@@ -211,7 +211,7 @@ export function generateCreatorIdeas({
   const templateSet = TEMPLATES[language] ?? TEMPLATES.Hinglish;
   const templates = templateSet[tone] ?? templateSet.Hype;
   const baseCaptions = templates.map((line) => line.replaceAll("{topic}", topic));
-  const transcriptLine = clean(transcript).split(/[.!?।！？\\n]+/).map(clean).find(line => line.length >= 12) ?? "";
+  const transcriptLine = clean(transcript).split(/[.!?।！？]+/).map(clean).find(line => line.length >= 12) ?? "";
   let contextualHook = "";
   if (transcriptLine) {
     const quote = transcriptLine.length > 82 ? transcriptLine.slice(0, 79).trimEnd() + "…" : transcriptLine;
