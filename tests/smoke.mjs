@@ -23,7 +23,7 @@ assert.match(html, /id="exportAllIndividualBtn"/, "all-individual export action 
 assert.match(html, /id="exportZipSelectedBtn"/, "selected ZIP export is an optional separate action");
 assert.match(html, /ZIP all clips \(optional\)/, "ZIP is labeled as optional");
 assert.match(html, /exportClips\(null,'individual'\)/, "mobile export path is individual files");
-assert.match(html, /atempo=\'+fx\.speed/, "audio speed filter reaches the export path");
+assert.match(html, /atempo=.*fx\.speed/, "audio speed filter reaches the export path");
 assert.match(html, /setpts=/, "video speed filter reaches the export path");
 assert.match(html, /family=Archivo\+Black/, "expanded web fonts are configured");
 
