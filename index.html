@@ -135,7 +135,7 @@ html,body{height:100%;overscroll-behavior-y:none}html{scroll-behavior:auto}body{
 <label class="checkline" style="margin-top:12px"><input type="checkbox" id="captionItalic"> Italic captions</label><div class="form-grid" style="margin-top:12px"><div class="field-stack"><label class="field-label" for="captionHighlightColor">Karaoke highlight</label><div class="color-row"><input id="captionHighlightColor" type="color" value="#fff38c"><span class="muted-label" id="captionHighlightColorLabel">#FFF38C</span></div></div><div class="field-stack"><label class="field-label" for="captionStrokeColor">Outline color</label><div class="color-row"><input id="captionStrokeColor" type="color" value="#000000"><span class="muted-label" id="captionStrokeColorLabel">#000000</span></div></div></div><div class="form-grid" style="margin-top:12px"><div class="field-stack"><label class="field-label" for="captionOpacity">Text opacity</label><div class="range-row"><input id="captionOpacity" type="range" min="20" max="100" value="100"><span class="value-chip" id="captionOpacityVal">100%</span></div></div><div class="field-stack"><label class="field-label" for="captionPositionY">Fine vertical position</label><div class="range-row"><input id="captionPositionY" type="range" min="5" max="95" value="90"><span class="value-chip" id="captionPositionYVal">90%</span></div></div></div>
 </details>
 <div class="clip-controls" style="margin-top:14px"><button class="btn primary" id="applyCaptionBtn">Apply to selected clips</button><button class="btn" id="applyCaptionAllBtn">Apply to all</button><label class="btn" for="subtitleFile" style="display:inline-flex;align-items:center">Import SRT / VTT<input id="subtitleFile" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip" class="file-input"></label></div><p class="subtitle-note">Add a caption line to each clip, or import timed SRT/VTT captions to download alongside your videos. Live speech-to-text needs a transcription engine and is not enabled in this local-only build.</p><div id="subtitleImportStatus" class="small-note" style="margin-top:9px"></div></div></section>
-<section class="panel"><div class="panel-head"><div class="panel-title"><span class="step">05</span><div><h2>Export studio</h2><p>Pick a single clip or export the selected batch</p></div></div></div><div class="panel-body"><label class="mode-choice"><input type="radio" name="exportMode" value="copy" checked><span><strong>Original stream · fastest</strong><small>No video re-encoding; preserves source quality. Cuts may snap to nearby keyframes. Text styles are available as editable sidecars where supported.</small></span></label><label class="mode-choice"><input type="radio" name="exportMode" value="encode"><span><strong>Precise cuts · high quality</strong><small>Re-encodes at high quality for tighter cuts. Resolution stays the same unless you choose a different canvas.</small></span></label><div class="form-grid" style="margin-top:13px"><div class="field-stack"><label class="field-label" for="exportFormat">File format</label><select class="field" id="exportFormat"><option value="mp4">MP4 · H.264 (recommended)</option></select></div><div class="field-stack"><label class="field-label" for="exportName">Series file name</label><input class="field" id="exportName" value="my-clips" maxlength="48"></div></div><div class="badge-warn" style="margin-top:13px">Burning title/captions into the image requires re-encoding. The app will attempt browser FFmpeg text rendering; if your browser build lacks that filter, it will preserve the clip and include caption/title sidecars instead of silently corrupting the export.</div><div class="export-card" style="margin-top:14px"><div class="export-head"><strong>Ready to render?</strong><span id="readyCount">0 clips in queue</span></div><p>Clips are processed sequentially to reduce memory spikes. Keep this tab open until the ZIP is ready; very large videos may take time on phones.</p><div class="export-action-grid"><button class="btn primary" id="exportIndividualBtn" disabled>↓ Export selected individually</button><button class="btn" id="exportAllIndividualBtn" disabled>↓ Export all individually</button><button class="btn" id="exportZipSelectedBtn" disabled>▣ ZIP selected (optional)</button><button class="export-btn" id="exportBtn" disabled>▣ ZIP all clips (optional)</button></div><div class="export-progress" id="exportProgress"><div class="progress-text"><span id="exportStatus">Preparing</span><span id="exportPercent">0%</span></div><div class="progress-track"><div id="exportProgressBar"></div></div><div id="exportDetails" class="small-note"></div></div><div id="resultsList" class="result-list"></div></div><p class="small-note" style="margin-top:12px">Privacy: processing is performed in this browser using FFmpeg WebAssembly loaded from a CDN. Your source video is not uploaded to a ClipSmith server. Browser memory and format support depend on your device.</p></div></section>
+<section class="panel"><div class="panel-head"><div class="panel-title"><span class="step">05</span><div><h2>Export studio</h2><p>Pick a single clip or export the selected batch</p></div></div></div><div class="panel-body"><label class="mode-choice"><input type="radio" name="exportMode" value="copy" checked><span><strong>Original stream · fastest</strong><small>No video re-encoding; preserves source quality. Cuts may snap to nearby keyframes. Text styles are available as editable sidecars where supported.</small></span></label><label class="mode-choice"><input type="radio" name="exportMode" value="encode"><span><strong>Precise cuts · high quality</strong><small>Re-encodes at high quality for tighter cuts. Resolution stays the same unless you choose a different canvas.</small></span></label><div class="form-grid" style="margin-top:13px"><div class="field-stack"><label class="field-label" for="exportFormat">File format</label><select class="field" id="exportFormat"><option value="mp4">MP4 · H.264 (recommended)</option></select></div><div class="field-stack"><label class="field-label" for="exportName">Series file name</label><input class="field" id="exportName" value="my-clips" maxlength="48"></div></div><div class="badge-warn" style="margin-top:13px">Burning title/captions into the image requires re-encoding. The app will attempt browser FFmpeg text rendering; if your browser build lacks that filter, it will preserve the clip and include caption/title sidecars instead of silently corrupting the export.</div><div class="export-card" style="margin-top:14px"><div class="export-head"><strong>Ready to render?</strong><span id="readyCount">0 clips in queue</span></div><p>Clips are processed sequentially to reduce memory spikes. Keep this tab open until the ZIP is ready; very large videos may take time on phones.</p><div class="export-action-grid"><button class="btn primary" id="exportIndividualBtn" disabled>↓ Export selected individually</button><button class="btn" id="exportAllIndividualBtn" disabled>↓ Export all individually</button><button class="btn" id="exportZipSelectedBtn" disabled>▣ ZIP selected (optional)</button><button class="export-btn" id="exportBtn" disabled>▣ ZIP all clips (optional)</button></div><p class="small-note" id="zipLimitHint">ZIP is limited to 8 clips per batch and sources under 350 MB to protect phone memory. For larger series, use Export individually. If prompted, allow multiple downloads.</p><div class="export-progress" id="exportProgress"><div class="progress-text"><span id="exportStatus">Preparing</span><span id="exportPercent">0%</span></div><div class="progress-track"><div id="exportProgressBar"></div></div><div id="exportDetails" class="small-note"></div></div><div id="resultsList" class="result-list"></div></div><p class="small-note" style="margin-top:12px">Privacy: processing is performed in this browser using FFmpeg WebAssembly loaded from a CDN. Your source video is not uploaded to a ClipSmith server. Browser memory and format support depend on your device.</p></div></section>
 </div></div><footer class="footer">CLIPSMITH STUDIO · Made for creators · Edit only content you own or are authorized to use.</footer></div>
 <div class="mobile-sticky"><button class="export-btn" id="mobileExportBtn" disabled>↓ Export all individually</button></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module">
@@ -200,7 +200,7 @@ function renderClips(){const wrap=$('clipList');wrap.innerHTML='';if(!clips.leng
 function selectOnly(id){selected.clear();selected.add(id)}function applyTitles(){clips.forEach((c,i)=>c.title=titleFor(i));renderClips();updatePreview();toast('Shared heading applied to all parts')}
 function generateClips(){if(!sourceFile||!sourceDuration)return toast('Upload a valid video first');let start=Math.max(0,Number($('startAt').value)||0),end=Number($('endAt').value)||sourceDuration;end=Math.min(end,sourceDuration);if(start>=end)return toast('End time must be after start time');const len=Math.min(600,Math.max(1,Number($('customSeconds').value)||clipLength));clipLength=len;clips=[];selected.clear();for(let s=start;s<end-.001;s+=len){let i=clips.length;clips.push({id:`c${Date.now()}-${i}`,start:s,end:Math.min(end,s+len),title:titleFor(i),caption:'',group:1})}clips.forEach(c=>selected.add(c.id));renderClips();updatePreview();toast(`${clips.length} clips generated`)}
 function handleFile(file){if(!file)return;if(!file.type.startsWith('video/')&&!/\.(mp4|mkv|mov|avi|webm|m4v|mpeg|mpg)$/i.test(file.name)){toast('Please choose a video file');return}if(sourceUrl)URL.revokeObjectURL(sourceUrl);sourceFile=file;sourceFileName=file.name;sourceUrl=URL.createObjectURL(file);youtubeId=null;$('videoPreview').src=sourceUrl;$('videoPreview').classList.remove('hidden');$('youtubePreview').classList.add('hidden');$('previewEmpty').classList.add('hidden');$('sourceLabel').textContent=file.name;$('previewBadge').textContent='LOCAL FILE';$('durationBadge').textContent='Reading…';clips=[];selected.clear();renderClips();$('videoPreview').load();}
-$('videoPreview').addEventListener('loadedmetadata',()=>{sourceDuration=$('videoPreview').duration||0;$('totalTime').textContent=fmt(sourceDuration);$('durationBadge').textContent=fmt(sourceDuration);$('sourceLabel').textContent=`${sourceFileName} · ${$('videoPreview').videoWidth}×${$('videoPreview').videoHeight}`;$('generateBtn').disabled=false;$('ratioBadge').textContent=`${$('videoPreview').videoWidth}: ${$('videoPreview').videoHeight}`;$('endAt').placeholder=`${Math.floor(sourceDuration)} sec`;updatePreview();toast('Video loaded locally')});$('videoPreview').addEventListener('timeupdate',()=>{const v=$('videoPreview');$('currentTime').textContent=fmt(v.currentTime);$('playProgress').style.width=(v.duration?v.currentTime/v.duration*100:0)+'%';updatePreview()});
+$('videoPreview').addEventListener('loadedmetadata',()=>{sourceDuration=$('videoPreview').duration||0;$('totalTime').textContent=fmt(sourceDuration);$('durationBadge').textContent=fmt(sourceDuration);$('sourceLabel').textContent=`${sourceFileName} · ${$('videoPreview').videoWidth}×${$('videoPreview').videoHeight} · ${formatBytes(sourceFile.size)}`;$('ideasTopic').placeholder=sourceFileName.replace(/\.[^.]+$/,'')+' (edit this topic)';$('generateBtn').disabled=false;$('ratioBadge').textContent=`${$('videoPreview').videoWidth}: ${$('videoPreview').videoHeight}`;$('endAt').placeholder=`${Math.floor(sourceDuration)} sec`;updatePreview();toast('Video loaded locally')});$('videoPreview').addEventListener('timeupdate',()=>{const v=$('videoPreview');$('currentTime').textContent=fmt(v.currentTime);$('playProgress').style.width=(v.duration?v.currentTime/v.duration*100:0)+'%';updatePreview()});
 $('fileInput').addEventListener('change',e=>handleFile(e.target.files[0]));const dz=$('dropzone');dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFile(e.dataTransfer.files[0])});
 function getYouTubeId(url){try{const u=new URL(url);if(u.hostname.includes('youtu.be'))return u.pathname.slice(1).split('/')[0];if(u.hostname.includes('youtube.com'))return u.searchParams.get('v')||u.pathname.match(/\/(?:shorts|embed|live)\/([^/?]+)/)?.[1]}catch{}return null}
 $('loadUrlBtn').onclick=async()=>{const url=$('urlInput').value.trim();if(!url)return toast('Paste a video URL first');const yt=getYouTubeId(url);if(yt){youtubeId=yt;sourceFile=null;clips=[];selected.clear();$('videoPreview').classList.add('hidden');$('youtubePreview').classList.remove('hidden');$('youtubePreview').src=`https://www.youtube-nocookie.com/embed/${encodeURIComponent(yt)}`;$('previewEmpty').classList.add('hidden');$('sourceLabel').textContent='YouTube preview · importing video is not supported';$('durationBadge').textContent='Preview only';$('previewBadge').textContent='EMBED PREVIEW';renderClips();updateButtons();toast('YouTube preview loaded. Upload an authorized file to create clips.');return}try{const r=await fetch(url);if(!r.ok)throw new Error(`HTTP ${r.status}`);const blob=await r.blob();if(!blob.type.startsWith('video/')&&!/\.(mp4|webm|mov|mkv)(\?|$)/i.test(url))throw new Error('That link does not look like a video file');const name=decodeURIComponent(new URL(url).pathname.split('/').pop()||'linked-video.mp4');handleFile(new File([blob],name,{type:blob.type||'video/mp4'}))}catch(e){toast('Could not import link: browser CORS or server access blocked it. Download your authorized file and upload it instead.');console.warn(e)}};
@@ -218,14 +218,197 @@ function assEscape(s){return String(s||'').replace(/\\/g,'\\\\').replace(/{/g,'\
 function transformText(value,style){let text=String(value||'');if(style?.caps||style?.transform==='uppercase')return text.toUpperCase();if(style?.transform==='lowercase')return text.toLowerCase();if(style?.transform==='capitalize')return text.replace(/\b\p{L}/gu,m=>m.toUpperCase());return text}
 function makeAss(c,duration,width,height){const ts=c.titleStyle||getTitleStyle(),cs=c.captionStyle||getCaptionStyle();const safeFont=f=>String(f||'Arial').replace(/[,{}\\]/g,'');const assColor=(color,opacity=100)=>{const hex=String(color||'#ffffff').replace('#','').padEnd(6,'f').slice(0,6);const alpha=Math.max(0,Math.min(255,Math.round(255*(1-Math.max(0,Math.min(100,opacity))/100)))).toString(16).padStart(2,'0').toUpperCase();return '&H'+alpha+hex.slice(4,6)+hex.slice(2,4)+hex.slice(0,2)};const title=ts.burn?assEscape(transformText(c.title,ts)):'';const cap=cs.burn?assEscape(transformText(c.caption||$('captionText').value,cs)):'';const assAlign=(horizontal,y)=>{const vertical=y<34?7:y<66?4:1;return vertical+(horizontal==='left'?0:horizontal==='right'?2:1)};const titleY=Number(ts.positionY??(ts.placement==='top'?18:ts.placement==='center'?50:82));const capY=Number(cs.positionY??(cs.position==='top'?8:cs.position==='middle'?47:90));const titleAlign=assAlign(ts.align,titleY);const capAlign=assAlign(cs.align,capY);const titleMargin=Math.round(height*(titleY<34?titleY/100:titleY<66?0:(100-titleY)/100));const capMargin=Math.round(height*(capY<34?capY/100:capY<66?0:(100-capY)/100));const assTime=x=>{const cent=Math.round((x%1)*100),whole=Math.floor(x);return `0:${String(Math.floor(whole/60)).padStart(2,'0')}:${String(whole%60).padStart(2,'0')}.${String(cent).padStart(2,'0')}`};let events='';if(title)events+=`Dialogue: 0,${assTime(0)},${assTime(duration)},Title,,0,0,0,,${title}\n`;if(cap)events+=`Dialogue: 1,${assTime(0)},${assTime(duration)},Caption,,0,0,0,,${cap}\n`;const titleOutline=ts.outline==='none'?0:ts.outline==='outline'?Math.max(1,ts.outlineWidth||2):2;const titleShadow=Math.max(0,Math.round((ts.shadow??10)/4));const titleBg=ts.bg==='solid'||ts.bg==='pill'?3:1;const captionBg=cs.bg==='none'?1:3;const captionOutline=cs.outline==='none'?0:cs.outline==='thick'?2:1;const captionShadow=Math.max(0,Math.round((cs.shadow??5)/4));return `[Script Info]\nScriptType: v4.00+\nPlayResX: ${width}\nPlayResY: ${height}\nScaledBorderAndShadow: yes\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Title,${safeFont(ts.font)},${Math.max(14,Math.round(ts.size*height/360))},${assColor(ts.color,ts.opacity??100)},&H000000FF,${assColor(ts.outlineColor||'#000000')},&H66000000,${ts.weight==='800'||ts.weight==='700'?1:0},${ts.italic?1:0},0,0,100,100,${ts.spacing||0},0,${titleBg},${titleOutline},${titleShadow},${titleAlign},25,25,${titleMargin},1\nStyle: Caption,${safeFont(cs.font)},${Math.round(cs.size*height/360)},${assColor(cs.style==='karaoke'?(cs.highlightColor||'#fff38c'):cs.color,cs.opacity??100)},&H000000FF,${assColor(cs.outlineColor||'#000000')},${cs.bg==='none'?'&H00000000':'&H88000000'},${cs.bold||cs.style==='bold'||cs.style==='karaoke'?1:0},${cs.italic?1:0},0,0,100,100,${cs.spacing||0},0,${captionBg},${captionOutline},${captionShadow},${capAlign},25,25,${capMargin},1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n${events}`}
 
-function setProgress(p,status,details=''){ $('exportProgress').style.display='block';$('exportPercent').textContent=`${Math.round(p)}%`;$('exportProgressBar').style.width=`${Math.max(0,Math.min(100,p))}%`;$('exportStatus').textContent=status;$('exportDetails').textContent=details; }
-async function exportClips(ids=null,packageMode='zip'){if(rendering||!sourceFile||!clips.length)return;const targetClips=ids?clips.filter(c=>ids.includes(c.id)):clips.slice();if(!targetClips.length)return toast('Select at least one clip to export');rendering=true;updateButtons();$('resultsList').innerHTML='';let loaded=false;const resultFiles=[];const failed=[];try{setProgress(0,'Loading video engine','The browser may ask for a moment to download FFmpeg WebAssembly.');await ensureFFmpeg();loaded=true;const inputExt=(sourceFile.name.match(/\.([a-z0-9]{2,5})$/i)||[])[1]?.toLowerCase()||'mp4';const supportedExt=['mp4','mov','mkv','webm','avi','m4v','mpg','mpeg'].includes(inputExt)?inputExt:'mp4';const inputName=`source.${supportedExt}`;const inBytes=await fetchFile(sourceFile);await ffmpeg.writeFile(inputName,inBytes);const mode=document.querySelector('input[name="exportMode"]:checked').value;const outExt='mp4';let total=targetClips.length;for(let i=0;i<targetClips.length;i++){const c=targetClips[i];const originalIndex=clips.findIndex(x=>x.id===c.id);setProgress(i/total*100,`Rendering clip ${i+1} of ${total}`,`${c.title} · ${fmt(c.start)}–${fmt(c.end)}`);const outName=`${safeName($('exportName').value)}-part-${String(originalIndex+1).padStart(2,'0')}.${outExt}`;const srt=makeSrt(c,getFxSettings().speed);let args,rendered=false;const v=$('videoPreview');const resolutionW=v.videoWidth||1920,resolutionH=v.videoHeight||1080;const aspect=$('aspectSelect').value;let vf=[];if(aspect!=='source'){const [aw,ah]=aspect.split(':').map(Number);const ratio=aw/ah;const longSide=Math.max(resolutionW,resolutionH);const w=Math.max(2,Math.round((ratio<1?longSide*ratio:longSide)/2)*2),h=Math.max(2,Math.round((ratio<1?longSide:longSide/ratio)/2)*2);vf.push(`scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2`);}
-const fx=getFxSettings();const effectsActive=fx.brightness!==0||fx.contrast!==100||fx.saturation!==100||fx.blur>0||fx.speed!==1||fx.volume!==100||fx.mute||fx.grayscale;const af=[];if(fx.mute||fx.volume===0)af.push('volume=0');else if(fx.volume!==100)af.push('volume='+(fx.volume/100).toFixed(2));if(fx.speed!==1)af.push('atempo='+fx.speed);if(fx.brightness!==0||fx.contrast!==100||fx.saturation!==100)vf.push('eq=brightness='+fx.brightness.toFixed(2)+':contrast='+(fx.contrast/100).toFixed(2)+':saturation='+(fx.saturation/100).toFixed(2));if(fx.grayscale)vf.push('hue=s=0');if(fx.blur>0)vf.push('gblur=sigma='+fx.blur);if(fx.speed!==1)vf.push('setpts='+(1/fx.speed).toFixed(4)+'*PTS');const burn=(c.titleStyle?.burn??$('titleBurn').checked)||(c.captionStyle?.burn??$('captionBurn').checked);
-if(mode==='encode'||burn||effectsActive){try{if(burn){const ass=`captions-${i}.ass`;await ffmpeg.writeFile(ass,new TextEncoder().encode(makeAss(c,(c.end-c.start)/fx.speed,resolutionW,resolutionH)));vf.push(`subtitles=${ass}`)}args=['-ss',String(c.start),'-i',inputName,'-t',String((c.end-c.start)/fx.speed),'-map','0:v:0?','-map','0:a?','-c:v','libx264','-preset','ultrafast','-crf','18','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart'];if(vf.length)args.push('-vf',vf.join(','));args.push(outName);await ffmpeg.exec(args);rendered=true}catch(err){console.warn('Overlay/encode unavailable, falling back to stream copy',err);try{await ffmpeg.deleteFile(outName)}catch{} }}
-if(!rendered){if(effectsActive)throw new Error('The selected effects could not be encoded by this browser build. Reset or reduce FX and try again.');args=['-ss',String(c.start),'-i',inputName,'-t',String((c.end-c.start)/fx.speed),'-map','0:v:0?','-map','0:a?','-c','copy','-avoid_negative_ts','make_zero','-movflags','+faststart',outName];try{await ffmpeg.exec(args)}catch(copyErr){console.warn('Stream-copy failed; trying high-quality MP4 fallback',copyErr);try{await ffmpeg.deleteFile(outName)}catch{};args=['-ss',String(c.start),'-i',inputName,'-t',String((c.end-c.start)/fx.speed),'-map','0:v:0?','-map','0:a?','-c:v','libx264','-preset','ultrafast','-crf','18','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart'];if(vf.length)args.push('-vf',vf.join(','));args.push(outName);await ffmpeg.exec(args);rendered=true}}const data=await ffmpeg.readFile(outName);resultFiles.push({name:outName,data:new Uint8Array(data)});if(srt){resultFiles.push({name:outName.replace(/\.(mp4|webm)$/i,'.srt'),data:new TextEncoder().encode(srt)})}try{await ffmpeg.deleteFile(outName);await ffmpeg.deleteFile(`captions-${i}.ass`)}catch{}const row=document.createElement('div');row.className='result-item';row.innerHTML=`<span>✓ ${outName}${!rendered&&burn?' · text sidecar fallback':''}</span><span>${(data.length/1048576).toFixed(1)} MB</span>`;$('resultsList').append(row)}
-if(packageMode==='individual'){setProgress(100,'Preparing separate files','Tap Download beside each clip. Subtitle files are listed separately too.');for(let j=0;j<resultFiles.length;j++){const f=resultFiles[j],url=URL.createObjectURL(new Blob([f.data],{type:f.name.endsWith('.srt')?'text/plain':'video/mp4'}));const row=document.createElement('div');row.className='result-item';const name=document.createElement('span');name.textContent=f.name;const meta=document.createElement('span');meta.className='result-size';meta.textContent=(f.data.length/1048576).toFixed(1)+' MB';const a=document.createElement('a');a.href=url;a.download=f.name;a.className='btn result-download';a.textContent='Download';a.setAttribute('aria-label','Download '+f.name);row.append(name,meta,a);$('resultsList').append(row);}setProgress(100,'Export complete',`${targetClips.length} clip${targetClips.length===1?'':'s'} ready as separate files. Tap each Download button below.`);toast('Separate files are ready to download');}else{setProgress(100,'Packaging ZIP','Preparing downloads…');const zip=await makeZip(resultFiles);const zipUrl=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));const a=document.createElement('a');a.href=zipUrl;a.download=`${safeName($('exportName').value)}-clips.zip`;a.className='btn primary';a.style.width='100%';a.style.display='block';a.style.textAlign='center';a.style.marginTop='10px';a.textContent='⬇ Download ZIP';$('resultsList').prepend(a);setProgress(100,'Export complete',`${targetClips.length} clips · ${(zip.byteLength/1048576).toFixed(1)} MB ZIP`);toast('Your clip batch is ready');}
-}catch(e){console.error(e);setProgress(0,'Export failed',String(e?.message||e).slice(0,220));toast('Export failed. Try a smaller video or Original stream mode.');}finally{if(loaded){try{await ffmpeg.deleteFile(`source.${(sourceFile.name.match(/\.([a-z0-9]{2,5})$/i)||[])[1]?.toLowerCase()||'mp4'}`)}catch{}}rendering=false;updateButtons()}}
-async function makeZip(files){const crcTable=makeCrcTable();function crc32(bytes){let c=-1;for(const b of bytes)c=(c>>>8)^crcTable[(c^b)&255];return(c^-1)>>>0}const enc=new TextEncoder();const chunks=[],centrals=[];let offset=0;for(const f of files){const name=enc.encode(f.name),data=f.data instanceof Uint8Array?f.data:new Uint8Array(f.data),crc=crc32(data);const local=new Uint8Array(30+name.length);const lv=new DataView(local.buffer);lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0800,true);lv.setUint16(8,0,true);lv.setUint32(14,crc,true);lv.setUint32(18,data.length,true);lv.setUint32(22,data.length,true);lv.setUint16(26,name.length,true);local.set(name,30);chunks.push(local,data);const central=new Uint8Array(46+name.length);const cv=new DataView(central.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,name.length,true);cv.setUint32(42,offset,true);central.set(name,46);centrals.push(central);offset+=local.length+data.length}const centralSize=centrals.reduce((s,c)=>s+c.length,0);const end=new Uint8Array(22);const dv=new DataView(end.buffer);dv.setUint32(0,0x06054b50,true);dv.setUint16(8,files.length,true);dv.setUint16(10,files.length,true);dv.setUint32(12,centralSize,true);dv.setUint32(16,offset,true);const all=[...chunks,...centrals,end];const blob=new Blob(all);return new Uint8Array(await blob.arrayBuffer())}function makeCrcTable(){const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t}
+
+function explainExportError(error){
+ const raw=String(error&&error.message||error||'Unknown export error').replace(/\s+/g,' ').trim();
+ const sourceSize=sourceFile&&sourceFile.size||0,tail=lastFFmpegLogs.slice(-3).join(' · ');
+ if(sourceSize>MAX_WASM_FILE_BYTES)return 'This source is too close to FFmpeg WebAssembly’s 2 GB limit. Use a smaller/compressed source. Current file: '+formatBytes(sourceSize)+'.';
+ if(/memory|allocation|out of memory|cannot enlarge|abort\(\)|out of bounds|heap/i.test(raw+' '+tail))return 'The browser ran out of memory. Export one clip at a time, use Original stream mode, keep Burn into export and FX off, close other tabs, and retry. Source size: '+formatBytes(sourceSize)+'.';
+ if(/network|fetch|worker|wasm|coreURL|failed to load|timeout|cross-origin/i.test(raw+' '+tail))return 'The free FFmpeg engine could not load. Check your connection, reload the studio, and temporarily disable a content-blocking VPN/filter for the CDN. Details: '+raw.slice(0,190);
+ if(/no such filter|error initializing filter|filter.*not found|overlay/i.test(raw+' '+tail))return 'This FFmpeg build cannot apply one of the selected filters. Turn off Burn into export / FX, keep the original aspect ratio, choose Original stream mode, and retry. Details: '+raw.slice(0,160);
+ if(/could not write header|codec.*not supported|muxer|invalid argument|error while opening encoder|conversion failed/i.test(raw+' '+tail))return 'This file/codec did not export with the selected MP4 settings. Try Original stream mode with Burn into export and FX off, or convert the source to MP4 first. Details: '+raw.slice(0,180);
+ return 'Export failed: '+raw.slice(0,220)+(tail?' · FFmpeg: '+tail.slice(0,160):'')+'. First test one selected clip in Original stream mode.';
+}
+function showExportFailure(error){
+ const detail=explainExportError(error);
+ setProgress(0,'Export failed — see details below',detail);
+ $('exportProgress').classList.add('failed');
+ toast('Export failed. Open Export for the cause and fix.');
+ window.__clipSmithNav?.setMobileView('export');
+ window.__clipSmithNav?.switchTool('export');
+}
+function downloadAndRelease(name,data,type='application/octet-stream'){
+ const blob=data instanceof Blob?data:new Blob([data],{type});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);
+ try{a.click()}finally{a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),30000)}
+}
+function wrapCanvasText(ctx,text,maxWidth){
+ const words=String(text||'').split(/\s+/).filter(Boolean),lines=[];let line='';
+ for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word}else line=next}
+ if(line)lines.push(line);return lines.length?lines:[''];
+}
+async function makeOverlayPng(clip,width,height,burnTitle,burnCaption){
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas text overlay is unavailable.');
+ const ts=clip.titleStyle||getTitleStyle(),cs=clip.captionStyle||getCaptionStyle();
+ const draw=(text,style,isTitle)=>{
+  text=String(text||'').trim();if(!text)return;
+  const size=Math.max(12,Math.round((Number(style.size)||22)*height/360));
+  const weight=isTitle?(style.weight||'800'):(style.bold?'800':'600');
+  const font=(style.italic?'italic ':'')+weight+' '+size+'px "'+String(style.font||'Arial').replace(/["\\]/g,'')+'", sans-serif';
+  ctx.font=font;ctx.textBaseline='middle';
+  const maxWidth=width*.88,lines=wrapCanvasText(ctx,text,maxWidth);
+  const lineHeight=size*(Number(style.lineHeight)||1.18);
+  const widths=lines.map(line=>ctx.measureText(line).width),blockWidth=Math.min(maxWidth,Math.max(...widths,0));
+  const align=style.align||'center',x=align==='left'?width*.06:align==='right'?width*.94:width/2;
+  const pos=style.positionY??(isTitle?(style.placement==='bottom'?82:style.placement==='center'?50:18):(style.position==='top'?8:style.position==='middle'?47:90));
+  const y=height*Math.max(.04,Math.min(.96,Number(pos)/100));
+  ctx.save();ctx.globalAlpha=Math.max(.2,Math.min(1,Number(style.opacity??100)/100));
+  ctx.translate(x,y);ctx.rotate((Number(style.rotation)||0)*Math.PI/180);
+  const maxLine=Math.max(...widths,0),padX=size*.48,padY=size*.25,left=align==='left'?0:align==='right'?-maxLine:-maxLine/2,top=-lineHeight*lines.length/2;
+  if(style.bg&&style.bg!=='none'){
+   ctx.fillStyle=style.bgColor||'#100d1c';
+   if(style.bg==='gradient'){const gradient=ctx.createLinearGradient(left,0,left+maxLine,0);gradient.addColorStop(0,'rgba(0,0,0,0)');gradient.addColorStop(.5,(style.bgColor||'#100d1c')+'dd');gradient.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=gradient}
+   const bx=left-padX,by=top-padY,bw=maxLine+padX*2,bh=lineHeight*lines.length+padY*2,rad=style.bg==='pill'?Math.max(4,size*.28):style.bg==='solid'?Math.max(2,size*.1):0;
+   ctx.beginPath();if(typeof ctx.roundRect==='function')ctx.roundRect(bx,by,bw,bh,rad);else ctx.rect(bx,by,bw,bh);ctx.fill();
+  }
+  ctx.textAlign=align;ctx.lineJoin='round';
+  if(style.shadow>0){ctx.shadowColor='rgba(0,0,0,.85)';ctx.shadowBlur=Math.max(0,Number(style.shadow)||0)*height/360;ctx.shadowOffsetY=size*.08}
+  if(['outline','thin','thick'].includes(style.outline)){ctx.strokeStyle=style.outlineColor||'#000000';ctx.lineWidth=Math.max(1,(Number(style.outlineWidth)||2)*height/360);lines.forEach((line,i)=>ctx.strokeText(transformText(line,style),0,(i-(lines.length-1)/2)*lineHeight,maxWidth))}
+  ctx.fillStyle=style.color||'#ffffff';
+  lines.forEach((line,i)=>ctx.fillText(transformText(line,style),0,(i-(lines.length-1)/2)*lineHeight,maxWidth));
+  ctx.restore();
+ };
+ if(burnTitle&&clip.title)draw(clip.title,ts,true);
+ const cap=clip.caption||$('captionText').value;
+ if(burnCaption&&cap)draw(cap,cs,false);
+ const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not prepare the text overlay image.')),'image/png'));
+ return new Uint8Array(await blob.arrayBuffer());
+}
+
+function setProgress(p,status,details=''){ $('exportProgress').style.display='block';$('exportProgress').classList.remove('failed');$('exportPercent').textContent=`${Math.round(p)}%`;$('exportProgressBar').style.width=`${Math.max(0,Math.min(100,p))}%`;$('exportStatus').textContent=status;$('exportDetails').textContent=details; }
+async function exportClips(ids=null,packageMode='zip'){
+ if(rendering||!sourceFile||!clips.length)return;
+ const targetClips=ids?clips.filter(c=>ids.includes(c.id)):clips.slice();
+ if(!targetClips.length)return toast('Select at least one clip to export');
+ if(packageMode==='zip'&&targetClips.length>MAX_ZIP_CLIPS){showExportFailure(new Error('ZIP batches are limited to '+MAX_ZIP_CLIPS+' clips. Choose up to '+MAX_ZIP_CLIPS+' clips for ZIP, or use Export all individually.'));return}
+ if(sourceFile.size>MAX_WASM_FILE_BYTES){showExportFailure(new Error('This source exceeds the safe FFmpeg WebAssembly size limit.'));return}
+ if(packageMode==='zip'&&sourceFile.size>350*1024*1024){showExportFailure(new Error('ZIP mode is limited to source files under 350 MB to reduce memory crashes. Choose Export individually instead.'));return}
+ const mode=document.querySelector('input[name="exportMode"]:checked').value;
+ const startBurnTitle=$('titleBurn').checked,startBurnCaption=$('captionBurn').checked;
+ const fx=getFxSettings(),aspect=$('aspectSelect').value;
+ const visualFX=fx.brightness!==0||fx.contrast!==100||fx.saturation!==100||fx.blur>0||fx.grayscale;
+ const audioFX=fx.speed!==1||fx.volume!==100||fx.mute||fx.volume===0;
+ const formatChange=aspect!=='source',needEncode=mode==='encode'||startBurnTitle||startBurnCaption||visualFX||audioFX||formatChange;
+ if(sourceFile.size>700*1024*1024&&needEncode){showExportFailure(new Error('This '+formatBytes(sourceFile.size)+' source requires re-encoding for the selected burn-in, FX, or format. On a phone this can exhaust browser memory. Turn off Burn into export and FX, keep the original aspect ratio, choose Original stream mode, then retry.'));return}
+ rendering=true;updateButtons();$('resultsList').innerHTML='';lastFFmpegLogs=[];
+ let loaded=false,activeInputName=null;const zipFiles=[];
+ const extension=(sourceFile.name.match(/\.([a-z0-9]{2,5})$/i)||[])[1]?.toLowerCase()||'mp4';
+ const inputName='source.'+(['mp4','mov','mkv','webm','avi','m4v','mpg','mpeg'].includes(extension)?extension:'mp4');
+ activeInputName=inputName;
+ const video=$('videoPreview'),width=video.videoWidth||1920,height=video.videoHeight||1080;
+ try{
+  setProgress(0,'Loading video engine','Source: '+formatBytes(sourceFile.size)+' · '+targetClips.length+' clip(s). Individual export releases each output after its download starts.');
+  await ensureFFmpeg();loaded=true;
+  await ffmpeg.writeFile(inputName,await fetchFile(sourceFile));
+  for(let i=0;i<targetClips.length;i++){
+   const c=targetClips[i],originalIndex=clips.findIndex(x=>x.id===c.id);
+   const ts=c.titleStyle||getTitleStyle(),cs=c.captionStyle||getCaptionStyle();
+   const burnTitle=Boolean(startBurnTitle&&c.title);
+   const burnCaption=Boolean(startBurnCaption&&(c.caption||$('captionText').value).trim());
+   const burn=burnTitle||burnCaption;
+   const currentFx=getFxSettings();
+   const fxActive=currentFx.brightness!==0||currentFx.contrast!==100||currentFx.saturation!==100||currentFx.blur>0||currentFx.speed!==1||currentFx.volume!==100||currentFx.mute||currentFx.grayscale;
+   const reencode=mode==='encode'||burn||fxActive||formatChange;
+   const outName=safeName($('exportName').value)+'-part-'+String(originalIndex+1).padStart(3,'0')+'.mp4';
+   const originalDuration=c.end-c.start,duration=originalDuration/currentFx.speed,srt=makeSrt(c,currentFx.speed);
+   const videoFilters=[];
+   if(aspect!=='source'){
+    const dims=aspect.split(':').map(Number),ratio=dims[0]/dims[1],longSide=Math.max(width,height);
+    const w=Math.max(2,Math.round((ratio<1?longSide*ratio:longSide)/2)*2),h=Math.max(2,Math.round((ratio<1?longSide:longSide/ratio)/2)*2);
+    videoFilters.push('scale='+w+':'+h+':force_original_aspect_ratio=decrease,pad='+w+':'+h+':(ow-iw)/2:(oh-ih)/2');
+   }
+   if(currentFx.brightness!==0||currentFx.contrast!==100||currentFx.saturation!==100)videoFilters.push('eq=brightness='+currentFx.brightness.toFixed(2)+':contrast='+(currentFx.contrast/100).toFixed(2)+':saturation='+(currentFx.saturation/100).toFixed(2));
+   if(currentFx.grayscale)videoFilters.push('hue=s=0');
+   if(currentFx.blur>0)videoFilters.push('gblur=sigma='+currentFx.blur);
+   if(currentFx.speed!==1)videoFilters.push('setpts='+(1/currentFx.speed).toFixed(4)+'*PTS');
+   const audioFilters=[];
+   if(currentFx.mute||currentFx.volume===0)audioFilters.push('volume=0');
+   else if(currentFx.volume!==100)audioFilters.push('volume='+(currentFx.volume/100).toFixed(2));
+   if(currentFx.speed!==1)audioFilters.push('atempo='+currentFx.speed);
+   setProgress(i/targetClips.length*100,'Rendering clip '+(i+1)+' of '+targetClips.length,fmt(c.start)+'–'+fmt(c.end)+' · '+formatBytes(sourceFile.size)+' source · '+(reencode?'re-encode':'stream copy'));
+   let overlayName=null,overlayBytes=null,outputBytes=null;
+   try{
+    if(reencode){
+     const args=['-ss',String(c.start),'-i',inputName];
+     let graph='';
+     if(burn){
+      overlayName='overlay-'+i+'.png';
+      overlayBytes=await makeOverlayPng(c,width,height,burnTitle,burnCaption);
+      await ffmpeg.writeFile(overlayName,overlayBytes);
+      args.push('-loop','1','-i',overlayName);
+      graph='[0:v:0][1:v:0]overlay=0:0:format=auto'+(videoFilters.length?','+videoFilters.join(','):'')+'[vout]';
+     }else if(videoFilters.length){graph='[0:v:0]'+videoFilters.join(',')+'[vout]'}
+     args.push('-t',String(duration));
+     if(graph)args.push('-filter_complex',graph,'-map','[vout]');else args.push('-map','0:v:0?');
+     args.push('-map','0:a?','-c:v','libx264','-preset','ultrafast','-crf','18','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart');
+     if(audioFilters.length)args.push('-af',audioFilters.join(','));
+     args.push(outName);await ffmpeg.exec(args);
+    }else{
+     const args=['-ss',String(c.start),'-i',inputName,'-t',String(originalDuration),'-map','0:v:0?','-map','0:a?','-c','copy','-avoid_negative_ts','make_zero','-movflags','+faststart',outName];
+     try{await ffmpeg.exec(args)}catch(copyError){
+      try{await ffmpeg.deleteFile(outName)}catch{}
+      setProgress(i/targetClips.length*100,'Re-encoding clip '+(i+1)+' of '+targetClips.length,'This source codec needs an MP4 compatibility encode.');
+      await ffmpeg.exec(['-ss',String(c.start),'-i',inputName,'-t',String(originalDuration),'-map','0:v:0?','-map','0:a?','-c:v','libx264','-preset','ultrafast','-crf','18','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart',outName]);
+     }
+    }
+    const rawData=await ffmpeg.readFile(outName);
+    outputBytes=rawData instanceof Uint8Array?rawData:new Uint8Array(rawData);
+    const srtName=outName.replace(/\.mp4$/i,'.srt');
+    const titleName=outName.replace(/\.mp4$/i,'-title.txt');
+    const titleSidecar=!burnTitle&&c.title?new TextEncoder().encode(c.title+'\n'):null;
+    if(packageMode==='zip'){
+     zipFiles.push({name:outName,data:outputBytes});
+     if(srt)zipFiles.push({name:srtName,data:new TextEncoder().encode(srt)});
+     if(titleSidecar)zipFiles.push({name:titleName,data:titleSidecar});
+    }else{
+     downloadAndRelease(outName,outputBytes,'video/mp4');
+     if(srt)downloadAndRelease(srtName,new TextEncoder().encode(srt),'text/plain;charset=utf-8');
+     if(titleSidecar)downloadAndRelease(titleName,titleSidecar,'text/plain;charset=utf-8');
+    }
+    const row=document.createElement('div');row.className='result-item';
+    const name=document.createElement('span');name.textContent='✓ '+outName;
+    const detail=document.createElement('span');detail.className='result-size';detail.textContent=formatBytes(outputBytes.byteLength)+(packageMode==='zip'?' · queued for ZIP':' · sent to browser downloads');
+    row.append(name,detail);$('resultsList').append(row);
+    outputBytes=null;
+   }finally{
+    try{await ffmpeg.deleteFile(outName)}catch{}
+    if(overlayName){try{await ffmpeg.deleteFile(overlayName)}catch{}}
+    overlayBytes=null;
+   }
+  }
+  if(packageMode==='zip'){
+   setProgress(94,'Packaging ZIP','Building the bounded ZIP batch and sidecar files.');
+   const zip=await makeZip(zipFiles),url=URL.createObjectURL(zip);
+   const a=document.createElement('a');a.href=url;a.download=safeName($('exportName').value)+'-clips.zip';a.style.display='none';document.body.appendChild(a);
+   try{a.click()}finally{a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),60000)}
+   setProgress(100,'Export complete',targetClips.length+' clip(s) packaged · '+formatBytes(zip.size)+'. The ZIP should appear in browser downloads.');
+   toast('ZIP sent to browser downloads');
+  }else{
+   setProgress(100,'Export complete',targetClips.length+' clip(s) sent to browser downloads. If prompted, allow multiple downloads. Captions are separate .srt files; titles are .txt sidecars unless burned into the video.');
+   toast('Clips sent to browser downloads');
+  }
+ }catch(error){
+  console.error('ClipSmith export failure',error,lastFFmpegLogs);
+  showExportFailure(error);
+ }finally{
+  if(loaded&&activeInputName){try{await ffmpeg.deleteFile(activeInputName)}catch{}}
+  rendering=false;updateButtons();
+ }
+}
+
+async function makeZip(files){const crcTable=makeCrcTable();function crc32(bytes){let c=-1;for(const b of bytes)c=(c>>>8)^crcTable[(c^b)&255];return(c^-1)>>>0}const enc=new TextEncoder();const chunks=[],centrals=[];let offset=0;for(const f of files){const name=enc.encode(f.name),data=f.data instanceof Uint8Array?f.data:new Uint8Array(f.data),crc=crc32(data);const local=new Uint8Array(30+name.length);const lv=new DataView(local.buffer);lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0800,true);lv.setUint16(8,0,true);lv.setUint32(14,crc,true);lv.setUint32(18,data.length,true);lv.setUint32(22,data.length,true);lv.setUint16(26,name.length,true);local.set(name,30);chunks.push(local,data);const central=new Uint8Array(46+name.length);const cv=new DataView(central.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,name.length,true);cv.setUint32(42,offset,true);central.set(name,46);centrals.push(central);offset+=local.length+data.length}const centralSize=centrals.reduce((s,c)=>s+c.length,0);const end=new Uint8Array(22);const dv=new DataView(end.buffer);dv.setUint32(0,0x06054b50,true);dv.setUint16(8,files.length,true);dv.setUint16(10,files.length,true);dv.setUint32(12,centralSize,true);dv.setUint32(16,offset,true);const all=[...chunks,...centrals,end];return new Blob(all,{type:'application/zip'})}function makeCrcTable(){const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t}
 $('exportBtn').onclick=()=>exportClips(null,'zip');$('exportZipSelectedBtn').onclick=()=>exportClips([...selected],'zip');$('exportAllIndividualBtn').onclick=()=>exportClips(null,'individual');$('mobileExportBtn').onclick=()=>exportClips(null,'individual');$('exportIndividualBtn').onclick=()=>exportClips([...selected],'individual');
 $('resetBtn').onclick=()=>{if(rendering)return toast('Wait until the current export finishes');if(sourceUrl)URL.revokeObjectURL(sourceUrl);sourceFile=null;sourceUrl=null;sourceDuration=0;clips=[];selected.clear();importedCaptions=null;$('fileInput').value='';$('videoPreview').removeAttribute('src');$('videoPreview').classList.add('hidden');$('youtubePreview').src='';$('youtubePreview').classList.add('hidden');$('previewEmpty').classList.remove('hidden');$('sourceLabel').textContent='Your source video will appear here';$('durationBadge').textContent='No source';$('totalTime').textContent='00:00';$('currentTime').textContent='00:00';$('playProgress').style.width='0';$('resultsList').innerHTML='';$('exportProgress').style.display='none';$('subtitleImportStatus').textContent='';renderClips();updatePreview();toast('Studio reset')};
 $('aspectSelect').onchange=()=>{const v=$('aspectSelect').value;$('ratioBadge').textContent=v==='source'?'SOURCE':v;$('videoStage').style.aspectRatio=v==='source'?'16/9':v.replace(':',' / ')};
