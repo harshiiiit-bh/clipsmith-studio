@@ -167,6 +167,14 @@ function hashtagSet({ title, fileName, transcript, visualTags, keywords, platfor
   const tags = [];
   const titleSlug = hashtagToken(safeTopic(title));
   if (titleSlug && !/^#(yourseriesname|untitledseries|myclips|video)$/i.test(titleSlug)) tags.push(titleSlug);
+  const platformTags = {
+    "YouTube Shorts": ["#YouTubeShorts", "#Shorts"],
+    "Instagram Reels": ["#InstagramReels", "#ReelsIndia"],
+    TikTok: ["#TikTok", "#TikTokVideo"],
+    Facebook: ["#FacebookReels", "#VideoHighlights"],
+    LinkedIn: ["#LinkedInVideo", "#CreatorTips"]
+  };
+  tags.push(...(platformTags[platform] ?? ["#VideoHighlights"]));
 
   if (/munna|bhai|mbbs|bollywood|hindi cinema|hindi movie|indian film/.test(lower)) {
     tags.push("#Bollywood", "#HindiCinema", "#MovieClips", "#ComedyScene");
@@ -184,14 +192,7 @@ function hashtagSet({ title, fileName, transcript, visualTags, keywords, platfor
     if (tags.length >= 18) break;
     if (word.length >= 4) tags.push(hashtagToken(word));
   }
-  const platformTags = {
-    "YouTube Shorts": ["#YouTubeShorts", "#Shorts"],
-    "Instagram Reels": ["#InstagramReels", "#ReelsIndia"],
-    TikTok: ["#TikTok", "#TikTokVideo"],
-    Facebook: ["#FacebookReels", "#VideoHighlights"],
-    LinkedIn: ["#LinkedInVideo", "#CreatorTips"]
-  };
-  tags.push(...(platformTags[platform] ?? ["#VideoHighlights"]), "#VideoHighlights", "#CreatorEdit");
+  tags.push("#VideoHighlights", "#CreatorEdit");
   const maxByPlatform = { "YouTube Shorts": 12, "Instagram Reels": 12, TikTok: 10, Facebook: 10, LinkedIn: 8 };
   return uniq(tags).slice(0, maxByPlatform[platform] ?? 12);
 }
