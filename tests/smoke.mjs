@@ -51,6 +51,8 @@ const creatorIdeas = generateCreatorIdeas({
 });
 assert.equal(creatorIdeas.captions.length, 8, "assistant should produce a useful set of caption options");
 assert.ok(creatorIdeas.captions.every(line => line.length > 12), "caption options should contain real copy");
+assert.ok(creatorIdeas.captions[0].toLowerCase().includes("funny scene"), "first hook should reflect supplied transcript text");
+assert.ok(creatorIdeas.hashtags.includes("#InstagramReels"), "hashtags should adapt to platform");
 assert.ok(creatorIdeas.hashtags.includes("#Bollywood"), "movie context should inform hashtag suggestions");
 assert.ok(creatorIdeas.hashtags.length >= 6, "assistant should suggest multiple hashtags");
 const idAttrs = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
