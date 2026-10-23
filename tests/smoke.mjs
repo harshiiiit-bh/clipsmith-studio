@@ -25,15 +25,15 @@ assert.match(html, /id="exportZipSelectedBtn"/, "selected ZIP export is an optio
 assert.match(html, /ZIP all clips \(optional\)/, "ZIP is labeled as optional");
 assert.match(html, /exportClips\(null,'individual'\)/, "mobile export path is individual files");
 assert.match(html, /atempo=.*fx\.speed/, "audio speed filter reaches the export path");
-assert.match(html, /setpts=/, "video speed filter reaches the export path");
+assert.match(html, /setpts=.*currentFx\\.speed/, "video speed filter reaches the export path");
 assert.match(html, /family=Archivo\+Black/, "expanded web fonts are configured");
 
 assert.match(html, /const MAX_ZIP_CLIPS = 8/, "ZIP batches are bounded to protect mobile memory");
 assert.match(html, /function explainExportError\(/, "export failures receive actionable diagnostics");
 assert.match(html, /function downloadAndRelease\(/, "individual exports release clip buffers as they are delivered");
-assert.match(html, /id="creatorIdeasPane"/, "creator ideas inspector is present");
-assert.match(html, /id="generateIdeasBtn"/, "caption and hashtag generation control is present");
-assert.match(html, /id="analyzeFramesBtn"/, "optional local frame analysis is available");
+assert.match(html, /ideasPane\\.id="creatorIdeasPane"/, "creator ideas inspector is present");
+assert.match(html, /generateIdeasBtn/, "caption and hashtag generation control is present");
+assert.match(html, /analyzeFramesBtn/, "optional local frame analysis is available");
 assert.match(html, /@tensorflow\/tfjs/, "open-source local visual analysis can be loaded on demand");
 assert.match(readFileSync(new URL("../creator-assistant.js", import.meta.url), "utf8"), /export function generateCreatorIdeas\(/, "caption suggestions use video context");
 assert.match(html, /data-view="ideas"/, "mobile creator ideas view is wired");
