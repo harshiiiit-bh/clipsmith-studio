@@ -27,6 +27,18 @@ assert.match(html, /atempo=.*fx\.speed/, "audio speed filter reaches the export 
 assert.match(html, /setpts=/, "video speed filter reaches the export path");
 assert.match(html, /family=Archivo\+Black/, "expanded web fonts are configured");
 
+assert.match(html, /const MAX_ZIP_CLIPS = 8/, "ZIP batches are bounded to protect mobile memory");
+assert.match(html, /function explainExportError\(/, "export failures receive actionable diagnostics");
+assert.match(html, /function downloadAndRelease\(/, "individual exports release clip buffers as they are delivered");
+assert.match(html, /id="creatorIdeasPane"/, "creator ideas inspector is present");
+assert.match(html, /id="generateIdeasBtn"/, "caption and hashtag generation control is present");
+assert.match(html, /id="analyzeFramesBtn"/, "optional local frame analysis is available");
+assert.match(html, /@tensorflow\/tfjs/, "open-source local visual analysis can be loaded on demand");
+assert.match(html, /function generateCreatorIdeas\(/, "caption suggestions use video context");
+assert.match(html, /setMobileView\('ideas'\)/, "mobile creator ideas view is wired");
+assert.match(html, /Export failed — see details below/, "visible export error state is clearer than a generic toast");
+
+
 const idAttrs = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 const duplicates = [...new Set(idAttrs.filter((id, i) => idAttrs.indexOf(id) !== i))];
 assert.deepEqual(duplicates, [], "element IDs must remain unique");
