@@ -1,51 +1,40 @@
-# ClipSmith Studio
+# ClipSmith Studio — Creator workspace
 
-A browser-first clipping studio for creators who need short, consistently titled video parts without uploading their footage to a ClipSmith server.
+A browser-first video clipping studio for turning an authorised source video into a series of short clips with consistent part titles, styled text, captions and flexible exports.
+
+## What changed in the creator workspace
+
+- Fixed-height, three-column desktop editor: media/clip queue, preview/timeline, and a tabbed editing inspector.
+- Compact mobile workspace with dedicated Media, Preview, Clips, Text and Export navigation rather than one endless page.
+- Expanded heading typography: larger font library, case transforms, left/center/right alignment, letter spacing, line height, italics, outline/shadow controls, title backings, placement and reusable part numbering.
+- Expanded caption styling: multiple font options, preset looks, text transforms, alignment, spacing, background, outline, shadow and vertical position.
+- Shared title patterns across a series plus per-clip title/caption edits and multi-select style application.
+- Clip queue with per-clip preview and separate-file export actions.
+- Export selected clips as individual files or package the full batch as a ZIP.
+- Custom-duration splitting, start/end range, aspect-format controls, SRT/VTT import and subtitle sidecars.
+- Local-first workflow; source media is not uploaded to a ClipSmith backend.
 
 ## Run locally
 
-Because browser video APIs and WebAssembly workers have security requirements, serve this folder over HTTP rather than opening `index.html` as a `file://` URL. For example:
+Serve the folder over HTTP rather than opening the HTML as a `file://` URL:
 
 ```bash
 python -m http.server 8000
 ```
 
-Then visit `http://localhost:8000`.
+Visit `http://localhost:8000`.
 
-The FFmpeg engine and supporting utilities are loaded on demand from jsDelivr, so an internet connection is required for rendering. No backend or API key is needed for the current MVP.
+FFmpeg WebAssembly is loaded on demand from jsDelivr, so an internet connection is required for rendering. No backend or API key is required for this MVP.
 
-## Features in this version
+## Publish on GitHub Pages
 
-- Import a local video by browse or drag-and-drop.
-- Import a direct media URL when the host permits browser CORS access.
-- Preview YouTube videos in an embed; YouTube watch links are not downloaded or ripped.
-- Split the selected range into 15, 30, 45, 60 second, or custom-duration clips.
-- Generate numbered Part, Episode, or Chapter headings, then override any clip title.
-- Select clips and apply title/caption settings individually or as a batch.
-- Preview heading and caption styles, with font, size, color, placement, weight, and background controls.
-- Add manual captions or import SRT/VTT subtitles; export SRT sidecars with clips.
-- Export multiple clips in a ZIP.
-- Choose stream-copy mode for speed and no video re-encoding, or H.264 re-encoding for more precise cuts and overlays.
-- Runs in the browser; the source file is not uploaded to a ClipSmith backend.
+This repository is currently configured to publish from the `main` branch, root folder (`/`). The root `index.html` is the site entrypoint. Commits to `main` are published by GitHub Pages automatically after its build finishes.
 
-## Important limitations
+## Quality and processing notes
 
-- Browser processing keeps media in memory. Large videos may overwhelm a phone or a low-memory device; start with a short sample.
-- Stream-copy mode preserves the original encoded streams, but cuts may align to nearby keyframes rather than exact frames.
-- Precise cuts, aspect-ratio conversion, and burned-in text require re-encoding and can affect quality. The H.264 export uses a high-quality CRF setting, but it is not mathematically lossless.
-- Burned-in text depends on the FFmpeg WebAssembly build supporting the required subtitle filter. If it fails, the editor attempts a safe stream-copy fallback and includes subtitle sidecars when available.
-- Automatic speech-to-text captions and AI highlight detection are not part of this MVP.
-- A remote media URL only works when the server serves media directly and allows cross-origin browser access. YouTube embeds are preview-only.
-- Use only videos and audio that you own or are authorized to edit and redistribute.
-
-## Deployment
-
-The included GitHub Actions workflow publishes this static site to GitHub Pages when the workflow has Pages deployment permission. In the repository, open **Settings → Pages** and choose **GitHub Actions** as the build/deployment source if GitHub Pages has not been enabled for the repo yet.
-
-## Roadmap ideas
-
-- Speech-to-text transcription with a local or opt-in remote engine.
-- Scene detection and silence-based clip suggestions.
-- 9:16 / 1:1 reframing and safe-area guides.
-- Project saving and reusable title/caption presets.
-- Undo/redo history and clip-level timeline trimming.
+- Original stream mode avoids video re-encoding, preserving the encoded streams, but cuts can align to nearby keyframes rather than exact frames.
+- Precise cuts, aspect conversion and burned-in text require re-encoding and may change quality. The H.264 output uses a high-quality CRF setting, but it is not mathematically lossless.
+- Video processing happens in browser memory. Very large files may exhaust memory on phones; test with a short clip first.
+- Direct video URLs only work when the host exposes media directly and permits browser CORS access. YouTube links are preview-only; the app does not download or rip YouTube videos.
+- Manual captions and SRT/VTT import are supported. Live speech-to-text and AI highlight detection are not included in this MVP.
+- Use only videos and audio you own or are authorised to edit and redistribute.
