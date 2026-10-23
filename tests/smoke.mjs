@@ -34,6 +34,7 @@ assert.match(html, /function downloadAndRelease\(/, "individual exports release 
 assert.match(html, /ideasPane\.id="creatorIdeasPane"/, "creator ideas inspector is present");
 assert.match(html, /generateIdeasBtn/, "caption and hashtag generation control is present");
 assert.match(html, /analyzeFramesBtn/, "optional local frame analysis is available");
+assert.match(html, /ideasTranscript/, "manual transcript context is available to the creator assistant");
 assert.match(html, /@tensorflow\/tfjs/, "open-source local visual analysis can be loaded on demand");
 assert.match(readFileSync(new URL("../creator-assistant.js", import.meta.url), "utf8"), /export function generateCreatorIdeas\(/, "caption suggestions use video context");
 assert.match(html, /data-view="ideas"/, "mobile creator ideas view is wired");
