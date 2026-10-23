@@ -1,0 +1,25 @@
+name: ClipSmith smoke checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "tests/**"
+      - ".github/workflows/clip-smoke.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "tests/**"
+      - ".github/workflows/clip-smoke.yml"
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax and editor-feature checks
+        run: node tests/smoke.mjs
