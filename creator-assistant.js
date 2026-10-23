@@ -184,7 +184,14 @@ function hashtagSet({ title, fileName, transcript, visualTags, keywords, platfor
     if (tags.length >= 18) break;
     if (word.length >= 4) tags.push(hashtagToken(word));
   }
-  tags.push("#Shorts", "#ReelsIndia", "#VideoHighlights", "#CreatorEdit");
+  const platformTags = {
+    "YouTube Shorts": ["#YouTubeShorts", "#Shorts"],
+    "Instagram Reels": ["#InstagramReels", "#ReelsIndia"],
+    TikTok: ["#TikTok", "#TikTokVideo"],
+    Facebook: ["#FacebookReels", "#VideoHighlights"],
+    LinkedIn: ["#LinkedInVideo", "#CreatorTips"]
+  };
+  tags.push(...(platformTags[platform] ?? ["#VideoHighlights"]), "#VideoHighlights", "#CreatorEdit");
   const maxByPlatform = { "YouTube Shorts": 12, "Instagram Reels": 12, TikTok: 10, Facebook: 10, LinkedIn: 8 };
   return uniq(tags).slice(0, maxByPlatform[platform] ?? 12);
 }
@@ -203,7 +210,25 @@ export function generateCreatorIdeas({
   const topic = cleanTitle.length > 48 ? cleanTitle.slice(0,45) + "…" : cleanTitle;
   const templateSet = TEMPLATES[language] ?? TEMPLATES.Hinglish;
   const templates = templateSet[tone] ?? templateSet.Hype;
-  const captions = uniq(templates.map((line) => line.replaceAll("{topic}", topic))).slice(0, 8);
+  const baseCaptions = templates.map((line) => line.replaceAll("{topic}", topic));
+  const transcriptLine = clean(transcript).split(/[.!?।！？\\n]+/).map(clean).find(line => line.length >= 12) ?? "";
+  let contextualHook = "";
+  if (transcriptLine) {
+    const quote = transcriptLine.length > 82 ? transcriptLine.slice(0, 79).trimEnd() + "…" : transcriptLine;
+    contextualHook = language === "Hindi"
+      ? "इस लाइन का असर देखो: “" + quote + "” 👀"
+      : language === "English"
+        ? "This line is the hook: “" + quote + "” 🎬"
+        : "Ye line hi scene ka highlight hai: “" + quote + "” 👀";
+  } else if ((visualTags ?? []).length) {
+    const visual = clean(visualTags[0]);
+    contextualHook = language === "Hindi"
+      ? visual + " वाले इस पल पर ध्यान दो 👀"
+      : language === "English"
+        ? "Look at the " + visual + " in this moment 👀"
+        : visual + " wala moment notice kiya? 👀";
+  }
+  const captions = uniq([contextualHook, ...baseCaptions]).slice(0, 8);
   const tags = hashtagSet({ title: cleanTitle, fileName, transcript, visualTags, keywords, platform });
   const signals = [];
   if (cleanTitle && !/^your series title|^untitled series|^my clips$/i.test(cleanTitle)) signals.push("project title / filename");
