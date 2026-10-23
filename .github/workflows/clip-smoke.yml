@@ -4,11 +4,13 @@ on:
     branches: [main]
     paths:
       - "index.html"
+      - "creator-assistant.js"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
   pull_request:
     paths:
       - "index.html"
+      - "creator-assistant.js"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
 jobs:
