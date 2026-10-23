@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { generateCreatorIdeas } from "../creator-assistant.js";
 
 const here = fileURLToPath(new URL("../index.html", import.meta.url));
 const html = readFileSync(here, "utf8");
@@ -34,11 +35,24 @@ assert.match(html, /id="creatorIdeasPane"/, "creator ideas inspector is present"
 assert.match(html, /id="generateIdeasBtn"/, "caption and hashtag generation control is present");
 assert.match(html, /id="analyzeFramesBtn"/, "optional local frame analysis is available");
 assert.match(html, /@tensorflow\/tfjs/, "open-source local visual analysis can be loaded on demand");
-assert.match(html, /function generateCreatorIdeas\(/, "caption suggestions use video context");
-assert.match(html, /setMobileView\('ideas'\)/, "mobile creator ideas view is wired");
+assert.match(readFileSync(new URL("../creator-assistant.js", import.meta.url), "utf8"), /export function generateCreatorIdeas\(/, "caption suggestions use video context");
+assert.match(html, /data-view="ideas"/, "mobile creator ideas view is wired");
 assert.match(html, /Export failed — see details below/, "visible export error state is clearer than a generic toast");
 
 
+const creatorIdeas = generateCreatorIdeas({
+  title: "Munna Bhai MBBS",
+  fileName: "movie.mkv",
+  transcript: "A funny scene from the movie",
+  visualTags: ["person"],
+  platform: "Instagram Reels",
+  tone: "Funny",
+  language: "Hinglish"
+});
+assert.equal(creatorIdeas.captions.length, 8, "assistant should produce a useful set of caption options");
+assert.ok(creatorIdeas.captions.every(line => line.length > 12), "caption options should contain real copy");
+assert.ok(creatorIdeas.hashtags.includes("#Bollywood"), "movie context should inform hashtag suggestions");
+assert.ok(creatorIdeas.hashtags.length >= 6, "assistant should suggest multiple hashtags");
 const idAttrs = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 const duplicates = [...new Set(idAttrs.filter((id, i) => idAttrs.indexOf(id) !== i))];
 assert.deepEqual(duplicates, [], "element IDs must remain unique");
