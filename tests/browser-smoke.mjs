@@ -194,15 +194,30 @@ try {
     assert.equal(overlayLayout.toolsOverlapCanvas, false, target.name + " toolbar must not cover the canvas");
     assert.equal(overlayLayout.badgesOverlapCanvas, false, target.name + " badges must not cover the canvas");
     assert.ok(overlayLayout.titleInCanvas, target.name + " heading overlay must remain within the video frame: " + JSON.stringify({ canvas: overlayLayout.canvasBounds, title: overlayLayout.titleBounds }));
+    assert.equal(dimensions.workspaceAspect, target.value, target.name + " must switch the entire editing workspace layout");
     if (target.value === "16:9") {
       previousCanvasWidth = dimensions.canvasWidth;
+      previousCanvasHeight = dimensions.canvasHeight;
+      previousPanelWidth = dimensions.previewPanelWidth;
       previousTitleFontSize = overlayLayout.titleFontSize;
     }
     if (target.value === "9:16") {
       assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
         "portrait selection must visibly narrow the preview canvas");
+      assert.ok(dimensions.previewPanelWidth < previousPanelWidth * 0.85,
+        "portrait mode must bring the preview workspace sides closer");
+      assert.ok(dimensions.canvasHeight > previousCanvasHeight + 30,
+        "portrait mode must stretch the editing area downward for a taller canvas");
       assert.ok(overlayLayout.titleFontSize < previousTitleFontSize,
-        "portrait heading font must shrink compared with landscape: " + JSON.stringify({ landscape: previousTitleFontSize, portrait: overlayLayout.titleFontSize, parent: overlayLayout.parentFontSize, canvas: overlayLayout.canvasClientWidth, inline: overlayLayout.titleInlineFont }));
+        "portrait heading font must shrink compared with landscape");
+    }
+    if (target.value === "1:1") {
+      assert.ok(dimensions.previewPanelWidth < previousPanelWidth,
+        "square mode must use its own dedicated editing area width");
+    }
+    if (target.value === "4:5") {
+      assert.ok(dimensions.previewPanelWidth < previousPanelWidth,
+        "4:5 mode must use its own dedicated editing area width");
     }
     assert.ok(overlayLayout.textFits, target.name + " heading must wrap instead of overflowing horizontally");
 
@@ -344,12 +359,17 @@ try {
     const intersects = (a, z) => a.left < z.right && a.right > z.left && a.top < z.bottom && a.bottom > z.top;
     const text = document.querySelector("#titleOverlayText");
     return { toolsOverlap: intersects(c, t), badgesOverlap: intersects(c, b),
-      ratio: c.width / c.height, textFits: text.scrollWidth <= text.clientWidth + 3 };
+      ratio: c.width / c.height, textFits: text.scrollWidth <= text.clientWidth + 3,
+      workspaceAspect: document.querySelector(".editor-center").dataset.aspect,
+      timelineAspect: document.querySelector(".timeline-panel").dataset.aspect,
+      canvasHeight: c.height };
   });
   assert.equal(mobileCanvasLayout.toolsOverlap, false, "mobile editing toolbar must not cover the portrait canvas");
   assert.equal(mobileCanvasLayout.badgesOverlap, false, "mobile status badges must not cover the portrait canvas");
   assert.ok(Math.abs(mobileCanvasLayout.ratio - 9 / 16) < 0.03, "mobile portrait canvas must keep the selected ratio");
   assert.ok(mobileCanvasLayout.textFits, "mobile portrait heading must wrap inside the canvas");
+  assert.equal(mobileCanvasLayout.workspaceAspect, "9:16", "mobile portrait must use its dedicated workspace layout");
+  assert.equal(mobileCanvasLayout.timelineAspect, "9:16", "mobile timeline controls must adapt to portrait mode");
   await page.locator("#aspectSelect").selectOption("16:9");
   await page.locator('.mobile-tab[data-tool="text"]').click();
   assert.equal(await page.locator("#pane-text").isVisible(), true, "mobile tab should open its tool pane");
