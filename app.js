@@ -1,9 +1,9 @@
-import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-cs3";
-import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-cs3";
-import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261024-ai2";
-import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-ai1";
-import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-mem1";
-import { scheduleCurrentSession, saveCurrentSession, loadCurrentSession, storeCurrentMedia, loadCurrentMedia, getCurrentMemoryInfo, clearCurrentMemory, flushCurrentSession } from "./memory-vault.js?v=20261024-mem1";
+import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
+import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-power3";
+import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261024-power3";
+import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
+import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
+import { scheduleCurrentSession, saveCurrentSession, loadCurrentSession, storeCurrentMedia, loadCurrentMedia, getCurrentMemoryInfo, clearCurrentMemory, flushCurrentSession } from "./memory-vault.js?v=20261024-power3";
 
 const $=id=>document.getElementById(id); const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
@@ -92,7 +92,7 @@ function updateSubtitleProgress(message){const status=$("subtitleProgress");if(s
 function updateActiveSubtitle(){const overlay=$("subtitleOverlay"),video=$("previewVideo");if(!overlay||!video)return;const time=Number(video.currentTime)||0,clip=selected();const cue=state.subtitleCues.find(item=>time>=item.start&&time<item.end&&(!clip||(time>=clip.start-.02&&time<=clip.end+.02)));overlay.textContent=cue?.text||"";overlay.classList.toggle("hidden",!cue);overlay.dataset.style=state.subtitleSettings.style;overlay.style.color=state.subtitleSettings.highlight;overlay.style.bottom=`${100-state.subtitleSettings.positionY}%`}
 function renderSubtitleCueList(){const root=$("subtitleCueList");if(!root)return;const cues=state.subtitleCues||[];const meta=$("subtitleCueMeta");if(meta)meta.textContent=`${cues.length} timed line${cues.length===1?"":"s"}`;const download=$("downloadSrtBtn");if(download)download.disabled=!cues.length;const more=$("showMoreCuesBtn");if(more){more.classList.toggle("hidden",cues.length<=subtitleCueLimit);more.textContent=`Show next ${Math.min(80,cues.length-subtitleCueLimit)} lines (${cues.length-subtitleCueLimit} remaining)`}if(!cues.length){root.innerHTML='<div class="queue-empty">No subtitles yet. Generate them or add a manual caption below.</div>';return}root.innerHTML=cues.slice(0,subtitleCueLimit).map((cue,i)=>`<div class="subtitle-cue-row"><button type="button" class="cue-time" data-cue-seek="${i}" title="Jump to this line">${fmt(cue.start)}<span>↗</span></button><textarea class="cue-edit" rows="2" data-subtitle-edit="${i}" aria-label="Edit subtitle line ${i+1}">${esc(cue.text)}</textarea><button type="button" class="cue-remove" data-cue-remove="${i}" aria-label="Remove subtitle line">×</button></div>`).join("")}
 function downloadSubtitleFile(){if(!state.subtitleCues.length)return toast("Generate subtitles first");const srt=createSrt(state.subtitleCues);downloadBlob(new Blob([srt],{type:"text/plain;charset=utf-8"}),`${(state.projectName||"clipsmith").replace(/[^\w-]+/g,"-")}.srt`);toast("SRT subtitles downloaded")}
-function ensureSubtitleWorker(){if(subtitleWorker&&subtitleWorkerReady)return subtitleWorkerReady;subtitleWorker=new Worker(new URL("./transcribe-worker.js?v=20261024-cs3",import.meta.url),{type:"module"});subtitleWorkerReady=new Promise((resolve,reject)=>{subtitleWorkerResolve=resolve;subtitleWorkerReject=reject});subtitleWorker.addEventListener("message",event=>{const data=event.data||{};if(data.type==="model-progress"){const suffix=data.progress===null?"":` · ${Math.round(data.progress)}%`;updateSubtitleProgress(`Loading local Whisper model${data.status?` · ${data.status}`:""}${suffix}`);return}if(data.type==="ready"){subtitleWorkerResolve?.();subtitleWorkerResolve=null;subtitleWorkerReject=null;updateSubtitleProgress("Whisper model ready · transcribing audio locally…");return}if(data.type==="fatal"){subtitleWorkerReject?.(new Error(data.message||"Whisper model failed to load"));subtitleWorkerResolve=null;subtitleWorkerReject=null;return}const pending=subtitlePending.get(data.requestId);if(!pending)return;subtitlePending.delete(data.requestId);if(data.type==="result")pending.resolve(data);else pending.reject(new Error(data.message||"Transcription failed"))});subtitleWorker.addEventListener("error",event=>{const error=new Error(event.message||"Subtitle worker crashed");subtitleWorkerReject?.(error);for(const pending of subtitlePending.values())pending.reject(error);subtitlePending.clear()});subtitleWorker.postMessage({type:"load"});return subtitleWorkerReady}
+function ensureSubtitleWorker(){if(subtitleWorker&&subtitleWorkerReady)return subtitleWorkerReady;subtitleWorker=new Worker(new URL("./transcribe-worker.js?v=20261024-power3",import.meta.url),{type:"module"});subtitleWorkerReady=new Promise((resolve,reject)=>{subtitleWorkerResolve=resolve;subtitleWorkerReject=reject});subtitleWorker.addEventListener("message",event=>{const data=event.data||{};if(data.type==="model-progress"){const suffix=data.progress===null?"":` · ${Math.round(data.progress)}%`;updateSubtitleProgress(`Loading local Whisper model${data.status?` · ${data.status}`:""}${suffix}`);return}if(data.type==="ready"){subtitleWorkerResolve?.();subtitleWorkerResolve=null;subtitleWorkerReject=null;updateSubtitleProgress("Whisper model ready · transcribing audio locally…");return}if(data.type==="fatal"){subtitleWorkerReject?.(new Error(data.message||"Whisper model failed to load"));subtitleWorkerResolve=null;subtitleWorkerReject=null;return}const pending=subtitlePending.get(data.requestId);if(!pending)return;subtitlePending.delete(data.requestId);if(data.type==="result")pending.resolve(data);else pending.reject(new Error(data.message||"Transcription failed"))});subtitleWorker.addEventListener("error",event=>{const error=new Error(event.message||"Subtitle worker crashed");subtitleWorkerReject?.(error);for(const pending of subtitlePending.values())pending.reject(error);subtitlePending.clear()});subtitleWorker.postMessage({type:"load"});return subtitleWorkerReady}
 function transcribeAudioChunk(samples,offset,language){return new Promise((resolve,reject)=>{if(!subtitleWorker) return reject(new Error("Subtitle worker is not ready"));const requestId=String(++subtitleRequestCounter);subtitlePending.set(requestId,{resolve,reject});subtitleWorker.postMessage({type:"transcribe",requestId,offset,samples,language},[samples.buffer])})}
 function approximateWords(text,start,end){const pieces=String(text||"").trim().split(/\s+/).filter(Boolean);if(!pieces.length)return[];const span=Math.max(.4,end-start),step=span/pieces.length;return pieces.map((word,i)=>({start:start+i*step,end:start+(i+1)*step,text:word}))}
 async function generateAutoSubtitles(){if(transcribing)return;if(!state.sourceFile||!state.duration)return toast("Import a video with audio first","error");const safetyWarnings=[];if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:state.sourceFile.size,duration:state.duration});if(warning)safetyWarnings.push(warning)}if(state.duration>5400||state.sourceFile.size>600*1024*1024)safetyWarnings.push("This is a long or large source. Speech recognition and FFmpeg can use substantial RAM on a phone.");if(safetyWarnings.length&&!confirm("ClipSmith memory-safety check:\n\n"+safetyWarnings.join("\n\n")+"\n\nContinue with local transcription?"))return;transcribing=true;transcriptionCancelled=false;$("autoSubtitleBtn").disabled=true;$("cancelTranscriptionBtn").classList.remove("hidden");const previousTime=$("previewVideo").currentTime;let ff=null,input="",prefix="",chunkCount=0;const words=[];try{updateSubtitleProgress("Loading browser video tools…");await ensureSubtitleWorker();if(transcriptionCancelled)throw new Error("Transcription cancelled");ff=await getFFmpeg();input=`asr-source-${uid()}`;prefix=`asr-audio-${uid()}-`;await ff.writeFile(input,await ff.__fetchFile(state.sourceFile));updateSubtitleProgress("Extracting 30-second audio chunks…");const pattern=`${prefix}%03d.wav`;await ff.exec(["-i",input,"-map","0:a:0","-vn","-ac","1","-ar","16000","-c:a","pcm_s16le","-f","segment","-segment_time","30","-reset_timestamps","1",pattern]);chunkCount=Math.ceil(state.duration/30)+1;for(let i=0;i<chunkCount;i++){if(transcriptionCancelled)throw new Error("Transcription cancelled");const name=`${prefix}${String(i).padStart(3,"0")}.wav`;let wav;try{wav=await ff.readFile(name)}catch{break}try{const samples=wavToFloat32(wav);if(!samples.length)continue;updateSubtitleProgress(`Transcribing audio chunk ${i+1} · about ${fmt(Math.min(state.duration,(i+1)*30))} of ${fmt(state.duration)}…`);const response=await transcribeAudioChunk(samples,i*30,$("subtitleLanguage").value);if(transcriptionCancelled)throw new Error("Transcription cancelled");const chunks=Array.isArray(response.chunks)?response.chunks:[];let usable=0;for(const item of chunks){const a=Array.isArray(item.timestamp)?Number(item.timestamp[0]):NaN,b=Array.isArray(item.timestamp)?Number(item.timestamp[1]):NaN;if(item.text&&Number.isFinite(a)&&Number.isFinite(b)&&b>a){words.push({start:i*30+a,end:Math.min(state.duration,i*30+b),text:item.text});usable++}}if(!usable&&response.text)words.push(...approximateWords(response.text,i*30,Math.min(state.duration,(i+1)*30)))}finally{try{await ff.deleteFile(name)}catch{}}}if(transcriptionCancelled)throw new Error("Transcription cancelled");state.subtitleCues=groupSubtitleWords(words,{maxWords:7,maxDuration:3.2,maxChars:42});subtitleCueLimit=80;if(!state.subtitleCues.length)throw new Error("No speech was detected. The video may have no audio, or the audio may be too unclear.");commit();renderSubtitleCueList();updateActiveSubtitle();updateSubtitleProgress(`Done · ${state.subtitleCues.length} timed subtitle lines generated locally. Edit any line or download the SRT.`);toast("Auto subtitles generated")}catch(error){const message=error?.message||"Subtitle generation failed";if(transcriptionCancelled||/cancelled/i.test(message)){updateSubtitleProgress("Transcription cancelled. Your video and existing subtitles are unchanged.");toast("Transcription cancelled")}else{if(subtitleWorker){subtitleWorker.terminate();subtitleWorker=null}subtitleWorkerReady=null;subtitleWorkerResolve=null;subtitleWorkerReject=null;updateSubtitleProgress(`Could not generate subtitles: ${message}`);toast("Auto subtitles failed · check the status message","error")}}finally{if(ff){if(input){try{await ff.deleteFile(input)}catch{}}for(let i=0;i<chunkCount;i++){try{await ff.deleteFile(`${prefix}${String(i).padStart(3,"0")}.wav`)}catch{}}}try{const video=$("previewVideo");if(video&&Number.isFinite(previousTime)&&state.duration)video.currentTime=clamp(previousTime,0,state.duration)}catch{}transcribing=false;$("autoSubtitleBtn").disabled=false;$("cancelTranscriptionBtn").classList.add("hidden");if(memorySafeMode)releaseTemporaryMemory({silent:true});}}
@@ -190,7 +190,7 @@ async function renderClip(c,i,mode){
 function renderQueue(clips){$("queueList").innerHTML=clips.map((c,i)=>`<div class="queue-item" id="queue-${c.id}"><div><strong>Part ${i+1} · ${esc(c.title)}</strong><small>${fmt(c.start)} → ${fmt(c.end)}</small><div class="queue-progress"><span></span></div></div><small class="queue-status">waiting</small></div>`).join('')}
 function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
-function outputName(c,i){return `${String(i+1).padStart(2,'0')}-${(c.title||`clip-${i+1}`).replace(/[^\w\u00C0-\uFFFF]+/g,'-').slice(0,70)}.mp4`}
+function outputName(c,i){const prefix=String($("powerExportPrefix")?.value||"").trim().replace(/[^\w\u00C0-\uFFFF-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48);const title=(c.title||`clip-${i+1}`).replace(/[^\w\u00C0-\uFFFF]+/g,'-').slice(0,70);return `${prefix?prefix+"-":""}${String(i+1).padStart(2,'0')}-${title}.mp4`}
 async function getFFmpeg(){if(ffmpegInstance)return ffmpegInstance;if(ffmpegLoading)return ffmpegLoading;ffmpegLoading=(async()=>{const {FFmpeg}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js');const {fetchFile,toBlobURL}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js');const ff=new FFmpeg();const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';await ff.load({coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm'),workerURL:await toBlobURL(`${base}/ffmpeg-core.worker.js`,'text/javascript')});ff.__fetchFile=fetchFile;ffmpegInstance=ff;return ff})();try{return await ffmpegLoading}catch(e){ffmpegLoading=null;throw e}}
 async function startExport(){if(exportBusy)return;exportBusy=true;$("startExportBtn").disabled=true;$("exportRecoveryActions").classList.add('hidden');const clips=[...state.clips];try{for(let i=0;i<clips.length;i++){const c=clips[i];qstatus(c.id,'starting',0);try{const blob=await renderClip(c,i,exportMode);downloadBlob(blob,outputName(c,i));qstatus(c.id,'done',100);await new Promise(r=>setTimeout(r,50))}catch(e){qstatus(c.id,'failed',0);$("exportRecoveryActions").classList.remove('hidden');$("recoveryText").textContent=e.message||'The browser could not render this clip.';toast('Export stopped — recovery options are ready','error');break}}}finally{exportBusy=false;$("startExportBtn").disabled=false;if(memorySafeMode)releaseTemporaryMemory({silent:true})}}
 $("startExportBtn").onclick=startExport;$("recoveryOriginalBtn").onclick=()=>{exportMode='copy';startExport()};$("recoveryLowBtn").onclick=()=>{exportMode='mobile';startExport()};$("recoverySingleClipBtn").onclick=async()=>{const c=selected();if(!c)return toast('Select one clip first');try{const b=await renderClip(c,0,'mobile');downloadBlob(b,outputName(c,0));toast('Selected clip exported')}catch(e){toast(e.message||'Single-clip export failed','error')}};
@@ -221,4 +221,84 @@ $("releaseTemporaryMemoryBtn")?.addEventListener("click",()=>releaseTemporaryMem
 window.addEventListener("clipsmith-native-memory-warning",()=>{if(memorySafeMode)releaseTemporaryMemory({silent:true})});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persist()});
 $('aiRecommendationList').addEventListener('click',event=>{const jump=event.target.closest('[data-ai-jump]');if(jump){const time=Number(jump.dataset.aiJump);if(!Number.isFinite(time))return;const clip=state.clips.find(item=>time>=item.start&&time<=item.end);if(clip)state.selectedId=clip.id;renderAll();$('previewVideo').currentTime=clamp(time,0,state.duration);setTool('preview');return}const pause=event.target.closest('[data-ai-add-pause]');if(pause){const item=aiAudit?.pauses?.[Number(pause.dataset.aiAddPause)];if(!item)return;const exists=state.skipRanges.some(r=>Math.abs(r.start-item.start)<.25&&Math.abs(r.end-item.end)<.25);if(!exists)state.skipRanges.push({id:uid(),start:item.start,end:item.end,label:'AI-suggested pause'});state.skipRanges.sort((a,b)=>a.start-b.start);commit();renderSkipRanges();toast('Pause marked as a skip range. Review it in Clips before rebuilding.');return}if(event.target.closest('#downloadChaptersBtn'))downloadAIChapters()});
-$("memorySaveNowBtn")?.addEventListener("click",saveMemoryNow);$("memoryClearBtn")?.addEventListener("click",clearDeviceMemory);window.addEventListener("pagehide",()=>{if(memoryClearInProgress)return;try{flushCurrentSession(snap()).catch(()=>{})}catch{}});recover();lastCommitted=snap();if($("projectName"))$("projectName").value=state.projectName;renderAll();refreshMemoryPanel();void restoreRememberedMemory();
+$("memorySaveNowBtn")?.addEventListener("click",saveMemoryNow);$("memoryClearBtn")?.addEventListener("click",clearDeviceMemory);window.addEventListener("pagehide",()=>{if(memoryClearInProgress)return;try{flushCurrentSession(snap()).catch(()=>{})}catch{}});window.ClipSmithStudio = Object.freeze({
+  build: "20261024-power3",
+  getProjectName: () => state.projectName,
+  getDuration: () => Number(state.duration) || 0,
+  getCurrentTime: () => Number($("previewVideo")?.currentTime) || 0,
+  getSelectedClip: () => {
+    const clip = selected();
+    if (!clip) return null;
+    const index = state.clips.findIndex((item) => item.id === clip.id);
+    const fx = { ...DEFAULT_FX, ...(clip.fx || state.fx) };
+    return { id: clip.id, index: index + 1, start: Number(clip.start) || 0, end: Number(clip.end) || 0,
+      title: clip.title || "", caption: clip.caption || "", speed: Number(fx.speed) || 1, muted: Boolean(fx.mute) };
+  },
+  setTool,
+  toast,
+  seekTo: (time) => {
+    const video = $("previewVideo");
+    if (!video || video.readyState < 1 || !Number.isFinite(Number(time))) return false;
+    video.currentTime = clamp(Number(time), 0, state.duration || Number(time));
+    if ($("seekBar") && state.duration > 0) $("seekBar").value = String(video.currentTime / state.duration * 100);
+    return true;
+  },
+  setSelectedTitle: (value, style = null) => {
+    const clip = selected();
+    if (!clip) return false;
+    clip.title = String(value || "").trim().slice(0, 240);
+    clip.autoTitle = false;
+    if (style && typeof style === "object") {
+      clip.titleStyle = { ...state.titleStyle, ...style };
+      state.titleStyle = { ...state.titleStyle, ...style };
+    }
+    commit(); renderAll(); return true;
+  },
+  setSelectedCaption: (value, style = null) => {
+    const clip = selected();
+    if (!clip) return false;
+    clip.caption = String(value || "").trim().slice(0, 500);
+    if (style && typeof style === "object") clip.captionStyle = { ...state.captionStyle, ...style };
+    commit(); renderAll(); return true;
+  },
+  setPlaybackSpeed: (value) => {
+    const speed = clamp(Number(value) || 1, 0.5, 2);
+    const clip = selected();
+    if (clip) clip.fx = { ...DEFAULT_FX, ...(clip.fx || state.fx), speed };
+    else state.fx = { ...DEFAULT_FX, ...state.fx, speed };
+    commit(); syncInspector(); updatePreview(); return speed;
+  },
+  setPreviewMuted: (value) => {
+    const muted = Boolean(value);
+    const clip = selected();
+    if (clip) clip.fx = { ...DEFAULT_FX, ...(clip.fx || state.fx), mute: muted };
+    else state.fx = { ...DEFAULT_FX, ...state.fx, mute: muted };
+    commit(); syncInspector(); updatePreview(); return muted;
+  },
+  resetSelectedEffects: () => {
+    const clip = selected();
+    if (clip) clip.fx = { ...DEFAULT_FX };
+    else state.fx = { ...DEFAULT_FX };
+    commit(); syncInspector(); updatePreview(); return true;
+  },
+  exportSelectedClip: async () => {
+    const clip = selected();
+    if (!clip) throw new Error("Select a clip before exporting it.");
+    if (!state.sourceFile) throw new Error("Re-import the source video before exporting this project.");
+    if (exportBusy) throw new Error("Another export is already running.");
+    exportBusy = true;
+    try {
+      const index = state.clips.findIndex((item) => item.id === clip.id);
+      const blob = await renderClip(clip, index, exportMode);
+      downloadBlob(blob, outputName(clip, index));
+      toast("Selected clip exported");
+      return true;
+    } finally {
+      exportBusy = false;
+      if (memorySafeMode) releaseTemporaryMemory({ silent: true });
+    }
+  }
+});
+
+recover();lastCommitted=snap();if($("projectName"))$("projectName").value=state.projectName;renderAll();refreshMemoryPanel();void restoreRememberedMemory();
+window.dispatchEvent(new CustomEvent("clipsmith:app-ready", { detail: { build: "20261024-power3" } }));
