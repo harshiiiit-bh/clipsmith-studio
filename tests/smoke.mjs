@@ -108,7 +108,7 @@ assert.equal(validateProjectManifest({ ...manifest, version: 999 }), null, "unkn
 assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "oops", start: -1, end: 2 }] }), null, "invalid clip time ranges are rejected");
 assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "duplicate", start: 0, end: 1 }, { id: "duplicate", start: 1, end: 2 }] }), null, "duplicate clip IDs are rejected");
 assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "too-long", start: 0, end: 21 }] }), null, "clips beyond the saved source duration are rejected");
-assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "caption", start: 0, end: 1, caption: "Line one\\nLine two" }] }).clips[0].caption, "Line one\\nLine two", "caption line breaks survive project round-trips");
+assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "caption", start: 0, end: 1, caption: "Line one\nLine two" }] }).clips[0].caption, "Line one\nLine two", "caption line breaks survive project round-trips");
 assert.equal(validateProjectManifest({ ...manifest, clips: "not an array" }), null, "malformed clip collections are rejected");
 
 assert.match(html, /id="undoBtn"/, "undo action is visible in the top bar");
