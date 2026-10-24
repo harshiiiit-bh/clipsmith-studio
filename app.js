@@ -304,7 +304,9 @@ function applyCanvasAspect(){
   if(!stage||!canvas)return;
   const sizes={"16:9":[16,9],"9:16":[9,16],"1:1":[1,1],"4:5":[4,5]};
   const [ratioWidth,ratioHeight]=sizes[state.aspect]||sizes["16:9"];
-  const availableWidth=stage.clientWidth,availableHeight=stage.clientHeight;
+  const stageStyle=getComputedStyle(stage);
+  const availableWidth=stage.clientWidth-(parseFloat(stageStyle.paddingLeft)||0)-(parseFloat(stageStyle.paddingRight)||0);
+  const availableHeight=stage.clientHeight-(parseFloat(stageStyle.paddingTop)||0)-(parseFloat(stageStyle.paddingBottom)||0);
   if(availableWidth<2||availableHeight<2)return;
   const ratio=ratioWidth/ratioHeight;
   let width=Math.min(availableWidth,availableHeight*ratio);
