@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const out=path.join(root,"mobile-www");
 const files=[
-  "index.html","styles.css","studio-2.css","runtime-guard.js","workspace-controls.js","power-tools.js","app.js","creator-assistant.js","editor-tools.js",
+  "index.html","styles.css","studio-2.css","runtime-guard.js","workspace-controls.js","power-tools.js","app.js","media-import.js","creator-assistant.js","editor-tools.js",
   "subtitle-tools.js","transcribe-worker.js","ai-creator-tools.js","mobile-memory.js","memory-vault.js"
 ];
 await rm(out,{recursive:true,force:true});
