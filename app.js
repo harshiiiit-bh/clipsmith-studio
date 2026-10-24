@@ -19,7 +19,7 @@ let aiHighlights=[],aiAudit=null,aiCleanup=null,aiChapters=[],aiReadability=null
 const MEMORY_SAFE_MODE_KEY="clipsmith.memory-safe-mode";
 let memorySafeMode=true;
 try{memorySafeMode=localStorage.getItem(MEMORY_SAFE_MODE_KEY)!=="false"}catch{}
-let restoreExistingClipsOnLoad=false, mediaSaveGeneration=0, memoryClearInProgress=false;
+let restoreExistingClipsOnLoad=false, mediaSaveGeneration=0, memoryClearInProgress=false; let pendingRecoverySnapshot=null;
 let subtitleWorker=null, subtitleWorkerReady=null, subtitleWorkerResolve=null, subtitleWorkerReject=null, subtitlePending=new Map(), subtitleRequestCounter=0, transcriptionCancelled=false, transcribing=false, subtitleCueLimit=80, sceneScanning=false;
 const snap=()=>JSON.parse(JSON.stringify({projectName:state.projectName,durationPreset:state.durationPreset,aspect:state.aspect,showSafe:state.showSafe,seriesTitle:state.seriesTitle,autoParts:state.autoParts,titleStyle:state.titleStyle,captionStyle:state.captionStyle,clips:state.clips,fx:state.fx,selectedId:state.selectedId,sourceMeta:state.sourceMeta,visualTags:state.visualTags,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays}));
 function refreshMemoryPanel(){
@@ -49,12 +49,154 @@ function selected(){return state.clips.find(c=>c.id===state.selectedId)||null}
 function undo(){const p=state.history.pop();if(!p)return toast("Nothing to undo");state.future.push(snap());restore(p);setSave("● Undo")}
 function redo(){const n=state.future.pop();if(!n)return toast("Nothing to redo");state.history.push(snap());restore(n);setSave("● Redo")}
 function restore(s){Object.assign(state,JSON.parse(JSON.stringify(s)));state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
-function recover(){try{const raw=localStorage.getItem("clipsmith.project.v2")||localStorage.getItem("clipsmith.project.v1");if(!raw)return;const s=JSON.parse(raw);Object.assign(state,s);state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.history=[];state.future=[];state.sourceFile=null;state.objectUrl=null;state.duration=Number(state.sourceMeta?.duration)||state.duration||0;if(state.clips.length){$("previewEmptyTitle").textContent="Draft recovered";$("previewEmptyHint").textContent="Re-import the original video to reconnect preview and export."; $("previewEmpty").classList.remove("hidden");$("mediaName").textContent=`Saved project · ${state.sourceMeta?.fileName||"video"}`}lastCommitted=snap();renderAll();setSave("● Recovered")}catch{}}
+function hasRecoverableDraft(snapshot){
+  return Boolean(snapshot&&(
+    (Array.isArray(snapshot.clips)&&snapshot.clips.length)||
+    snapshot.sourceMeta?.fileName||
+    (Array.isArray(snapshot.subtitleCues)&&snapshot.subtitleCues.length)||
+    (snapshot.projectName&&snapshot.projectName!=="Untitled Project")
+  ));
+}
+function hideDraftRecoveryPrompt(){
+  $("draftRecoveryActions")?.classList.add("hidden");
+  $("emptyUploadBtn")?.classList.remove("hidden");
+}
+function showDraftRecoveryPrompt(snapshot){
+  if(!hasRecoverableDraft(snapshot))return;
+  pendingRecoverySnapshot=snapshot;
+  const name=String(snapshot.projectName||"Untitled Project");
+  $("previewEmptyTitle").textContent="Previous draft found";
+  $("previewEmptyHint").textContent=`A saved project (“${name}”) is on this device. Restore it to continue, or start fresh.`;
+  $("draftRecoveryActions")?.classList.remove("hidden");
+  $("emptyUploadBtn")?.classList.add("hidden");
+  $("previewEmpty").classList.remove("hidden");
+  $("mediaName").textContent="Previous draft available";
+  setMemoryVaultStatus("Previous draft found","Restore the saved edit, or start fresh to clear the old local draft and remembered source.");
+}
+function applyRecoveredDraft(s){
+  if(!s||typeof s!=="object")return false;
+  Object.assign(state,s);
+  state.clips=Array.isArray(s.clips)?s.clips:[];
+  state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];
+  state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];
+  state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};
+  state.exportAspect=s.exportAspect||"source";
+  state.burnOverlays=s.burnOverlays!==false;
+  state.sourceMeta=s.sourceMeta&&typeof s.sourceMeta==="object"?s.sourceMeta:null;
+  state.sourceUrl=state.sourceMeta?.sourceUrl||"";
+  state.history=[];
+  state.future=[];
+  state.sourceFile=null;
+  state.objectUrl=null;
+  state.duration=Number(state.sourceMeta?.duration)||Number(state.duration)||0;
+  state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);
+  pendingRecoverySnapshot=null;
+  hideDraftRecoveryPrompt();
+  $("previewEmptyTitle").textContent="Draft recovered";
+  $("previewEmptyHint").textContent=state.sourceMeta?.fileName
+    ?`Re-import ${state.sourceMeta.fileName} to reconnect preview and export.`
+    :"Choose the original video to reconnect preview and export.";
+  $("previewEmpty").classList.remove("hidden");
+  $("mediaName").textContent=`Saved project · ${state.sourceMeta?.fileName||"video"}`;
+  if($("projectName"))$("projectName").value=state.projectName||"Untitled Project";
+  renderAll();
+  lastCommitted=snap();
+  setSave("● Recovered");
+  return true;
+}
+function recover(){
+  try{
+    const raw=localStorage.getItem("clipsmith.project.v2")||localStorage.getItem("clipsmith.project.v1");
+    if(!raw)return;
+    const snapshot=JSON.parse(raw);
+    pendingRecoverySnapshot=hasRecoverableDraft(snapshot)?snapshot:null;
+  }catch{pendingRecoverySnapshot=null}
+}
+async function startFreshProject(){
+  const button=$("startFreshBtn");
+  if(button)button.disabled=true;
+  memoryClearInProgress=true;
+  try{
+    await clearCurrentMemory();
+    localStorage.removeItem("clipsmith.project.v2");
+    localStorage.removeItem("clipsmith.project.v1");
+    if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);
+    const video=$("previewVideo");
+    if(video){video.pause();video.removeAttribute("src");video.load()}
+    Object.assign(state,{
+      projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,
+      visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],
+      subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},
+      exportAspect:"source",burnOverlays:true,aspect:"16:9",showSafe:false,
+      seriesTitle:"Your series title",autoParts:true,
+      titleStyle:{font:"Inter",size:30,color:"#fff",outline:"#000",opacity:1,bold:true,italic:false,spacing:0,shadow:6},
+      captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},
+      clips:[],fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null
+    });
+    pendingRecoverySnapshot=null;
+    hideDraftRecoveryPrompt();
+    if($("projectName"))$("projectName").value=state.projectName;
+    $("mediaName").textContent="No video loaded";
+    $("previewEmptyTitle").textContent="Bring in your video";
+    $("previewEmptyHint").textContent="Everything stays in this browser. Nothing is uploaded for editing.";
+    $("previewEmpty").classList.remove("hidden");
+    renderAll();
+    lastCommitted=snap();
+    setSave("● Ready");
+    setMemoryVaultStatus("Fresh project","The previous local draft and remembered source video were cleared.");
+    toast("Started a fresh project");
+  }catch(error){
+    toast(`Could not clear the previous draft: ${error?.message||"storage unavailable"}`,"error");
+  }finally{
+    memoryClearInProgress=false;
+    if(button)button.disabled=false;
+  }
+}
 async function refreshMemoryVaultStats(){try{const info=await getCurrentMemoryInfo();const node=$("memoryVaultUsage");if(node){const used=Number(info.usageBytes)||0,quota=Number(info.quotaBytes)||0;node.textContent=used>0?(`${humanBytes(used)} used`+(quota>0?" of "+humanBytes(quota):"")):"Storage estimate unavailable"}}catch{const node=$("memoryVaultUsage");if(node)node.textContent="Storage estimate unavailable"}}
 async function rememberSourceMedia(file){if(memoryClearInProgress)return;const generation=++mediaSaveGeneration;setMemoryVaultStatus("Remembering source video…",`${file.name} · checking device storage`);try{if(navigator.storage?.persist)await navigator.storage.persist().catch(()=>false);const estimate=await navigator.storage?.estimate?.().catch(()=>null);const free=Number(estimate?.quota)-Number(estimate?.usage);if(Number.isFinite(free)&&free>0&&file.size>free*.92)throw new Error("Not enough available browser storage for this video");if(memoryClearInProgress)return;await storeCurrentMedia(file);await refreshMemoryVaultStats();if(generation===mediaSaveGeneration)setMemoryVaultStatus("Source video remembered",`${file.name} · ${humanBytes(file.size)} stored on this device. The app can reconnect it after restart.`)}catch(error){if(generation===mediaSaveGeneration)setMemoryVaultStatus("Project autosave is active",`The video is loaded for this session, but could not be stored (${error?.message||"storage unavailable"}). Re-import it after a restart. Export a project file as a backup.`)}}
 async function saveMemoryNow(){const button=$("memorySaveNowBtn");if(button)button.disabled=true;setMemoryVaultStatus("Saving project memory…","Saving the current edit, settings, subtitles and available source video.");try{await flushCurrentSession(snap());if(state.sourceFile)await rememberSourceMedia(state.sourceFile);else setMemoryVaultStatus("Project memory saved","The edit and settings are stored locally. Import the source video again if it is not remembered.");const info=await getCurrentMemoryInfo();await refreshMemoryVaultStats();if(info.hasSession&&!info.hasMedia&&state.sourceMeta)setMemoryVaultStatus("Project memory saved","Your edit and subtitles are saved, but the source video needs re-importing after restart.");toast("Project memory saved on this device")}catch(error){setMemoryVaultStatus("Local backup unavailable",error?.message||"Use Save to download a portable project file.");toast("Could not save device memory · use Save to export a backup","error")}finally{if(button)button.disabled=false}}
 async function clearDeviceMemory(){if(!confirm("Clear all ClipSmith project memory and remembered video stored on this device? This will remove the local draft too."))return;memoryClearInProgress=true;try{await clearCurrentMemory();localStorage.removeItem("clipsmith.project.v2");localStorage.removeItem("clipsmith.project.v1");if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);location.reload()}catch(error){memoryClearInProgress=false;toast(`Could not clear local memory: ${error?.message||"storage error"}`,"error")}}
-async function restoreRememberedMemory(){setMemoryVaultStatus("Checking device memory…","Looking for your last project and remembered source video.");try{let hasLocalSnapshot=false;try{hasLocalSnapshot=Boolean(localStorage.getItem("clipsmith.project.v2")||localStorage.getItem("clipsmith.project.v1"))}catch{}if(!hasLocalSnapshot){const saved=await loadCurrentSession();if(saved?.snapshot){restore(saved.snapshot);lastCommitted=snap();if($("projectName"))$("projectName").value=state.projectName;renderAll()}}const savedMedia=await loadCurrentMedia();const meta=state.sourceMeta;const sameSource=Boolean(savedMedia?.blob&&meta&&(savedMedia.name===meta.fileName)&&(!Number(meta.fileSize)||Number(savedMedia.size)===Number(meta.fileSize)));if(sameSource){const file=new File([savedMedia.blob],savedMedia.name,{type:savedMedia.type||savedMedia.blob.type||"video/mp4",lastModified:savedMedia.lastModified||Date.now()});state.sourceFile=file;state.sourceUrl=meta.sourceUrl||"";state.objectUrl=URL.createObjectURL(file);restoreExistingClipsOnLoad=true;const video=$("previewVideo");video.src=state.objectUrl;video.load();$("mediaName").textContent=`${file.name} · remembered`;$("previewEmptyTitle").textContent="Restoring your project…";$("previewEmptyHint").textContent="Reconnecting the locally remembered video and your last edit."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Restoring source video from local memory…","loading");setMemoryVaultStatus("Saved project found",`${file.name} · ${humanBytes(file.size)}. Reconnecting your last edit…`)}else if(meta?.fileName){setMemoryVaultStatus("Project memory restored",`Your edit and subtitles are saved. Re-import ${meta.fileName} to reconnect the original video.`)}else{setMemoryVaultStatus("Memory vault ready","Edits autosave on this device. Source videos are remembered when storage space and browser support allow it.")}const info=await getCurrentMemoryInfo();if($("memoryVaultUsage"))$("memoryVaultUsage").textContent=(Number(info.usageBytes)>0?`${humanBytes(info.usageBytes)} used`:"0 B used")+(Number(info.quotaBytes)>0?" of "+humanBytes(info.quotaBytes):"")}catch(error){setMemoryVaultStatus("Local draft protection active",`The normal editor autosave is active; persistent media memory is unavailable in this browser (${error?.message||"storage unavailable"}).`)}}
+async function restoreRememberedMemory(){
+  setMemoryVaultStatus("Checking device memory…","Looking for your last project and remembered source video.");
+  try{
+    if(!pendingRecoverySnapshot){
+      const savedSession=await loadCurrentSession();
+      if(savedSession?.snapshot&&hasRecoverableDraft(savedSession.snapshot))pendingRecoverySnapshot=savedSession.snapshot;
+    }
+    const snapshot=pendingRecoverySnapshot;
+    const savedMedia=await loadCurrentMedia();
+    const meta=snapshot?.sourceMeta||null;
+    const sameSource=Boolean(savedMedia?.blob&&meta&&(savedMedia.name===meta.fileName)&&(!Number(meta.fileSize)||Number(savedMedia.size)===Number(meta.fileSize)));
+    if(snapshot&&sameSource){
+      applyRecoveredDraft(snapshot);
+      const file=new File([savedMedia.blob],savedMedia.name,{type:savedMedia.type||savedMedia.blob.type||"video/mp4",lastModified:savedMedia.lastModified||Date.now()});
+      state.sourceFile=file;
+      state.sourceUrl=meta.sourceUrl||"";
+      state.objectUrl=URL.createObjectURL(file);
+      restoreExistingClipsOnLoad=true;
+      const video=$("previewVideo");
+      video.src=state.objectUrl;
+      video.load();
+      $("mediaName").textContent=`${file.name} · remembered`;
+      $("previewEmptyTitle").textContent="Restoring your project…";
+      $("previewEmptyHint").textContent="Reconnecting the locally remembered video and your last edit.";
+      $("previewEmpty").classList.remove("hidden");
+      updateImportStatus("Restoring source video from local memory…","loading");
+      setMemoryVaultStatus("Saved project found",`${file.name} · ${humanBytes(file.size)}. Reconnecting your last edit…`);
+    }else if(hasRecoverableDraft(snapshot)){
+      showDraftRecoveryPrompt(snapshot);
+    }else{
+      pendingRecoverySnapshot=null;
+      hideDraftRecoveryPrompt();
+      setMemoryVaultStatus("Memory vault ready","Edits autosave on this device. Source videos are remembered when storage space and browser support allow it.");
+    }
+    const info=await getCurrentMemoryInfo();
+    if($("memoryVaultUsage"))$("memoryVaultUsage").textContent=(Number(info.usageBytes)>0?`${humanBytes(info.usageBytes)} used`:"0 B used")+(Number(info.quotaBytes)>0?" of "+humanBytes(info.quotaBytes):"");
+  }catch(error){
+    setMemoryVaultStatus("Local draft protection active",`The normal editor autosave is active; persistent media memory is unavailable in this browser (${error?.message||"storage unavailable"}).`);
+    if(hasRecoverableDraft(pendingRecoverySnapshot))showDraftRecoveryPrompt(pendingRecoverySnapshot);
+  }
+}
 function releaseTemporaryMemory({silent=false}={}){
   if(exportBusy||transcribing||sceneScanning||$("analyzeFrameBtn")?.disabled){
     if(!silent)toast("Finish the active video or AI task before releasing temporary memory.");
@@ -111,7 +253,7 @@ async function scanSceneChanges(){const video=$("previewVideo"),button=$("sceneS
 function renderAll(){renderTimeline();renderClips();renderSkipRanges();renderSubtitleCueList();syncInspector();updatePreview();$("aspectSelect").value=state.aspect;if($("burnOverlaysToggle"))$("burnOverlaysToggle").checked=state.burnOverlays!==false;$("ratioBadge").textContent=state.aspect;$("safeZones").classList.toggle("hidden",!state.showSafe);$$('#durationChips button').forEach(b=>b.classList.toggle('active',b.dataset.duration===String(state.durationPreset)||(b.dataset.duration==="custom"&&![15,30,45,60].includes(state.durationPreset))));setTimeInputs("duration",state.durationPreset);$("durationBadge").textContent=fmt(state.duration);$("totalTime").textContent=fmt(state.duration);$("timelineHint").textContent=state.clips.length?`${state.clips.length} clips · select one to edit`:"Your sequence is empty";if($("projectName"))$("projectName").value=state.projectName}
 function setTool(tool){if(typeof tool!=="string"||!tool)return;if(tool==="preview"){state.activeTool="preview";$("inspector").classList.remove("open");$$('.tool,.mobile-tab').forEach(x=>x.classList.remove('active'));$$('.mobile-tab[data-tool="preview"]').forEach(x=>x.classList.add('active'));return}state.activeTool=tool;$$('.tool,.mobile-tab').forEach(x=>x.classList.toggle('active',x.dataset.tool===tool));$$('.inspector-pane').forEach(x=>x.classList.add('hidden'));const pane=$("pane-"+tool);if(pane)pane.classList.remove('hidden');$("inspectorTitle").textContent=tool==="cut"?"Clips":tool==="creator"?"Creator Intelligence":tool[0].toUpperCase()+tool.slice(1);if(innerWidth<=820)$("inspector").classList.add('open')}
 function updateImportStatus(text,type="info"){const n=$("importStatus");if(n){n.textContent=text;n.dataset.state=type}}
-function updateSource(file,{sourceUrl=""}={}){if(!file)return;restoreExistingClipsOnLoad=false;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.subtitleCues=[];subtitleCueLimit=80;renderSubtitleCueList();updateActiveSubtitle();state.skipRanges=[];setTimeInputs("skipStart",null);setTimeInputs("skipEnd",null);renderSkipRanges();state.sourceFile=file;state.sourceUrl=sourceUrl;state.sourceMeta={fileName:file.name,fileSize:file.size,sourceUrl,duration:0};state.objectUrl=URL.createObjectURL(file);const v=$("previewVideo");v.src=state.objectUrl;v.load();$("mediaName").textContent=file.name;$("previewEmptyTitle").textContent="Preparing your edit…";$("previewEmptyHint").textContent="Reading the video and building your first clip plan."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Reading video metadata…","loading");setSave("● Media loaded");void rememberSourceMedia(file)}
+function updateSource(file,{sourceUrl=""}={}){if(!file)return;if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}restoreExistingClipsOnLoad=false;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.subtitleCues=[];subtitleCueLimit=80;renderSubtitleCueList();updateActiveSubtitle();state.skipRanges=[];setTimeInputs("skipStart",null);setTimeInputs("skipEnd",null);renderSkipRanges();state.sourceFile=file;state.sourceUrl=sourceUrl;state.sourceMeta={fileName:file.name,fileSize:file.size,sourceUrl,duration:0};state.objectUrl=URL.createObjectURL(file);const v=$("previewVideo");v.src=state.objectUrl;v.load();$("mediaName").textContent=file.name;$("previewEmptyTitle").textContent="Preparing your edit…";$("previewEmptyHint").textContent="Reading the video and building your first clip plan."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Reading video metadata…","loading");setSave("● Media loaded");persist();void rememberSourceMedia(file)}
 function loadFile(file){if(!file)return;const ok=/\.(mp4|webm|mov|mkv|m4v|ogv|avi)$/i.test(file.name)||String(file.type).startsWith('video/');if(!ok)return toast("Choose a video file such as MP4, WebM or MOV","error");if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:file.size,duration:0});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nClose other apps before continuing. Continue anyway?"))return}updateSource(file)}
 async function loadUrl(){const raw=$("videoUrl").value.trim();if(!raw)return toast("Paste a direct video file link first","error");let url;try{url=new URL(raw);if(!/^https?:$/.test(url.protocol))throw Error("Only http/https links are supported")}catch(e){updateImportStatus(e.message,"error");return}const b=$("loadUrlBtn");b.disabled=true;updateImportStatus("Fetching the video into this tab…","loading");try{const r=await fetch(url,{mode:'cors',credentials:'omit'});if(!r.ok)throw Error(`Host returned HTTP ${r.status}`);const mime=(r.headers.get('content-type')||'').toLowerCase();const blob=await r.blob();if(blob.size>300*1024*1024)throw Error("This video is over 300 MB. Upload the local file instead for better reliability.");if(mime.includes('text/html'))throw Error("That URL is a webpage, not a direct video file");let name=decodeURIComponent(url.pathname.split('/').pop()||'video.mp4').replace(/[\\/:*?"<>|]/g,'-');if(!/\.(mp4|webm|mov|mkv|m4v|ogv)$/i.test(name))name=mime.includes('webm')?'video.webm':'video.mp4';const linkedFile=new File([blob],name,{type:blob.type||'video/mp4'});if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:linkedFile.size,duration:0});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nContinue anyway?"))return}updateSource(linkedFile,{sourceUrl:url.href});updateImportStatus("Video imported locally · preparing preview…","loading")}catch(e){updateImportStatus(e.message||"Could not import that link","error");toast("Link import failed","error")}finally{b.disabled=false}}
 $("uploadBtn").onclick=$("dropBrowseBtn").onclick=$("emptyUploadBtn").onclick=()=>$("videoInput").click();$("videoInput").onchange=e=>{loadFile(e.target.files?.[0]);e.target.value=''};$("dropCard").ondragover=e=>e.preventDefault();$("dropCard").ondrop=e=>{e.preventDefault();loadFile(e.dataTransfer.files?.[0])};$("loadUrlBtn").onclick=loadUrl;$("videoUrl").onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadUrl()}};
@@ -195,7 +337,7 @@ function outputName(c,i){const prefix=String($("powerExportPrefix")?.value||"").
 async function getFFmpeg(){if(ffmpegInstance)return ffmpegInstance;if(ffmpegLoading)return ffmpegLoading;ffmpegLoading=(async()=>{const {FFmpeg}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js');const {fetchFile,toBlobURL}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js');const ff=new FFmpeg();const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';await ff.load({coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm'),workerURL:await toBlobURL(`${base}/ffmpeg-core.worker.js`,'text/javascript')});ff.__fetchFile=fetchFile;ffmpegInstance=ff;return ff})();try{return await ffmpegLoading}catch(e){ffmpegLoading=null;throw e}}
 async function startExport(){if(exportBusy)return;exportBusy=true;$("startExportBtn").disabled=true;$("exportRecoveryActions").classList.add('hidden');const clips=[...state.clips];try{for(let i=0;i<clips.length;i++){const c=clips[i];qstatus(c.id,'starting',0);try{const blob=await renderClip(c,i,exportMode);downloadBlob(blob,outputName(c,i));qstatus(c.id,'done',100);await new Promise(r=>setTimeout(r,50))}catch(e){qstatus(c.id,'failed',0);$("exportRecoveryActions").classList.remove('hidden');$("recoveryText").textContent=e.message||'The browser could not render this clip.';toast('Export stopped — recovery options are ready','error');break}}}finally{exportBusy=false;$("startExportBtn").disabled=false;if(memorySafeMode)releaseTemporaryMemory({silent:true})}}
 $("startExportBtn").onclick=startExport;$("recoveryOriginalBtn").onclick=()=>{exportMode='copy';startExport()};$("recoveryLowBtn").onclick=()=>{exportMode='mobile';startExport()};$("recoverySingleClipBtn").onclick=async()=>{const c=selected();if(!c)return toast('Select one clip first');try{const b=await renderClip(c,0,'mobile');downloadBlob(b,outputName(c,0));toast('Selected clip exported')}catch(e){toast(e.message||'Single-clip export failed','error')}};
-$("saveProjectBtn").onclick=()=>{const m=createProjectManifest({projectName:state.projectName,sourceFileName:state.sourceFile?.name||state.sourceMeta?.fileName||'',sourceFileSize:state.sourceFile?.size||state.sourceMeta?.fileSize||0,sourceDuration:state.duration,sourceUrl:state.sourceMeta?.sourceUrl||'',clips:state.clips,controls:{aspectSelect:state.aspect,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays}},new Date().toISOString());downloadBlob(new Blob([JSON.stringify(m,null,2)],{type:'application/json'}),`${state.projectName.replace(/\W+/g,'-')||'clipsmith-project'}.clipsmith.json`);toast('Project saved')};$("loadProjectBtn").onclick=()=>$("projectFileInput").click();$("projectFileInput").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const m=validateProjectManifest(JSON.parse(await f.text()));if(!m)throw Error('Invalid ClipSmith project file');state.projectName=m.projectName;state.clips=m.clips;state.aspect=m.controls?.aspectSelect||'16:9';state.skipRanges=Array.isArray(m.controls?.skipRanges)?m.controls.skipRanges.filter(r=>Number.isFinite(Number(r?.start))&&Number.isFinite(Number(r?.end))&&Number(r.end)>Number(r.start)).slice(0,500).map(r=>({id:typeof r.id==='string'?r.id:uid(),start:Math.max(0,Number(r.start)),end:Math.max(0,Number(r.end)),label:'Promo / ad break'})):[];state.subtitleCues=Array.isArray(m.controls?.subtitleCues)?m.controls.subtitleCues.filter(q=>Number.isFinite(Number(q.start))&&Number.isFinite(Number(q.end))&&Number(q.end)>Number(q.start)&&String(q.text||'').trim()).slice(0,50000):[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(m.controls?.subtitleSettings||{})};state.exportAspect=m.controls?.exportAspect||"source";state.burnOverlays=m.controls?.burnOverlays!==false;state.duration=m.source.duration||0;state.sourceMeta={fileName:m.source.fileName,fileSize:m.source.fileSize,sourceUrl:m.source.url||'',duration:state.duration};state.sourceFile=null;state.selectedId=state.clips[0]?.id||null;$("projectName").value=state.projectName;$("mediaName").textContent=`Saved project · ${state.sourceMeta.fileName||'video'}`;$("previewEmptyTitle").textContent='Project opened';$("previewEmptyHint").textContent='Re-import the source video to preview and export.';$("previewEmpty").classList.remove('hidden');commit();renderAll();toast('Project opened')}catch(err){toast(err.message||'Could not open project','error')}finally{e.target.value=''}};
+$("saveProjectBtn").onclick=()=>{const m=createProjectManifest({projectName:state.projectName,sourceFileName:state.sourceFile?.name||state.sourceMeta?.fileName||'',sourceFileSize:state.sourceFile?.size||state.sourceMeta?.fileSize||0,sourceDuration:state.duration,sourceUrl:state.sourceMeta?.sourceUrl||'',clips:state.clips,controls:{aspectSelect:state.aspect,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays}},new Date().toISOString());downloadBlob(new Blob([JSON.stringify(m,null,2)],{type:'application/json'}),`${state.projectName.replace(/\W+/g,'-')||'clipsmith-project'}.clipsmith.json`);toast('Project saved')};$("loadProjectBtn").onclick=()=>$("projectFileInput").click();$("projectFileInput").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const m=validateProjectManifest(JSON.parse(await f.text()));if(!m)throw Error('Invalid ClipSmith project file');if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}state.projectName=m.projectName;state.clips=m.clips;state.aspect=m.controls?.aspectSelect||'16:9';state.skipRanges=Array.isArray(m.controls?.skipRanges)?m.controls.skipRanges.filter(r=>Number.isFinite(Number(r?.start))&&Number.isFinite(Number(r?.end))&&Number(r.end)>Number(r.start)).slice(0,500).map(r=>({id:typeof r.id==='string'?r.id:uid(),start:Math.max(0,Number(r.start)),end:Math.max(0,Number(r.end)),label:'Promo / ad break'})):[];state.subtitleCues=Array.isArray(m.controls?.subtitleCues)?m.controls.subtitleCues.filter(q=>Number.isFinite(Number(q.start))&&Number.isFinite(Number(q.end))&&Number(q.end)>Number(q.start)&&String(q.text||'').trim()).slice(0,50000):[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(m.controls?.subtitleSettings||{})};state.exportAspect=m.controls?.exportAspect||"source";state.burnOverlays=m.controls?.burnOverlays!==false;state.duration=m.source.duration||0;state.sourceMeta={fileName:m.source.fileName,fileSize:m.source.fileSize,sourceUrl:m.source.url||'',duration:state.duration};state.sourceFile=null;state.selectedId=state.clips[0]?.id||null;$("projectName").value=state.projectName;$("mediaName").textContent=`Saved project · ${state.sourceMeta.fileName||'video'}`;$("previewEmptyTitle").textContent='Project opened';$("previewEmptyHint").textContent='Re-import the source video to preview and export.';$("previewEmpty").classList.remove('hidden');commit();renderAll();toast('Project opened')}catch(err){toast(err.message||'Could not open project','error')}finally{e.target.value=''}};
 $("projectName").oninput=e=>{state.projectName=e.target.value;persist()};
 $("generateIdeasBtn").onclick=()=>{const ideas=generateCreatorIdeas({title:selected()?.title||state.seriesTitle,fileName:state.sourceFile?.name||'',transcript:$("ideasTranscript").value.trim()||state.subtitleCues.map(cue=>cue.text).join(" "),visualTags:state.visualTags,platform:$("creatorPlatform").value,tone:$("creatorTone").value,language:$("creatorLanguage").value});lastCreatorIdeas=ideas;$("creatorResults").innerHTML=`<div class="result-card"><span>Caption ideas</span>${ideas.captions.map(x=>`<div class="copy-line"><p>${esc(x)}</p><button data-copy="${esc(x)}">Copy</button></div>`).join('')}</div><div class="result-card"><span>Hashtags</span><div class="copy-line"><p>${esc(ideas.hashtags.join(' '))}</p><button data-copy="${esc(ideas.hashtags.join(' '))}">Copy</button></div></div><div class="result-card"><span>Hooks</span>${(ideas.hooks||ideas.captions||[]).slice(0,5).map(x=>`<div class="copy-line"><p>${esc(x)}</p><button data-copy="${esc(x)}">Copy</button></div>`).join("")}</div><div class="result-card"><span>Short titles</span>${(ideas.titles||[]).map(x=>`<div class="copy-line"><p>${esc(x)}</p><button data-copy="${esc(x)}">Copy</button></div>`).join("")}</div>`};$("creatorResults").onclick=e=>{const b=e.target.closest('[data-copy]');if(b)navigator.clipboard?.writeText(b.dataset.copy).then(()=>toast('Copied'))};
 async function analyzeCurrentFrame(){const v=$("previewVideo"),status=$("visualAnalysisStatus"),btn=$("analyzeFrameBtn");if(!state.sourceFile||v.readyState<2)return toast('Load a video first');btn.disabled=true;status.textContent='Loading local object detection…';try{if(!visionModelPromise){visionModelPromise=(async()=>{await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';document.head.appendChild(s);await new Promise((res,rej)=>{s.onload=res;s.onerror=rej});return window.cocoSsd.load({base:'lite_mobilenet_v2'})})()}const model=await visionModelPromise;const p=await model.detect(v,10,.35);state.visualTags=[...new Set(p.map(x=>x.class))].slice(0,8);status.textContent=state.visualTags.length?`Detected: ${state.visualTags.join(', ')}`:'No clear objects detected';commit();toast('Frame analyzed')}catch(e){visionModelPromise=null;status.textContent='Local analysis unavailable; add a transcript or description instead.';toast('Frame analysis unavailable','error')}finally{btn.disabled=false;if(memorySafeMode)releaseTemporaryMemory({silent:true})}}
@@ -301,5 +443,5 @@ $("memorySaveNowBtn")?.addEventListener("click",saveMemoryNow);$("memoryClearBtn
   }
 });
 
-recover();lastCommitted=snap();if($("projectName"))$("projectName").value=state.projectName;renderAll();refreshMemoryPanel();void restoreRememberedMemory();
+$("restoreDraftBtn").onclick=()=>{const snapshot=pendingRecoverySnapshot;if(!snapshot)return;if(applyRecoveredDraft(snapshot)){setMemoryVaultStatus("Project memory restored",state.sourceMeta?.fileName?`Your saved edits are restored. Re-import ${state.sourceMeta.fileName} to reconnect preview and export.`:"Your saved edits are restored. Add a video to preview and export.");toast("Saved draft restored")}};$("startFreshBtn").onclick=()=>{void startFreshProject()};recover();lastCommitted=snap();if($("projectName"))$("projectName").value=state.projectName;renderAll();refreshMemoryPanel();void restoreRememberedMemory();
 window.dispatchEvent(new CustomEvent("clipsmith:app-ready", { detail: { build: "20261024-power3" } }));

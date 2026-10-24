@@ -85,10 +85,44 @@ try {
     else await route.continue();
   });
 
+  await page.addInitScript(() => {
+    localStorage.setItem("clipsmith.project.v2", JSON.stringify({
+      projectName: "Stale test draft",
+      sourceMeta: { fileName: "old-video.mp4", fileSize: 1234, duration: 60 },
+      duration: 60,
+      durationPreset: 30,
+      aspect: "16:9",
+      seriesTitle: "Stale series",
+      autoParts: true,
+      selectedId: "old-clip",
+      clips: [{ id: "old-clip", start: 0, end: 30, title: "Stale Part 1", autoTitle: true }],
+      subtitleCues: [],
+      skipRanges: []
+    }));
+  });
+
   const response = await page.goto(origin + "/", { waitUntil: "domcontentloaded" });
   assert.equal(response?.status(), 200, "editor document should load");
   await page.waitForSelector("#app-shell");
   await page.waitForTimeout(800);
+  await page.waitForFunction(() => {
+    const actions = document.querySelector("#draftRecoveryActions");
+    return actions && !actions.classList.contains("hidden");
+  }, null, { timeout: 5000 });
+  assert.equal(await page.locator("#mediaName").textContent(), "Previous draft available",
+    "a draft without its original source should be offered, not silently loaded");
+  assert.equal(await page.locator("#timeline .timeline-block").count(), 0,
+    "clips from a disconnected draft must not appear until recovery is chosen");
+  assert.equal(await page.locator("#clip-strip .clip-card").count(), 0,
+    "the clip strip stays empty until the user restores the old draft");
+  await page.locator("#startFreshBtn").click();
+  await page.waitForFunction(() => {
+    const actions = document.querySelector("#draftRecoveryActions");
+    return actions?.classList.contains("hidden") && localStorage.getItem("clipsmith.project.v2") === null;
+  }, null, { timeout: 5000 });
+  assert.equal(await page.locator("#mediaName").textContent(), "No video loaded",
+    "Start fresh returns to a clean editor");
+  await page.waitForTimeout(100);
 
   assert.equal(pageErrors.length, 0, "no browser runtime exceptions on startup: " + pageErrors.join(" | ") + " | console: " + localConsoleErrors.join(" | "));
   assert.equal(localConsoleErrors.length, 0, "no local JavaScript errors on startup: " + localConsoleErrors.join(" | "));

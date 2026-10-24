@@ -1428,3 +1428,10 @@ button, .apk-download-btn, .clip-card, .tool, .mobile-tab { touch-action: manipu
   .power-marker-input button { width:100%; }
   .power-modal-footer > span:last-child { display:none; }
 }
+
+
+/* Previous-draft recovery is opt-in when the original video is unavailable. */
+.draft-recovery-actions{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:5px;width:100%;}
+.draft-recovery-actions .primary-btn,.draft-recovery-actions .soft-btn{min-height:42px;padding-inline:16px;}
+.draft-recovery-actions .soft-btn{background:#ffffff08;border-color:#ffffff20;color:#d5d9e6;}
+@media(max-width:680px){.draft-recovery-actions{gap:7px;margin-top:2px}.draft-recovery-actions .primary-btn,.draft-recovery-actions .soft-btn{min-height:40px;padding-inline:13px;font-size:11px}}
