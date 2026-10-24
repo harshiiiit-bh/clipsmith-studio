@@ -117,6 +117,10 @@ assert.match(html, /id="saveProjectBtn"/, "portable project save is available");
 assert.match(html, /id="loadProjectBtn"/, "portable project load is available");
 assert.match(html, /id="projectFileInput"/, "project JSON file can be imported");
 assert.match(html, /id="exportRecoveryActions"/, "export failure provides a dedicated recovery panel");
+assert.match(html, /grid-template-columns:repeat\(6,1fr\)/, "all six mobile views have an equal navigation slot");
+assert.match(html, /pointerdown/, "title and caption overlays can be positioned on the canvas");
+assert.match(html, /clipsmith\.project\.v1/, "local project draft recovery is enabled");
+assert.match(html, /sourceFile\.size>350\*1024\*1024\|\|\/memory/, "large failed stream copies are not blindly re-encoded");
 assert.match(html, /recoveryOriginalBtn/, "export recovery can switch to original stream");
 assert.match(html, /recoverySingleClipBtn/, "export recovery can try a single clip");
 
