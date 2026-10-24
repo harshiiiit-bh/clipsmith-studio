@@ -265,3 +265,15 @@ export function rankSceneChanges(samples, options = {}) {
   }
   return accepted;
 }
+
+/** Move a clip to a target slot, keeping automatic part numbering aligned with sequence order. */
+export function reorderClip(clips, fromId, toId, options = {}) {
+  if (!Array.isArray(clips)) return null;
+  const fromIndex = clips.findIndex(clip => clip.id === fromId), toIndex = clips.findIndex(clip => clip.id === toId);
+  if (fromIndex < 0 || toIndex < 0) return null;
+  const result = clips.slice();
+  const [moving] = result.splice(fromIndex, 1);
+  result.splice(toIndex, 0, moving);
+  if (typeof options.titleFor === 'function') return { clips: renumberAutoTitles(result, options.titleFor), selectedId: moving.id };
+  return { clips: result, selectedId: moving.id };
+}
