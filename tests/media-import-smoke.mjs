@@ -29,8 +29,8 @@ assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
 
 assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker must not hide ZIP or uncommon video files with a narrow accept filter");
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
-assert.match(html, /studio-2\.css\?v=20261024-canvashape1/);
-assert.match(html, /app\.js\?v=20261024-canvashape1/);
+assert.match(html, /studio-2\.css\?v=20261024-overlaysfix3/);
+assert.match(html, /app\.js\?v=20261024-overlaysfix3/);
 
 assert.match(html, /id="clipStripSlider"[^>]*aria-label="Slide through clips"/,
   "the clip browser needs a visible range slider");
