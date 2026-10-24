@@ -1,5 +1,5 @@
-import { generateCreatorIdeas } from "./creator-assistant.js";
-import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegments } from "./editor-tools.js";
+import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-ux2";
+import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegments } from "./editor-tools.js?v=20261024-ux2";
 
 const $ = (id) => document.getElementById(id);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
