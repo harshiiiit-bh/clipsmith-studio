@@ -78,7 +78,7 @@ if (timeline && zoomRange) {
       }
       const baseWidth = Number(block.dataset.baseWidth);
       if (Number.isFinite(baseWidth)) {
-        block.style.width = `${Math.max(3, baseWidth * zoom)}%`;
+        block.style.width = `${Math.max(62, Math.round(baseWidth * zoom))}px`;
       }
     });
 

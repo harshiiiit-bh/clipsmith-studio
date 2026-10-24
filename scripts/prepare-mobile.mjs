@@ -11,4 +11,5 @@ const files=[
 await rm(out,{recursive:true,force:true});
 await mkdir(out,{recursive:true});
 for(const file of files)await cp(path.join(root,file),path.join(out,file));
-console.log(`Prepared ${files.length} local editor assets for the Android WebView.`);
+await cp(path.join(root,"ffmpeg"),path.join(out,"ffmpeg"),{recursive:true});
+console.log(`Prepared ${files.length} local editor assets plus the same-origin FFmpeg worker for the Android WebView.`);
