@@ -31,6 +31,8 @@ assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker mu
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
 assert.match(html, /studio-2\.css\?v=20261024-ratiowork1/);
 assert.match(html, /app\.js\?v=20261024-ratiowork1/);
+assert.match(app, /aspectTargets\.forEach\(el=>\{if\(el\)el\.dataset\.aspect=aspect\}\)/,
+  "the selected aspect ratio should drive the editor workspace layout as well as the canvas");
 
 assert.match(html, /id="clipStripSlider"[^>]*aria-label="Slide through clips"/,
   "the clip browser needs a visible range slider");
