@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - "index.html"
+      - "app.js"
+      - "styles.css"
       - "creator-assistant.js"
       - "editor-tools.js"
       - "tests/**"
@@ -11,6 +13,8 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "app.js"
+      - "styles.css"
       - "creator-assistant.js"
       - "editor-tools.js"
       - "tests/**"
@@ -26,4 +30,6 @@ jobs:
         with:
           node-version: 22
       - name: Syntax and editor-feature checks
-        run: node tests/smoke.mjs
+        run: |
+          node tests/smoke.mjs
+          node tests/editor-upgrade-smoke.mjs
