@@ -187,3 +187,17 @@ kbd{display:inline-block;min-width:max-content;padding:5px 8px;border:1px solid 
 .ai-action{margin:0;padding:7px 0;border-top:1px solid #ffffff0b;color:#b5bdce;font-size:10px;line-height:1.5}
 @media(max-width:820px){.ai-copilot{padding:11px}.ai-recommendations{max-height:38dvh}.ai-tool-card{min-height:62px}.ai-copilot-head strong{font-size:14px}}
 @media(max-width:420px){.ai-tool-card{padding:8px;grid-template-columns:21px minmax(0,1fr);column-gap:6px}.ai-tool-card>span{width:21px}.ai-tool-card>b{font-size:9px}.ai-tool-card>small{font-size:8px}.ai-readiness-card strong{font-size:21px}.ai-audit-row{gap:5px}.ai-audit-row .soft-btn{padding:0 6px}}
+
+/* Native Android download and device memory controls */
+.apk-download-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:35px;padding:0 11px;border:1px solid #6e5ba5;border-radius:10px;background:linear-gradient(135deg,#27213c,#151421);color:#d8ceff;text-decoration:none;font-size:10px;font-weight:800;white-space:nowrap;box-shadow:0 8px 24px #7657ff12;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.apk-download-btn:hover{border-color:#b9a5ff;background:linear-gradient(135deg,#332951,#1a1727);transform:translateY(-1px)}
+.apk-download-btn span{font-size:15px;line-height:1;color:#9fe8c9}
+.apk-download-btn:focus-visible{outline:2px solid #b9a5ff;outline-offset:3px}
+.memory-system-card{border-color:#31544c;background:linear-gradient(145deg,#14231f,#101219)}
+.memory-system-card .memory-safe-check{margin:9px 0 10px;font-size:9px!important}
+.memory-status-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:8px 0;color:#7fbdac;font-size:8px}
+.memory-status-row span{padding:5px 7px;border:1px solid #70e0b018;border-radius:7px;background:#70e0b009}
+#memoryDraftStatus[data-state=error]{color:#ff9bad;border-color:#ff718e33}
+#memorySystemStatus[data-state=error]{color:#ff9bad}
+@media(max-width:820px){.apk-download-btn{min-height:34px;padding:0 8px;gap:4px;font-size:9px}.apk-download-btn span{font-size:13px}.memory-system-card{margin:10px 0}.memory-system-card .hint{line-height:1.45}}
+@media(max-width:520px){.apk-download-btn{min-height:31px;padding:0 6px;gap:3px;font-size:8px;border-radius:8px}.apk-download-btn span{font-size:12px}.apk-download-btn b{letter-spacing:-.2px}}
