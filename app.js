@@ -102,9 +102,54 @@ $("applyTrimBtn").onclick=()=>{const c=selectedClip();if(!c)return;const s=Numbe
 
 let ffmpegInstance=null,ffmpegLoading=null;async function getFFmpeg(){if(ffmpegInstance)return ffmpegInstance;if(ffmpegLoading)return ffmpegLoading;ffmpegLoading=(async()=>{const {FFmpeg}=await import("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js");const {fetchFile,toBlobURL}=await import("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js");const ff=new FFmpeg();const base="https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";await ff.load({coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,"text/javascript"),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,"application/wasm"),workerURL:await toBlobURL(`${base}/ffmpeg-core.worker.js`,"text/javascript")});ff.__fetchFile=fetchFile;ffmpegInstance=ff;return ff})();try{return await ffmpegLoading}catch(e){ffmpegLoading=null;throw e}}
 const MAX_CONCURRENT_EXPORTS=1;const exportQueue=[];let exportMode="smart";
-function openExport(){if(!state.clips.length)return toast("Generate clips first.");$("export-queue").classList.remove("hidden");$("exportSummary").textContent=`${state.clips.length} clips • ${fmt(state.clips.reduce((a,c)=>a+c.end-c.start,0))} total`;$("memoryHint").textContent=`Local processing • serial queue • ${navigator.deviceMemory||"?"} GB reported device memory`;renderQueue(state.clips)}function renderQueue(clips){$("queueList").innerHTML=clips.map((c,i)=>`<div class="queue-item" id="queue-${c.id}"><div><strong>Part ${i+1} · ${esc(c.title)}</strong><small>${fmt(c.start)} → ${fmt(c.end)}</small><div class="queue-progress"><span></span></div></div><small class="queue-status">waiting</small></div>`).join("")}function setQueueStatus(id,status,pct=0){const el=$(`queue-${id}`);if(!el)return;el.querySelector(".queue-status").textContent=status;el.querySelector(".queue-progress span").style.width=`${pct}%`}
-function chooseOutputName(c,index){const base=(c.title||`clip-${index+1}`).replace(/[^\w\u00C0-\uFFFF]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||`clip-${index+1}`;return `${String(index+1).padStart(2,"0")}-${base}.mp4`}function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}function canStreamCopy(){return exportMode==="copy"||exportMode==="smart"}
-async function renderClip(c,index,mode=exportMode){if(!state.sourceFile)throw new Error("Local export needs the source video file.");const ff=await getFFmpeg(),inputName=`input-${uid()}.bin`,output=`output-${uid()}.mp4`;await ff.writeFile(inputName,await ff.__fetchFile(state.sourceFile));const duration=Math.max(.5,c.end-c.start),fx=c.fx||DEFAULT_FX,needsFilter=fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||fx.volume!==1||fx.mute;let args=["-ss",String(c.start),"-i",inputName,"-t",String(duration),"-map","0:v:0?","-map","0:a:0?"];if(canStreamCopy()&&!needsFilter&&mode!=="mobile")args.push("-c","copy","-avoid_negative_ts","make_zero");else{const vf=[];if(fx.brightness||fx.contrast!==1||fx.saturation!==1)vf.push(`eq=brightness=${fx.brightness}:contrast=${fx.contrast}:saturation=${fx.saturation}`);if(fx.blur>0)vf.push(`boxblur=${fx.blur}:1`);if(fx.speed!==1)vf.push(`setpts=${1/fx.speed}*PTS`);if(mode==="mobile")vf.push("scale='min(1280,iw)':-2");if(vf.length)args.push("-vf",vf.join(","));if(fx.mute)args.push("-an");else if(fx.speed!==1||fx.volume!==1)args.push("-af",`${fx.speed!==1?`atempo=${clamp(fx.speed,.5,2)}`:""}${fx.speed!==1&&fx.volume!==1?",":""}${fx.volume!==1?`volume=${fx.volume}`:""}`);args.push("-c:v","libx264","-preset","veryfast","-crf",mode==="mobile"?"28":"22","-c:a","aac","-b:a",mode==="mobile"?"96k":"128k","-movflags","+faststart")}args.push(output);ff.on("progress",({progress})=>setQueueStatus(c.id,"rendering",Math.round(progress*100)));try{await ff.exec(args);const data=await ff.readFile(output);return new Blob([data.buffer],{type:"video/mp4"})}finally{try{await ff.deleteFile(inputName)}catch{}try{await ff.deleteFile(output)}catch{}}}
+function openExport(){if(!state.clips.length)return toast("Your clip list is empty. Import a video first.");if(!state.sourceFile)return toast("Re-import the original video before exporting this project.");$("export-queue").classList.remove("hidden");$("exportSummary").textContent=`${state.clips.length} clips • ${fmt(state.clips.reduce((a,c)=>a+c.end-c.start,0))} total`;$("memoryHint").textContent=`Smart tries stream-copy first, then converts if needed • ${navigator.deviceMemory||"unknown"} GB device memory`;renderQueue(state.clips)}
+function renderQueue(clips){$("queueList").innerHTML=clips.map((c,i)=>`<div class="queue-item" id="queue-${c.id}"><div><strong>Part ${i+1} · ${esc(c.title)}</strong><small>${fmt(c.start)} → ${fmt(c.end)}</small><div class="queue-progress"><span></span></div></div><small class="queue-status">waiting</small></div>`).join("")}
+function setQueueStatus(id,status,pct=0){const el=$(`queue-${id}`);if(!el)return;el.querySelector(".queue-status").textContent=status;el.querySelector(".queue-progress span").style.width=`${pct}%`}
+function chooseOutputName(c,index){const base=(c.title||`clip-${index+1}`).replace(/[^\w\u00C0-\uFFFF]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||`clip-${index+1}`;return `${String(index+1).padStart(2,"0")}-${base}.mp4`}
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2500)}
+function canStreamCopy(mode,needsFilter){return (mode==="copy"||mode==="smart")&&!needsFilter&&mode!=="mobile"}
+async function renderClip(c,index,mode=exportMode){
+ if(!state.sourceFile)throw new Error("Local export needs the source video file. Re-import the original video.");
+ const fx={...DEFAULT_FX,...(c.fx||DEFAULT_FX)};
+ const needsFilter=fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||fx.volume!==1||fx.mute;
+ if(mode==="copy"&&needsFilter)throw new Error("Original stream mode cannot apply FX, speed or volume edits. Choose Smart or High quality to render those edits.");
+ const ff=await getFFmpeg(),inputName=`input-${uid()}.bin`,output=`output-${uid()}.mp4`;
+ await ff.writeFile(inputName,await ff.__fetchFile(state.sourceFile));
+ const duration=Math.max(.5,c.end-c.start),useCopy=canStreamCopy(mode,needsFilter);
+ const buildArgs=(streamCopy)=>{
+  const args=["-ss",String(c.start),"-i",inputName,"-t",String(duration),"-map","0:v:0?","-map","0:a:0?"];
+  if(streamCopy)args.push("-c","copy","-avoid_negative_ts","make_zero");
+  else{
+   const vf=[];
+   if(fx.brightness||fx.contrast!==1||fx.saturation!==1)vf.push(`eq=brightness=${fx.brightness}:contrast=${fx.contrast}:saturation=${fx.saturation}`);
+   if(fx.blur>0)vf.push(`boxblur=${fx.blur}:1`);
+   if(fx.speed!==1)vf.push(`setpts=${1/fx.speed}*PTS`);
+   if(mode==="mobile")vf.push("scale='min(1280,iw)':-2");
+   if(vf.length)args.push("-vf",vf.join(","));
+   if(fx.mute)args.push("-an");
+   else if(fx.speed!==1||fx.volume!==1)args.push("-af",`${fx.speed!==1?`atempo=${clamp(fx.speed,.5,2)}`:""}${fx.speed!==1&&fx.volume!==1?",":""}${fx.volume!==1?`volume=${fx.volume}`:""}`);
+   args.push("-c:v","libx264","-preset","veryfast","-crf",mode==="mobile"?"28":mode==="high"?"20":"22","-c:a","aac","-b:a",mode==="mobile"?"96k":"128k","-movflags","+faststart");
+  }
+  args.push(output);return args;
+ };
+ const execute=async(streamCopy)=>{
+  const onProgress=({progress})=>setQueueStatus(c.id,"rendering",Math.round(progress*100));ff.on("progress",onProgress);
+  try{await ff.exec(buildArgs(streamCopy));const data=await ff.readFile(output);return new Blob([data],{type:"video/mp4"})}
+  finally{if(typeof ff.off==="function")ff.off("progress",onProgress)}
+ };
+ try{
+  try{return await execute(useCopy)}
+  catch(error){
+   const message=String(error?.message||error);
+   if(mode==="smart"&&useCopy&&!/out of memory|allocation failed/i.test(message)){
+    setQueueStatus(c.id,"Smart retry: stream-copy failed",0);
+    try{await ff.deleteFile(output)}catch{}
+    return await execute(false);
+   }
+   throw error;
+  }
+ }finally{try{await ff.deleteFile(inputName)}catch{}try{await ff.deleteFile(output)}catch{}}
+}
 async function startExport(){if(exportQueue.length)return;const clips=[...state.clips];if(!clips.length)return;$("startExportBtn").disabled=true;$("exportRecoveryActions").classList.add("hidden");exportQueue.push(...clips);for(let i=0;i<clips.length;i++){const c=clips[i];setQueueStatus(c.id,"starting",0);try{const blob=await renderClip(c,i,exportMode);downloadBlob(blob,chooseOutputName(c,i));setQueueStatus(c.id,"done",100);await new Promise(r=>setTimeout(r,60))}catch(e){setQueueStatus(c.id,"failed",0);$("exportRecoveryActions").classList.remove("hidden");$("recoveryText").textContent=`${e?.message||"The browser could not render this clip."} Try Original stream for a compatible source, Mobile safe for a lower-memory render, or export one clip first.`;toast("Export failed — see details below");break}}exportQueue.length=0;$("startExportBtn").disabled=false}
 $("exportBtn").onclick=openExport;$("closeExportBtn").onclick=()=>$("export-queue").classList.add("hidden");$("startExportBtn").onclick=startExport;$$(`.export-mode`).forEach(b=>b.onclick=()=>{$$(`.export-mode`).forEach(x=>x.classList.remove("active"));b.classList.add("active");exportMode=b.dataset.mode});$("recoveryOriginalBtn").onclick=()=>{exportMode="copy";startExport()};$("recoveryLowBtn").onclick=()=>{exportMode="mobile";startExport()};$("recoverySingleClipBtn").onclick=async()=>{const c=selectedClip();if(!c)return toast("Select one clip first.");try{const b=await renderClip(c,0,"mobile");downloadBlob(b,chooseOutputName(c,0));setQueueStatus(c.id,"done",100)}catch{toast("Single-clip export failed")}};
 $("projectName").oninput=e=>{state.projectName=e.target.value;persist()};$("saveProjectBtn").onclick=()=>{const manifest=createProjectManifest({projectName:state.projectName,sourceFileName:state.sourceFile?.name||"",sourceFileSize:state.sourceFile?.size||0,sourceDuration:state.duration,clips:state.clips,controls:{aspectSelect:state.aspect}},new Date().toISOString());downloadBlob(new Blob([JSON.stringify(manifest,null,2)],{type:"application/json"}),`${state.projectName.replace(/\W+/g,"-")||"clipsmith-project"}.clipsmith.json`);toast("Project file saved")};$("loadProjectBtn").onclick=()=>$("projectFileInput").click();$("projectFileInput").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const manifest=validateProjectManifest(JSON.parse(await f.text()));if(!manifest)throw new Error("Invalid project file");state.projectName=manifest.projectName;state.clips=manifest.clips;state.aspect=manifest.controls?.aspectSelect||"16:9";state.duration=manifest.source.duration||0;state.selectedId=state.clips[0]?.id||null;commitHistory();renderAll();toast("Project restored; relink the source video if needed")}catch(err){toast(err.message||"Could not open project")}};
