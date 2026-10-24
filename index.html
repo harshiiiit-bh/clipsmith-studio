@@ -8,14 +8,14 @@
 <title>ClipSmith Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Archivo+Black&family=Bebas+Neue&family=Bangers&family=Anton&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./styles.css?v=20261024-ux3">
+<link rel="stylesheet" href="./styles.css?v=20261024-trimfix1">
 </head>
 <body>
 <div id="app-shell" class="app-shell">
 <header class="topbar">
   <div class="brand"><div class="brandmark">✂</div><div><strong>ClipSmith</strong><small>VIDEO CLIPPING STUDIO</small></div></div>
   <div class="project-title"><span class="project-label">PROJECT</span><input id="projectName" class="ghost-input" value="Untitled Project" aria-label="Project name"><span id="saveState" class="save-state">● Ready</span></div>
-  <div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo">↶</button><button id="redoBtn" class="icon-btn" title="Redo">↷</button><button id="saveProjectBtn" class="top-btn">Save</button><button id="loadProjectBtn" class="top-btn">Open</button><input id="projectFileInput" type="file" accept=".json,.clipsmith" hidden><button id="exportBtn" class="primary-btn export-top">Export</button></div>
+  <div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo">↶</button><button id="redoBtn" class="icon-btn" title="Redo">↷</button><button id="saveProjectBtn" class="top-btn">Save</button><button id="loadProjectBtn" class="top-btn">Open</button><input id="projectFileInput" type="file" accept=".json,.clipsmith" hidden><input id="videoInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.ogv,.avi" hidden><button id="exportBtn" class="primary-btn export-top">Export</button></div>
 </header>
 <main class="workspace">
   <aside class="tool-rail" aria-label="Editor tools">
@@ -54,11 +54,50 @@
       <div class="drop-card" id="dropCard"><div class="drop-icon">↥</div><strong>Drop your video here</strong><p>MP4, WebM, MOV, MKV and other browser-playable files.</p><button id="dropBrowseBtn" class="primary-btn full">Browse files</button></div>
       <div class="field-block link-import"><label for="videoUrl">Or use a direct video link</label><div class="url-import-row"><input id="videoUrl" class="field" type="url" inputmode="url" placeholder="https://example.com/video.mp4"><button id="loadUrlBtn" class="soft-btn">Load</button></div><p id="importStatus" class="hint" data-state="info">Direct MP4/WebM links only. The host must allow browser access.</p></div>
       <div class="smart-card"><div><span class="eyebrow">SMART SPLIT</span><strong>How long should each clip be?</strong></div><div class="chip-row" id="durationChips"><button data-duration="15">15s</button><button data-duration="30" class="active">30s</button><button data-duration="45">45s</button><button data-duration="60">60s</button><button data-duration="custom">Custom</button></div></div>
-      <div id="customDurationWrap" class="field-block hidden"><label>Custom duration</label><input id="customDuration" class="field" type="number" min="1" max="3600" value="30"></div>
+      <div id="customDurationWrap" class="field-block hidden"><label>Custom clip length</label><div class="time-parts duration-parts">
+        <label class="time-part"><input id="durationHours" class="field" type="number" min="0" max="24" step="1" inputmode="numeric" placeholder="0"><span>hours</span></label>
+        <label class="time-part"><input id="durationMinutes" class="field" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="0"><span>mins</span></label>
+        <label class="time-part"><input id="durationSeconds" class="field" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" placeholder="30"><span>secs</span></label>
+      </div><p class="hint">Choose any combination of hours, minutes and seconds.</p></div>
       <button id="generateClipsBtn" class="primary-btn full">↯ Regenerate clip plan</button>
       <p class="hint center">Tip: 30–60 seconds is a good starting point for Shorts/Reels.</p>
     </section>
-    <section id="pane-cut" class="inspector-pane hidden"><div class="pane-intro"><span class="step-number">02</span><div><strong>Shape your sequence</strong><p>Select a clip below, move the playhead, then split or trim.</p></div></div><div class="section-title"><strong>Selected clip</strong><span id="selectedClipLabel">No clip selected</span></div><div class="two-col"><div><label>Start</label><input id="clipStart" class="field" type="number" step="0.01"></div><div><label>End</label><input id="clipEnd" class="field" type="number" step="0.01"></div></div><button id="applyTrimBtn" class="primary-btn full">Apply trim</button></section>
+    <section id="pane-cut" class="inspector-pane hidden">
+      <div class="pane-intro"><span class="step-number">02</span><div><strong>Trim & clean your movie</strong><p>Enter exact timecodes and mark promo/ad sections to keep them out of your regenerated clips.</p></div></div>
+      <div class="section-title"><strong>Selected clip</strong><span id="selectedClipLabel">No clip selected</span></div>
+      <div class="timecode-grid">
+        <div class="timecode-card"><label>Clip start</label><div class="time-parts">
+          <label class="time-part"><input id="clipStartHours" class="field" type="number" min="0" max="999" step="1" inputmode="numeric" placeholder="0"><span>h</span></label>
+          <label class="time-part"><input id="clipStartMinutes" class="field" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="0"><span>m</span></label>
+          <label class="time-part"><input id="clipStartSeconds" class="field" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" placeholder="0"><span>s</span></label>
+        </div></div>
+        <div class="timecode-card"><label>Clip end</label><div class="time-parts">
+          <label class="time-part"><input id="clipEndHours" class="field" type="number" min="0" max="999" step="1" inputmode="numeric" placeholder="0"><span>h</span></label>
+          <label class="time-part"><input id="clipEndMinutes" class="field" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="0"><span>m</span></label>
+          <label class="time-part"><input id="clipEndSeconds" class="field" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" placeholder="0"><span>s</span></label>
+        </div></div>
+      </div>
+      <button id="applyTrimBtn" class="primary-btn full">Apply trim to selected clip</button>
+      <div class="promo-cleanup">
+        <div class="promo-cleanup-head"><span class="eyebrow">MOVIE CLEANUP</span><strong>Skip promos & ad breaks</strong><p>Mark the unwanted section. The next clip-plan rebuild excludes it; ClipSmith never guesses and deletes footage without your approval.</p></div>
+        <div class="timecode-grid">
+          <div class="timecode-card"><label>Skip from</label><div class="time-parts">
+            <label class="time-part"><input id="skipStartHours" class="field" type="number" min="0" max="999" step="1" inputmode="numeric" placeholder="0"><span>h</span></label>
+            <label class="time-part"><input id="skipStartMinutes" class="field" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="0"><span>m</span></label>
+            <label class="time-part"><input id="skipStartSeconds" class="field" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" placeholder="0"><span>s</span></label>
+          </div></div>
+          <div class="timecode-card"><label>Skip to</label><div class="time-parts">
+            <label class="time-part"><input id="skipEndHours" class="field" type="number" min="0" max="999" step="1" inputmode="numeric" placeholder="0"><span>h</span></label>
+            <label class="time-part"><input id="skipEndMinutes" class="field" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="0"><span>m</span></label>
+            <label class="time-part"><input id="skipEndSeconds" class="field" type="number" min="0" max="59.9" step="0.1" inputmode="decimal" placeholder="0"><span>s</span></label>
+          </div></div>
+        </div>
+        <div class="button-row"><button id="setSkipStartBtn" class="soft-btn">Start = playhead</button><button id="setSkipEndBtn" class="soft-btn">End = playhead</button></div>
+        <button id="addSkipRangeBtn" class="soft-btn full">＋ Mark promo / ad range</button>
+        <div id="skipRangeList" class="skip-range-list"><p class="hint">No ranges marked yet.</p></div>
+        <div class="cleanup-actions"><button id="clearSkipRangesBtn" class="soft-btn">Clear marks</button><button id="applySkipRangesBtn" class="primary-btn">Apply cleanup & rebuild clips</button></div>
+      </div>
+    </section>
     <section id="pane-text" class="inspector-pane hidden"><div class="pane-intro"><span class="step-number">03</span><div><strong>Brand every clip</strong><p>Set one title pattern and ClipSmith can number every part for you.</p></div></div><label>Series / heading</label><input id="seriesTitle" class="field" value="Your series title"><label class="check"><input id="autoParts" type="checkbox" checked> Automatically add Part 1, Part 2…</label><button id="applyTitleBtn" class="primary-btn full">Apply title to all clips</button><div class="subhead">Heading style <span>Preview updates live</span></div><div class="two-col"><div><label>Font</label><select id="titleFont" class="field"><option>Inter</option><option>Anton</option><option>Archivo Black</option><option>Bebas Neue</option><option>Bangers</option><option>Oswald</option><option>Space Grotesk</option></select></div><div><label>Size</label><input id="titleSize" class="range-field" type="range" min="14" max="76" value="30"></div></div><div class="two-col"><div><label>Color</label><input id="titleColor" class="color-field" type="color" value="#ffffff"></div><div><label>Outline</label><input id="titleOutline" class="color-field" type="color" value="#000000"></div></div><div class="range-row"><label>Opacity</label><input id="titleOpacity" type="range" min="0" max="1" step=".01" value="1"></div></section>
     <section id="pane-captions" class="inspector-pane hidden"><div class="pane-intro"><span class="step-number">04</span><div><strong>Make captions pop</strong><p>Paste dialogue or captions, choose a style, and preview it instantly.</p></div></div><label>Caption text</label><textarea id="captionText" class="field textarea" rows="5" placeholder="Paste a line or transcript…"></textarea><div class="two-col"><div><label>Style</label><select id="captionStyle" class="field"><option>Classic</option><option>Karaoke</option><option>Pop</option><option>Cinematic</option></select></div><div><label>Highlight</label><input id="captionHighlightColor" class="color-field" type="color" value="#9e83ff"></div></div><div class="range-row"><label>Position</label><input id="captionPositionY" type="range" min="55" max="92" value="78"></div><button id="applyCaptionBtn" class="primary-btn full">Apply caption to selected</button></section>
     <section id="pane-fx" class="inspector-pane hidden"><div class="pane-intro"><span class="step-number">05</span><div><strong>Style the shot</strong><p>Use a preset first. Fine-tune only when you need to.</p></div></div><label>Look preset</label><select id="fxPreset" class="field"><option>Original</option><option>Cinema</option><option>Vibrant</option><option>Mono</option><option>Dreamy</option></select><div class="range-row"><label>Brightness</label><input id="fxBrightness" type="range" min="-1" max="1" step=".01" value="0"></div><div class="range-row"><label>Contrast</label><input id="fxContrast" type="range" min=".5" max="1.8" step=".01" value="1"></div><div class="range-row"><label>Saturation</label><input id="fxSaturation" type="range" min="0" max="2" step=".01" value="1"></div><div class="range-row"><label>Blur</label><input id="fxBlur" type="range" min="0" max="8" step=".1" value="0"></div><div class="range-row"><label>Speed</label><input id="fxSpeed" type="range" min=".5" max="2" step=".05" value="1"></div><div class="range-row"><label>Volume</label><input id="fxVolume" type="range" min="0" max="2" step=".05" value="1"></div><label class="check"><input id="fxMute" type="checkbox"> Mute audio</label><button id="normalizeAudioFxBtn" class="soft-btn full">Normalize audio</button></section>
@@ -69,5 +108,5 @@
 <section id="export-queue" class="export-queue panel hidden"><div class="queue-head"><div><span class="eyebrow">EXPORT CENTER</span><h2>Render your clips</h2><p>One clip at a time keeps phone memory under control.</p></div><button id="closeExportBtn" class="icon-btn">×</button></div><div class="export-grid"><div><div class="field-block"><label>Export strategy</label><div class="chip-row"><button class="export-mode active" data-mode="smart">Smart</button><button class="export-mode" data-mode="copy">Original stream</button><button class="export-mode" data-mode="high">High quality</button><button class="export-mode" data-mode="mobile">Mobile safe</button></div></div><div class="export-summary" id="exportSummary">0 clips</div><div id="exportRecoveryActions" class="recovery hidden"><strong>Let's recover safely.</strong><p id="recoveryText">Choose a lighter export path.</p><div class="recovery-actions"><button id="recoveryOriginalBtn" class="soft-btn">Original stream</button><button id="recoverySingleClipBtn" class="soft-btn">Try selected clip</button><button id="recoveryLowBtn" class="primary-btn">Mobile safe</button></div></div></div><div class="queue-list" id="queueList"><div class="queue-empty">Nothing queued yet.</div></div></div><div class="queue-footer"><span id="memoryHint">Local processing · serial queue</span><button id="startExportBtn" class="primary-btn">Start export</button></div></section>
 <nav id="mobile-nav" class="mobile-nav"><button class="mobile-tab active" data-tool="media"><span>▣</span>Media</button><button class="mobile-tab" data-tool="preview"><span>▶</span>Preview</button><button class="mobile-tab" data-tool="cut"><span>☷</span>Clips</button><button class="mobile-tab" data-tool="text"><span>Tt</span>Text</button><button class="mobile-tab" data-tool="fx"><span>◈</span>FX</button><button class="mobile-tab" data-tool="creator"><span>✦</span>Creator</button></nav>
 </div>
-<script type="module" src="./app.js?v=20261024-ux3"></script>
+<script type="module" src="./app.js?v=20261024-trimfix1"></script>
 </body></html>
