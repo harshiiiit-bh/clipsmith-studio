@@ -21,6 +21,8 @@ on:
       - "index.html"
       - "app.js"
       - "styles.css"
+      - "studio-2.css"
+      - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
       - "subtitle-tools.js"
