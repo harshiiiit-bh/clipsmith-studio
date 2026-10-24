@@ -12,9 +12,11 @@ const androidWorkflow = readFileSync(join(root, ".github", "workflows", "android
 const workspaceControls = readFileSync(join(root, "workspace-controls.js"), "utf8");
 const app = readFileSync(join(root, "app.js"), "utf8");
 const subtitleTools = readFileSync(join(root, "subtitle-tools.js"), "utf8");
+const powerTools = readFileSync(join(root, "power-tools.js"), "utf8");
+const runtimeGuard = readFileSync(join(root, "runtime-guard.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
-assert.match(html, /href="\.\/studio-2\.css\?v=20261024-runtime1"/, "Studio stylesheet cache key is refreshed for this release");
+assert.match(html, /href="\.\/studio-2\.css\?v=20261024-power3"/, "Studio stylesheet cache key is refreshed for this release");
 assert.ok(
   html.indexOf('href="./studio-2.css?') > html.indexOf('href="./styles.css?'),
   "Studio 2.0 overrides must load after the legacy editor CSS"
@@ -54,9 +56,9 @@ assert.equal(
 assert.ok(html.includes('id="focusPreviewBtn"'), "desktop preview focus control exists");
 assert.ok(html.includes('id="timelineZoomRange"'), "timeline zoom control exists");
 assert.ok(html.includes('id="timelineZoomFitBtn"'), "timeline reset-to-fit control exists");
-assert.ok(html.includes('src="./workspace-controls.js?v=20261024-runtime1"'), "workspace controls cache key is refreshed for this release");
-assert.ok(html.includes('src="./app.js?v=20261024-runtime1"'), "editor application cache key is refreshed for this release");
-assert.ok(app.includes('from "./subtitle-tools.js?v=20261024-ai2"'), "changed subtitle module cache key is refreshed");
+assert.ok(html.includes('src="./workspace-controls.js?v=20261024-power3"'), "workspace controls cache key is refreshed for this release");
+assert.ok(html.includes('src="./app.js?v=20261024-power3"'), "editor application cache key is refreshed for this release");
+assert.ok(app.includes('from "./subtitle-tools.js?v=20261024-power3"'), "changed subtitle module cache key is refreshed");
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
 assert.ok(css.includes(".timeline-zoom-controls"), "timeline zoom controls receive responsive styling");
 assert.ok(css.includes("overflow-x: auto"), "timeline supports horizontal scrolling when zoomed");
@@ -91,4 +93,18 @@ assert.ok(subtitleTools.includes("${(titleShadow/3).toFixed(1)}"), "MP4/ASS titl
 assert.ok(workspaceControls.includes("const actions = ["), "quick actions palette has command definitions");
 assert.ok(workspaceControls.includes('event.key === "ArrowDown"'), "quick actions supports keyboard navigation");
 assert.ok(css.includes(".command-palette-scrim") && css.includes(".text-style-toggles"), "new typography and command palette styles exist");
+
+assert.ok(html.includes('src="./runtime-guard.js?v=20261024-power3"'), "startup guard loads before editor module");
+assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v=20261024-power3"'), "startup diagnostics must load before editor modules");
+assert.ok(html.includes('src="./power-tools.js?v=20261024-power3"'), "Power Tools module is loaded");
+assert.ok(mobilePrepare.includes('"runtime-guard.js"') && mobilePrepare.includes('"power-tools.js"'), "Android WebView packages both new runtime modules");
+assert.ok(runtimeGuard.includes("clipsmith:app-ready") && runtimeGuard.includes("clipsmithStartupRecovery"), "startup failures receive a visible recovery route");
+assert.ok(app.includes("20261024-power3") && !/20261024-(?:runtime1|cs3|ai1|ai2|mem1|apk2)/.test(app), "application imports use one release cache key");
+assert.ok(powerTools.includes("parseTimecode") && powerTools.includes("powerPreviousFrameBtn"), "precision timecode and frame-step tools are wired");
+assert.ok(powerTools.includes("markerWrite") && powerTools.includes("powerLoopBtn"), "local markers and clip loop controls are implemented");
+assert.ok(powerTools.includes("exportSelected") && powerTools.includes("powerExportPrefix"), "single-clip export and naming prefix are wired");
+assert.ok(css.includes("grid-template-columns:repeat(7,minmax(0,1fr))"), "mobile navigation is sized for the new tool tab");
+assert.equal((androidWorkflow.match(/- "power-tools\.js"/g) || []).length, 2, "Android builds when the Power Tools script changes");
+assert.equal((androidWorkflow.match(/- "runtime-guard\.js"/g) || []).length, 2, "Android builds when the startup guard changes");
+
 console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");

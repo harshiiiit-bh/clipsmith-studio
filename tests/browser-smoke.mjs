@@ -120,6 +120,30 @@ try {
   assert.equal(await page.locator("#commandPaletteModal").isVisible(), false, "command palette should close after running an action");
   assert.equal(await page.locator("#pane-text").isVisible(), true, "Quick Actions command should open the selected inspector pane");
 
+  // Creator Power Tools must work as real controls, not a visual-only modal.
+  await page.locator("#powerToolsBtn").click();
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), true, "Power Tools opens from the desktop toolbar");
+  const timecodeChecks = await page.evaluate(() => ({
+    full: window.ClipSmithPowerTools.parseTimecode("01:02:03.5"),
+    short: window.ClipSmithPowerTools.parseTimecode("01:23"),
+    decimal: window.ClipSmithPowerTools.parseTimecode("12.25"),
+    invalid: window.ClipSmithPowerTools.parseTimecode("01:60")
+  }));
+  assert.deepEqual(timecodeChecks, { full: 3723.5, short: 83, decimal: 12.25, invalid: null },
+    "timecode parser accepts supported formats and rejects out-of-range seconds");
+  await page.locator("#presetShortsBtn").click();
+  assert.equal(await page.locator("#aspectSelect").inputValue(), "9:16", "Shorts preset changes the preview ratio");
+  assert.equal(await page.locator("#exportAspectSelect").inputValue(), "9:16", "Shorts preset also changes the export ratio");
+  await page.locator("#powerExportPrefix").fill("WatchToon");
+  assert.equal(await page.locator("#powerFilenamePreview").textContent(), "WatchToon-01-clip-title.mp4", "custom export filename preview updates live");
+  await page.locator("#closePowerToolsBtn").click();
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), false, "Power Tools closes cleanly");
+  await page.keyboard.press("Alt+p");
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), true, "Alt+P opens Creator Power Tools");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), false, "Escape closes Creator Power Tools");
+
+
   // Check the smaller viewport and mobile tab integration too.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.mobile-tab[data-tool="text"]').click();
@@ -127,9 +151,15 @@ try {
   assert.equal(await page.locator("#inspector").evaluate((el) => el.classList.contains("open")), true,
     "mobile inspector drawer should open with the selected tool");
 
+  await page.locator("#powerToolsMobileBtn").click();
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), true, "Power Tools opens from the mobile navigation");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), false, "Escape closes Power Tools on mobile");
+
+
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
-  console.log("ClipSmith browser runtime smoke checks passed: startup, assets, text styling, focus mode, Quick Actions, export, and mobile navigation.");
+  console.log("ClipSmith browser runtime smoke checks passed: startup, assets, text styling, focus mode, Quick Actions, Power Tools presets, export filename preview, and mobile navigation.");
 } finally {
   if (browser) await browser.close();
   await new Promise((resolveClose) => server.close(resolveClose));
