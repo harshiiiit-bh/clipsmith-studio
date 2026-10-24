@@ -14,7 +14,7 @@ const app = readFileSync(join(root, "app.js"), "utf8");
 const subtitleTools = readFileSync(join(root, "subtitle-tools.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
-assert.match(html, /href="\.\/studio-2\.css\?[^"]+"/, "Studio 2.0 responsive layer is linked");
+assert.match(html, /href="\.\/studio-2\.css\?v=20261024-runtime1"/, "Studio stylesheet cache key is refreshed for this release");
 assert.ok(
   html.indexOf('href="./studio-2.css?') > html.indexOf('href="./styles.css?'),
   "Studio 2.0 overrides must load after the legacy editor CSS"
@@ -54,7 +54,9 @@ assert.equal(
 assert.ok(html.includes('id="focusPreviewBtn"'), "desktop preview focus control exists");
 assert.ok(html.includes('id="timelineZoomRange"'), "timeline zoom control exists");
 assert.ok(html.includes('id="timelineZoomFitBtn"'), "timeline reset-to-fit control exists");
-assert.ok(html.includes('src="./workspace-controls.js?'), "workspace controls module is loaded");
+assert.ok(html.includes('src="./workspace-controls.js?v=20261024-runtime1"'), "workspace controls cache key is refreshed for this release");
+assert.ok(html.includes('src="./app.js?v=20261024-runtime1"'), "editor application cache key is refreshed for this release");
+assert.ok(app.includes('from "./subtitle-tools.js?v=20261024-ai2"'), "changed subtitle module cache key is refreshed");
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
 assert.ok(css.includes(".timeline-zoom-controls"), "timeline zoom controls receive responsive styling");
 assert.ok(css.includes("overflow-x: auto"), "timeline supports horizontal scrolling when zoomed");
@@ -81,6 +83,7 @@ for (const font of ["Manrope", "Poppins", "Montserrat", "Roboto Condensed", "Per
 assert.ok(app.includes("fontWeight:style.bold===false?500:800"), "on-canvas heading reflects bold state");
 assert.ok(app.includes('fontStyle:style.italic?"italic":"normal"'), "on-canvas heading reflects italic state");
 assert.ok(app.includes("letterSpacing:"), "on-canvas heading reflects letter spacing");
+assert.equal(app.split("}\\nfunction ").length - 1, 0, "app.js must not contain escaped \\n separators between function declarations");
 assert.ok(app.includes('"titleBold","titleItalic","titleSpacing","titleShadow"'), "new typography controls persist through the existing style handler");
 assert.ok(subtitleTools.includes("${titleBold},${titleItalic}"), "MP4/ASS title style exports bold and italic settings");
 assert.ok(subtitleTools.includes("${titleSpacing}"), "MP4/ASS title style exports letter spacing");
