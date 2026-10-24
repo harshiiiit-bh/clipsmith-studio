@@ -51,7 +51,15 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
   const pageErrors = [];
   const localRequestFailures = [];
+  const localConsoleErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
+  page.on("console", (message) => {
+    if (message.type() !== "error") return;
+    const location = message.location();
+    if (!location.url || location.url.startsWith(origin + "/")) {
+      localConsoleErrors.push((location.url || "(unknown source)") + ":" + (location.lineNumber || 0) + ":" + (location.columnNumber || 0) + " " + message.text());
+    }
+  });
   page.on("requestfailed", (request) => {
     if (request.url().startsWith(origin + "/")) {
       localRequestFailures.push(request.url() + " — " + (request.failure()?.errorText || "request failed"));
@@ -70,7 +78,8 @@ try {
   await page.waitForSelector("#app-shell");
   await page.waitForTimeout(800);
 
-  assert.equal(pageErrors.length, 0, "no browser runtime exceptions on startup: " + pageErrors.join(" | "));
+  assert.equal(pageErrors.length, 0, "no browser runtime exceptions on startup: " + pageErrors.join(" | ") + " | console: " + localConsoleErrors.join(" | "));
+  assert.equal(localConsoleErrors.length, 0, "no local JavaScript errors on startup: " + localConsoleErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "all local editor assets should load: " + localRequestFailures.join(" | "));
   assert.equal(await page.locator("#pane-media").isVisible(), true, "Media pane should be visible on first load");
   assert.equal(await page.locator("#uploadBtn").isVisible(), true, "video import action should be available");
