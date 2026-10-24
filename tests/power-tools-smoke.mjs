@@ -41,6 +41,7 @@ assert.match(tools, /powerMarkerList/);
 assert.match(tools, /presetShortsBtn/);
 assert.match(tools, /powerFrameRate/);
 assert.match(tools, /powerSnapshotBtn/);
+assert.ok(html.includes('id="powerFilenamePreview"'), "filename preview exists");
 assert.match(tools, /Alt\+P|event\.altKey/);
 assert.match(workspace, /Open Creator Power Tools/);
 assert.match(css, /\.power-tools-scrim/);
