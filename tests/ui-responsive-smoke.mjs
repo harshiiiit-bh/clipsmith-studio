@@ -50,10 +50,16 @@ assert.equal(
 
 
 assert.ok(html.includes('id="focusPreviewBtn"'), "desktop preview focus control exists");
+assert.ok(html.includes('id="timelineZoomRange"'), "timeline zoom control exists");
+assert.ok(html.includes('id="timelineZoomFitBtn"'), "timeline reset-to-fit control exists");
 assert.ok(html.includes('src="./workspace-controls.js?'), "workspace controls module is loaded");
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
+assert.ok(css.includes(".timeline-zoom-controls"), "timeline zoom controls receive responsive styling");
+assert.ok(css.includes("overflow-x: auto"), "timeline supports horizontal scrolling when zoomed");
 assert.ok(workspaceControls.includes('classList.toggle("focus-preview"'), "focus control toggles focus mode");
 assert.ok(workspaceControls.includes("aria-pressed"), "focus control reports its active state");
+assert.ok(workspaceControls.includes("MutationObserver"), "timeline zoom remains applied after clip sequence updates");
+assert.ok(workspaceControls.includes("dataset.baseWidth"), "timeline zoom scales base widths without compounding");
 assert.ok(workspaceControls.includes('event.key.toLowerCase() === "f"'), "F toggles preview focus mode");
 assert.ok(workspaceControls.includes('event.key === "Escape"'), "Escape exits preview focus mode");
 assert.ok(html.includes("<kbd>F</kbd>"), "keyboard help documents the focus shortcut");
