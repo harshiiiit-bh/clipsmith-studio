@@ -69,7 +69,7 @@ const assTime = value => { const cs=Math.max(0,Math.round((Number(value)||0)*100
 
 /** Create a portable ASS subtitle track with a persistent heading and timecoded captions. */
 export function createAssDocument({ title = '', duration = 0, width = 1280, height = 720, cues = [], titleStyle = {}, subtitleStyle = {} } = {}) {
-  const w=Math.max(2,Math.round(Number(width)||1280)),h=Math.max(2,Math.round(Number(height)||720);
+  const w=Math.max(2,Math.round(Number(width)||1280)),h=Math.max(2,Math.round(Number(height)||720));
   const titleSize=Math.max(14,Math.min(108,Number(titleStyle.size)||32)),captionSize=Math.max(14,Math.min(64,Number(subtitleStyle.size)||Math.min(42,h*.035)));
   const titleFont=String(titleStyle.font||'Inter').replace(/[^\w -]/g,'').slice(0,48)||'Arial',captionFont=String(subtitleStyle.font||'Inter').replace(/[^\w -]/g,'').slice(0,48)||'Arial';
   const titleColor=assColor(titleStyle.color||'#ffffff'),titleOutline=assColor(titleStyle.outline||'#000000'),captionColor=assColor(subtitleStyle.highlight||'#9e83ff');
