@@ -14,7 +14,7 @@ const app = readFileSync(join(root, "app.js"), "utf8");
 const subtitleTools = readFileSync(join(root, "subtitle-tools.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
-assert.match(html, /href="\.\/studio-2\.css\?v=20261024-max2"/, "Studio stylesheet cache key is refreshed for this release");
+assert.match(html, /href="\.\/studio-2\.css\?v=20261024-max3"/, "Studio stylesheet cache key is refreshed for this release");
 assert.ok(
   html.indexOf('href="./studio-2.css?') > html.indexOf('href="./styles.css?'),
   "Studio 2.0 overrides must load after the legacy editor CSS"
@@ -103,5 +103,7 @@ assert.match(html, /class="tool-icon" aria-hidden="true"><svg/, "desktop tool na
 assert.match(html, /class="mobile-icon" aria-hidden="true"><svg/, "mobile navigation uses crisp inline SVG icons");
 assert.match(css, /\.tool-icon svg/, "desktop tool icons have consistent sizing and stroke styling");
 assert.match(css, /\.mobile-tab span svg/, "mobile tool icons have consistent sizing and stroke styling");
+
+assert.match(css, /@media \(max-width: 960px\) and \(min-width: 821px\)[\s\S]*?\.top-actions #loadProjectBtn \{ display: inline-flex/, "laptop layout keeps Open project available");
 
 console.log("ClipSmith Studio Max responsive smoke checks passed.");
