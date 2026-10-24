@@ -72,6 +72,10 @@ function safeText(value, max = 500) {
   return String(value ?? "").replace(/[\u0000-\u001f]+/g, " ").trim().slice(0, max);
 }
 
+function safeMultiline(value, max = 4000) {
+  return String(value ?? "").replace(/\u0000/g, "").replace(/\r\n?/g, "\n").replace(/[\u0001-\u0008\u000b\u000c\u000e-\u001f\u007f]+/g, " ").trim().slice(0, max);
+}
+
 export function createProjectManifest(project = {}, savedAt = new Date().toISOString()) {
   const clips = Array.isArray(project.clips) ? copyJSON(project.clips) : [];
   return {
@@ -98,26 +102,30 @@ export function validateProjectManifest(value) {
   if (!value.source || typeof value.source !== "object" || Array.isArray(value.source)) return null;
   if (typeof value.controls !== "object" || value.controls === null || Array.isArray(value.controls)) return null;
 
+  const fileSize = Number(value.source.fileSize);
+  const duration = Number(value.source.duration);
+  if (!Number.isFinite(fileSize) || fileSize < 0 || !Number.isFinite(duration) || duration < 0) return null;
+
   const clips = [];
+  const ids = new Set();
   for (const raw of value.clips) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
     const start = Number(raw.start);
     const end = Number(raw.end);
     if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end <= start) return null;
-    if (typeof raw.id !== "string" || !raw.id.trim() || raw.id.length > 160) return null;
+    if (duration > 0 && end > duration + 0.05) return null;
+    if (typeof raw.id !== "string" || !raw.id.trim() || raw.id.length > 160 || /[\u0000-\u001f]/.test(raw.id)) return null;
+    if (ids.has(raw.id)) return null;
+    ids.add(raw.id);
     clips.push({
       ...copyJSON(raw),
       id: safeText(raw.id, 160),
       start,
       end,
       title: safeText(raw.title, 500),
-      caption: safeText(raw.caption, 4000)
+      caption: safeMultiline(raw.caption, 4000)
     });
   }
-
-  const fileSize = Number(value.source.fileSize);
-  const duration = Number(value.source.duration);
-  if (!Number.isFinite(fileSize) || fileSize < 0 || !Number.isFinite(duration) || duration < 0) return null;
 
   return {
     format: "clipsmith-project",
@@ -133,14 +141,13 @@ export function validateProjectManifest(value) {
     clips
   };
 }
-
 export function projectControlsToSnapshot(controls) {
   const snapshot = {};
   for (const [key, entry] of Object.entries(controls ?? {})) {
     if (!/^[a-zA-Z][a-zA-Z0-9_-]{0,79}$/.test(key)) continue;
     if (!entry || typeof entry !== "object") continue;
     const type = entry.type === "checkbox" || entry.type === "radio" ? entry.type : "value";
-    const value = type === "checkbox" || type === "radio" ? Boolean(entry.checked) : safeText(entry.value, 2000);
+    const value = type === "checkbox" || type === "radio" ? Boolean(entry.value ?? entry.checked) : safeText(entry.value, 2000);
     snapshot[key] = { type, value };
   }
   return snapshot;
