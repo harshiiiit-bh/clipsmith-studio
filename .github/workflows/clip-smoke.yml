@@ -8,6 +8,8 @@ on:
       - "styles.css"
       - "studio-2.css"
       - "workspace-controls.js"
+      - "power-tools.js"
+      - "runtime-guard.js"
       - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
@@ -24,6 +26,8 @@ on:
       - "styles.css"
       - "studio-2.css"
       - "workspace-controls.js"
+      - "power-tools.js"
+      - "runtime-guard.js"
       - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
@@ -50,9 +54,12 @@ jobs:
       - name: Syntax and editor-feature checks
         run: |
           node --check app.js
+          node --check power-tools.js
+          node --check runtime-guard.js
           node --check subtitle-tools.js
           node --check workspace-controls.js
           node tests/smoke.mjs
           node tests/editor-upgrade-smoke.mjs
           node tests/ui-responsive-smoke.mjs
+          node tests/power-tools-smoke.mjs
           node tests/browser-smoke.mjs
