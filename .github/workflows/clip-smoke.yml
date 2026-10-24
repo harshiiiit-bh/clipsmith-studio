@@ -7,6 +7,7 @@ on:
       - "app.js"
       - "styles.css"
       - "studio-2.css"
+      - "workspace-controls.js"
       - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
@@ -22,6 +23,7 @@ on:
       - "app.js"
       - "styles.css"
       - "studio-2.css"
+      - "workspace-controls.js"
       - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
@@ -43,6 +45,7 @@ jobs:
           node-version: 22
       - name: Syntax and editor-feature checks
         run: |
+          node --check workspace-controls.js
           node tests/smoke.mjs
           node tests/editor-upgrade-smoke.mjs
           node tests/ui-responsive-smoke.mjs
