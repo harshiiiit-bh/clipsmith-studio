@@ -83,6 +83,7 @@ for (const font of ["Manrope", "Poppins", "Montserrat", "Roboto Condensed", "Per
 assert.ok(app.includes("fontWeight:style.bold===false?500:800"), "on-canvas heading reflects bold state");
 assert.ok(app.includes('fontStyle:style.italic?"italic":"normal"'), "on-canvas heading reflects italic state");
 assert.ok(app.includes("letterSpacing:"), "on-canvas heading reflects letter spacing");
+assert.equal(app.split("}\\nfunction ").length - 1, 0, "app.js must not contain escaped \\n separators between function declarations");
 assert.ok(app.includes('"titleBold","titleItalic","titleSpacing","titleShadow"'), "new typography controls persist through the existing style handler");
 assert.ok(subtitleTools.includes("${titleBold},${titleItalic}"), "MP4/ASS title style exports bold and italic settings");
 assert.ok(subtitleTools.includes("${titleSpacing}"), "MP4/ASS title style exports letter spacing");
