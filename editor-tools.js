@@ -1,5 +1,27 @@
 const MAX_PROJECT_CLIPS = 10000;
 const MIN_SPLIT_FRAGMENT_SECONDS = 0.5;
+const MAX_AUTO_CLIPS = 5000;
+
+/** Create a bounded clip plan; null signals a timeline too large for a sensible editor session. */
+export function buildClipSegments(duration, clipSeconds = 30, options = {}) {
+  const total = Number(duration);
+  const step = Number(clipSeconds);
+  const minSegment = Number.isFinite(Number(options.minSegmentSeconds)) && Number(options.minSegmentSeconds) > 0
+    ? Number(options.minSegmentSeconds)
+    : MIN_SPLIT_FRAGMENT_SECONDS;
+  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(step) || step <= 0) return [];
+  const count = Math.ceil(total / step);
+  if (count > MAX_AUTO_CLIPS) return null;
+  const segments = [];
+  for (let index = 0; index < count; index += 1) {
+    const start = index * step;
+    if (start >= total - 0.05) break;
+    const end = Math.min(total, start + step);
+    if (end - start < minSegment) break;
+    segments.push({ start: Number(start.toFixed(3)), end: Number(end.toFixed(3)), index });
+  }
+  return segments;
+}
 
 function copyJSON(value) {
   return JSON.parse(JSON.stringify(value));
@@ -93,7 +115,8 @@ export function createProjectManifest(project = {}, savedAt = new Date().toISOSt
     source: {
       fileName: safeText(project.sourceFileName, 240),
       fileSize: Number.isFinite(Number(project.sourceFileSize)) ? Math.max(0, Number(project.sourceFileSize)) : 0,
-      duration: Number.isFinite(Number(project.sourceDuration)) ? Math.max(0, Number(project.sourceDuration)) : 0
+      duration: Number.isFinite(Number(project.sourceDuration)) ? Math.max(0, Number(project.sourceDuration)) : 0,
+      url: safeText(project.sourceUrl, 2048)
     },
     controls: project.controls && typeof project.controls === "object" && !Array.isArray(project.controls)
       ? copyJSON(project.controls)
@@ -142,7 +165,8 @@ export function validateProjectManifest(value) {
     source: {
       fileName: safeText(value.source.fileName, 240),
       fileSize,
-      duration
+      duration,
+      url: safeText(value.source.url, 2048)
     },
     controls: copyJSON(value.controls),
     clips
