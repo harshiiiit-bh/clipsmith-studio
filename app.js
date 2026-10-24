@@ -328,9 +328,11 @@ function fitCanvasOverlayText(){
   const width=canvas.clientWidth;
   if(width<2)return;
   const clip=selected(),style=clip?.titleStyle||state.titleStyle;
-  const scale=Math.min(1,Math.max(.45,width/420));
-  const titleText=$("titleOverlayText");
-  if(titleText)titleText.style.fontSize=Math.max(12,(Number(style?.size)||30)*scale)+"px";
+  const scale=Math.min(1,Math.max(.4,width/420));
+  const titleFontSize=Math.max(12,(Number(style?.size)||30)*scale);
+  const title=$("titleOverlay"),titleText=$("titleOverlayText");
+  if(title){title.style.fontSize=titleFontSize+"px";title.style.lineHeight="1.08"}
+  if(titleText)titleText.style.fontSize=titleFontSize+"px";
   const caption=$("captionOverlay");
   if(caption)caption.style.fontSize=Math.max(11,21*Math.min(1,Math.max(.52,width/420)))+"px";
   const subtitle=$("subtitleOverlay");
