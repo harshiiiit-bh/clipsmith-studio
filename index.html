@@ -34,7 +34,7 @@
     <div class="preview-panel panel">
       <div class="panel-toolbar">
         <div class="toolbar-left"><span class="workspace-name">EDIT BAY</span><button id="uploadBtn" class="soft-btn">＋ Add video</button><span id="mediaName" class="muted">No video loaded</span></div>
-        <div class="toolbar-right"><select id="aspectSelect" class="mini-select" title="Canvas ratio"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="4:5">4:5</option></select><button id="safeZoneBtn" class="soft-btn">Safe zones</button></div>
+        <div class="toolbar-right"><select id="aspectSelect" class="mini-select" title="Canvas ratio"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="4:5">4:5</option></select><button id="safeZoneBtn" class="soft-btn">Safe zones</button><button id="focusPreviewBtn" class="soft-btn focus-preview-toggle" type="button" aria-pressed="false" title="Expand the preview workspace"><span aria-hidden="true">⛶</span><b>Focus</b></button></div>
       </div>
       <div id="preview-stage" class="preview-stage">
         <video id="previewVideo" playsinline preload="metadata"></video>
@@ -159,4 +159,5 @@
 <nav id="mobile-nav" class="mobile-nav"><button class="mobile-tab active" data-tool="media"><span>▣</span>Media</button><button class="mobile-tab" data-tool="preview"><span>▶</span>Preview</button><button class="mobile-tab" data-tool="cut"><span>☷</span>Clips</button><button class="mobile-tab" data-tool="text"><span>Tt</span>Text</button><button class="mobile-tab" data-tool="fx"><span>◈</span>FX</button><button class="mobile-tab" data-tool="creator"><span>✦</span>Creator</button></nav>
 </div>
 <script type="module" src="./app.js?v=20261024-apk2"></script>
+<script type="module" src="./workspace-controls.js?v=20261024-studio2"></script>
 </body></html>
