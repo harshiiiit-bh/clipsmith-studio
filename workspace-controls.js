@@ -56,3 +56,51 @@ if (shell && focusButton) {
 
   syncFocusControl();
 }
+
+
+/* Timeline zoom is a workspace preference, not part of the saved edit. */
+const timeline = document.getElementById("timeline");
+const zoomRange = document.getElementById("timelineZoomRange");
+const zoomValue = document.getElementById("timelineZoomValue");
+const zoomOut = document.getElementById("timelineZoomOutBtn");
+const zoomIn = document.getElementById("timelineZoomInBtn");
+const zoomFit = document.getElementById("timelineZoomFitBtn");
+
+if (timeline && zoomRange) {
+  const readZoom = () => Math.min(3, Math.max(1, Number(zoomRange.value) || 1));
+
+  const syncTimelineZoom = () => {
+    const zoom = readZoom();
+    timeline.querySelectorAll(".timeline-block").forEach((block) => {
+      if (!block.dataset.baseWidth) {
+        const baseWidth = Number.parseFloat(block.style.width);
+        if (Number.isFinite(baseWidth)) block.dataset.baseWidth = String(baseWidth);
+      }
+      const baseWidth = Number(block.dataset.baseWidth);
+      if (Number.isFinite(baseWidth)) {
+        block.style.width = `${Math.max(3, baseWidth * zoom)}%`;
+      }
+    });
+
+    if (zoomValue) zoomValue.textContent = `${Math.round(zoom * 100)}%`;
+    if (zoomOut) zoomOut.disabled = zoom <= 1;
+    if (zoomIn) zoomIn.disabled = zoom >= 3;
+  };
+
+  const changeZoom = (next) => {
+    zoomRange.value = String(Math.min(3, Math.max(1, next)));
+    syncTimelineZoom();
+  };
+
+  zoomRange.addEventListener("input", syncTimelineZoom);
+  zoomOut?.addEventListener("click", () => changeZoom(readZoom() - 0.25));
+  zoomIn?.addEventListener("click", () => changeZoom(readZoom() + 0.25));
+  zoomFit?.addEventListener("click", () => {
+    changeZoom(1);
+    timeline.scrollLeft = 0;
+  });
+
+  const timelineObserver = new MutationObserver(syncTimelineZoom);
+  timelineObserver.observe(timeline, { childList: true });
+  syncTimelineZoom();
+}
