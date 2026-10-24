@@ -1116,7 +1116,7 @@ button, .apk-download-btn, .clip-card, .tool, .mobile-tab { touch-action: manipu
   .top-actions .top-btn, .top-actions .icon-btn, .apk-download-btn { min-height: 34px; }
   .top-actions .icon-btn { width: 32px; }
   .top-actions .top-btn { padding-inline: 8px; }
-  .top-actions #loadProjectBtn { display: none; }
+  
   .top-actions #apkDownloadBtn b { display: none; }
   .top-actions #apkDownloadBtn { width: 34px; padding-inline: 0; }
   .workspace { grid-template-columns: 54px minmax(0, 1fr) 260px; gap: 9px; padding: 9px; }
@@ -1134,6 +1134,7 @@ button, .apk-download-btn, .clip-card, .tool, .mobile-tab { touch-action: manipu
   .pane-intro p, .hint { font-size: 9px; }
 }
 @media (max-width: 960px) and (min-width: 821px) {
+  .top-actions #loadProjectBtn { display: inline-flex; align-items: center; justify-content: center; }
   .top-actions #keyboardHelpBtn { display: none; }
   .workspace { grid-template-columns: 48px minmax(0, 1fr) 238px; gap: 7px; padding: 7px; }
   .editor-center { grid-template-rows: minmax(0, 1fr) clamp(184px, 25vh, 218px); gap: 7px; }
