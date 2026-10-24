@@ -154,6 +154,38 @@ try {
     if (target.value === "16:9") previousCanvasWidth = dimensions.canvasWidth;
     if (target.value === "9:16") assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
       "portrait selection must visibly narrow the preview canvas");
+
+    const overlayLayout = await page.evaluate(() => {
+      const canvas = document.querySelector("#preview-canvas");
+      const tools = document.querySelector("#canvasTitleTools");
+      const badges = document.querySelector(".preview-badges");
+      const title = document.querySelector("#titleOverlay");
+      const titleText = document.querySelector("#titleOverlayText");
+      const intersects = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      const c = canvas.getBoundingClientRect();
+      const t = tools.getBoundingClientRect();
+      const b = badges.getBoundingClientRect();
+      const h = title.getBoundingClientRect();
+      return {
+        toolsInsideCanvas: canvas.contains(tools),
+        badgesInsideCanvas: canvas.contains(badges),
+        toolsOverlapCanvas: intersects(c, t),
+        badgesOverlapCanvas: intersects(c, b),
+        titleInCanvas: h.left >= c.left - 1 && h.right <= c.right + 1 && h.top >= c.top - 1 && h.bottom <= c.bottom + 1,
+        canvasWidth: c.width,
+        titleFontSize: parseFloat(getComputedStyle(titleText).fontSize),
+        textFits: titleText.scrollWidth <= titleText.clientWidth + 3
+      };
+    });
+    assert.equal(overlayLayout.toolsInsideCanvas, false, "editor toolbar must stay outside the ratio-sized video frame");
+    assert.equal(overlayLayout.badgesInsideCanvas, false, "duration/ratio badges must stay outside the ratio-sized video frame");
+    assert.equal(overlayLayout.toolsOverlapCanvas, false, target.name + " toolbar must not cover the canvas");
+    assert.equal(overlayLayout.badgesOverlapCanvas, false, target.name + " badges must not cover the canvas");
+    assert.ok(overlayLayout.titleInCanvas, target.name + " heading overlay must remain within the video frame");
+    assert.ok(overlayLayout.titleFontSize <= overlayLayout.canvasWidth * 0.1,
+      target.name + " heading font should shrink when the canvas becomes narrow");
+    assert.ok(overlayLayout.textFits, target.name + " heading must wrap instead of overflowing horizontally");
+
   }
   await page.locator("#aspectSelect").selectOption("16:9");
   await page.waitForFunction(() => document.querySelector("#preview-canvas")?.dataset.aspect === "16:9");
