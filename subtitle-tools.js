@@ -62,3 +62,23 @@ export function wavToFloat32(input) {
   for (let i = 0; i < mono.length; i++) { let sum = 0; for (let ch = 0; ch < channels; ch++) sum += pcm[i * channels + ch]; mono[i] = sum / channels; }
   return mono;
 }
+
+const assSafeText = value => String(value ?? '').replace(/\u0000/g, '').replace(/\r\n?/g, '\n').replace(/\\/g, '\\\\').replace(/\{/g, '\\{').replace(/\}/g, '\\}').replace(/\n/g, '\\N').trim();
+const assColor = value => { const hex = String(value || '#ffffff').replace('#','').padEnd(6,'f').slice(0,6); const r=hex.slice(0,2),g=hex.slice(2,4),b=hex.slice(4,6); return `&H00${b}${g}${r}`.toUpperCase(); };
+const assTime = value => { const cs=Math.max(0,Math.round((Number(value)||0)*100)); const h=Math.floor(cs/360000),m=Math.floor(cs%360000/6000),s=Math.floor(cs%6000/100),fraction=cs%100; return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(fraction).padStart(2,'0')}`; };
+
+/** Create a portable ASS subtitle track with a persistent heading and timecoded captions. */
+export function createAssDocument({ title = '', duration = 0, width = 1280, height = 720, cues = [], titleStyle = {}, subtitleStyle = {} } = {}) {
+  const w=Math.max(2,Math.round(Number(width)||1280)),h=Math.max(2,Math.round(Number(height)||720);
+  const titleSize=Math.max(14,Math.min(108,Number(titleStyle.size)||32)),captionSize=Math.max(14,Math.min(64,Number(subtitleStyle.size)||Math.min(42,h*.035)));
+  const titleFont=String(titleStyle.font||'Inter').replace(/[^\w -]/g,'').slice(0,48)||'Arial',captionFont=String(subtitleStyle.font||'Inter').replace(/[^\w -]/g,'').slice(0,48)||'Arial';
+  const titleColor=assColor(titleStyle.color||'#ffffff'),titleOutline=assColor(titleStyle.outline||'#000000'),captionColor=assColor(subtitleStyle.highlight||'#9e83ff');
+  const titleLine=assSafeText(title),total=Math.max(.5,Number(duration)||.5),marginL=Math.round(w*.055),marginV=Math.round(h*(100-clampAssPosition(titleStyle.positionY,17))/100);
+  const captionMargin=Math.round(h*(100-clampAssPosition(subtitleStyle.positionY,82))/100);
+  const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},&H88000000,-1,0,0,0,100,100,0,0,1,${Math.max(1,Math.round(titleSize*.09))},2,8,${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},&H00000000,&HAA000000,-1,0,0,0,100,100,0,0,1,2,1,2,${marginL},${marginL},${captionMargin},1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+  const events=[];
+  if(titleLine)events.push(`Dialogue: 0,${assTime(0)},${assTime(total)},Heading,,0,0,0,,${titleLine}`);
+  for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),text=assSafeText(cue?.text);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 1,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${text}`)}
+  return `${header}\n${events.join('\n')}\n`;
+}
+function clampAssPosition(value,fallback){const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):fallback}
