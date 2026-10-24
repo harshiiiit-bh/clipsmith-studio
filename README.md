@@ -1,5 +1,10 @@
 # ClipSmith Studio — Creator workspace
 
+## Studio Max responsive UI
+
+The Studio Max visual layer keeps the browser editor lightweight and framework-free while refining the desktop editing room, laptop-width control density, touch navigation, preview canvas, clip timeline, inspector sheet, focus states, and reduced-motion/accessibility behavior. The original video-processing engine and existing event-wired controls remain in place. No new runtime dependency is required.
+
+
 A browser-first video clipping studio for turning an authorised source video into a short-form series with consistent part titles, styled captions, creator ideas and flexible exports.
 
 ## Editor workspace
