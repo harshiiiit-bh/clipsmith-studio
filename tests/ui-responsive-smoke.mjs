@@ -14,7 +14,7 @@ const app = readFileSync(join(root, "app.js"), "utf8");
 const subtitleTools = readFileSync(join(root, "subtitle-tools.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
-assert.match(html, /href="\.\/studio-2\.css\?v=20261024-runtime1"/, "Studio stylesheet cache key is refreshed for this release");
+assert.match(html, /href="\.\/studio-2\.css\?v=20261024-max1"/, "Studio stylesheet cache key is refreshed for this release");
 assert.ok(
   html.indexOf('href="./studio-2.css?') > html.indexOf('href="./styles.css?'),
   "Studio 2.0 overrides must load after the legacy editor CSS"
