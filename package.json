@@ -1,0 +1,20 @@
+{
+  "name": "clipsmith-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ClipSmith Studio browser-first editor with an Android package",
+  "scripts": {
+    "prepare:mobile": "node scripts/prepare-mobile.mjs",
+    "android:init": "npm run prepare:mobile && cap add android",
+    "android:sync": "npm run prepare:mobile && cap sync android",
+    "test": "node tests/smoke.mjs && node tests/editor-upgrade-smoke.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}
