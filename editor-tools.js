@@ -238,3 +238,42 @@ export function projectControlsToSnapshot(controls) {
   }
   return snapshot;
 }
+
+/** Remove a clip and immediately close numbering gaps without overwriting custom titles. */
+export function removeClipAndRenumber(clips, clipId, options = {}) {
+  if (!Array.isArray(clips)) return null;
+  const index = clips.findIndex(clip => clip.id === clipId);
+  if (index < 0) return null;
+  let result = clips.filter(clip => clip.id !== clipId);
+  if (typeof options.titleFor === 'function') result = renumberAutoTitles(result, options.titleFor);
+  const selectedIndex = Math.min(index, result.length - 1);
+  return { clips: result, selectedId: result[selectedIndex]?.id ?? null };
+}
+
+/** Keep scene-change candidates above threshold while suppressing adjacent duplicate suggestions. */
+export function rankSceneChanges(samples, options = {}) {
+  const threshold = Number.isFinite(Number(options.threshold)) ? Number(options.threshold) : 0.42;
+  const minGap = Math.max(0, Number(options.minGap) || 1.2);
+  const sorted = (Array.isArray(samples) ? samples : []).map(sample => ({
+    time: Number(sample?.time), score: Number(sample?.score)
+  })).filter(sample => Number.isFinite(sample.time) && sample.time >= 0 && Number.isFinite(sample.score) && sample.score >= threshold).sort((a,b)=>a.time-b.time);
+  const accepted = [];
+  for (const item of sorted) {
+    const previous = accepted[accepted.length - 1];
+    if (previous && item.time - previous.time < minGap) { if (item.score > previous.score) accepted[accepted.length - 1] = item; continue; }
+    accepted.push(item);
+  }
+  return accepted;
+}
+
+/** Move a clip to a target slot, keeping automatic part numbering aligned with sequence order. */
+export function reorderClip(clips, fromId, toId, options = {}) {
+  if (!Array.isArray(clips)) return null;
+  const fromIndex = clips.findIndex(clip => clip.id === fromId), toIndex = clips.findIndex(clip => clip.id === toId);
+  if (fromIndex < 0 || toIndex < 0) return null;
+  const result = clips.slice();
+  const [moving] = result.splice(fromIndex, 1);
+  result.splice(toIndex, 0, moving);
+  if (typeof options.titleFor === 'function') return { clips: renumberAutoTitles(result, options.titleFor), selectedId: moving.id };
+  return { clips: result, selectedId: moving.id };
+}
