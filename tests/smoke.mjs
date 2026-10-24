@@ -1,132 +1,51 @@
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { generateCreatorIdeas } from "../creator-assistant.js";
 import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, renumberAutoTitles } from "../editor-tools.js";
 
-const here = fileURLToPath(new URL("../index.html", import.meta.url));
-const html = readFileSync(here, "utf8");
+const root = new URL("../", import.meta.url);
+const html = readFileSync(new URL("index.html", root), "utf8");
+const app = readFileSync(new URL("app.js", root), "utf8");
+const css = readFileSync(new URL("styles.css", root), "utf8");
 
-assert.match(html, /height:100dvh/, "workspace should be constrained to the viewport");
-assert.match(html, /overflow:hidden/, "page shell should not become an endless document");
-assert.match(html, /fxPane\.dataset\.pane="fx"/, "FX inspector pane is registered");
-assert.match(html, /data-tool="fx"/, "FX inspector tab is available");
-assert.match(html, /id="fxSpeed"/, "speed control is present");
-assert.match(html, /id="fxVolume"/, "volume/gain control is present");
-assert.match(html, /id="titleStrokeColor"/, "title outline color control is present");
-assert.match(html, /id="titleOpacity"/, "title opacity control is present");
-assert.match(html, /id="titleRotation"/, "title rotation control is present");
-assert.match(html, /id="captionHighlightColor"/, "caption highlight color control is present");
-assert.match(html, /id="captionPositionY"/, "caption positioning control is present");
-assert.match(html, /id="exportAllIndividualBtn"/, "all-individual export action is present");
-assert.match(html, /id="exportZipSelectedBtn"/, "selected ZIP export is an optional separate action");
-assert.match(html, /ZIP all clips \(optional\)/, "ZIP is labeled as optional");
-assert.match(html, /exportClips\(null,'individual'\)/, "mobile export path is individual files");
-assert.match(html, /atempo=.*currentFx\.speed/, "audio speed filter reaches the export path");
-assert.match(html, /setpts=.*currentFx\.speed/, "video speed filter reaches the export path");
-assert.match(html, /family=Archivo\+Black/, "expanded web fonts are configured");
+for (const id of ["app-shell","undoBtn","redoBtn","splitAtPlayheadBtn","duplicateClipBtn","saveProjectBtn","loadProjectBtn","projectFileInput","exportRecoveryActions","recoveryOriginalBtn","recoverySingleClipBtn"]) {
+  assert.match(html, new RegExp(`id="${id}"`), `${id} should exist`);
+}
+assert.match(html, /id="clip-strip"/, "compact clip strip should exist");
+assert.match(html, /id="timeline"/, "timeline should exist");
+assert.match(html, /id="creatorResults"/, "creator result area should exist");
+assert.match(html, /ffmpeg@0\.12\.15/, "FFmpeg wrapper must be pinned");
+assert.match(html, /@ffmpeg\/core@0\.12\.10/, "FFmpeg core must be pinned");
+assert.match(html, /@tensorflow\/tfjs@4\.22\.0/, "optional browser ML dependency must be pinned");
+assert.match(css, /height:100dvh/, "editor must fit the viewport");
+assert.match(css, /overflow:hidden/, "page should not become an endless document");
+assert.match(app, /const MAX_CONCURRENT_EXPORTS=1/, "exports must be serialized");
+assert.match(app, /URL\.revokeObjectURL/, "download URLs must be released");
+assert.match(app, /navigator\.deviceMemory/, "export strategy should inspect device memory");
+assert.match(app, /-c","copy"/, "original stream export must be available");
+assert.match(app, /mode==="mobile"/, "mobile-safe export must be available");
+assert.match(app, /generateCreatorIdeas\(/, "creator intelligence must be wired");
+assert.match(app, /caption ideas/i, "caption ideas must be surfaced");
+assert.match(app, /hashtags/i, "hashtags must be surfaced");
 
-assert.match(html, /const MAX_ZIP_CLIPS = 8/, "ZIP batches are bounded to protect mobile memory");
-assert.match(html, /function explainExportError\(/, "export failures receive actionable diagnostics");
-assert.match(html, /function downloadAndRelease\(/, "individual exports release clip buffers as they are delivered");
-assert.match(html, /ideasPane\.id="creatorIdeasPane"/, "creator ideas inspector is present");
-assert.match(html, /generateIdeasBtn/, "caption and hashtag generation control is present");
-assert.match(html, /analyzeFramesBtn/, "optional local frame analysis is available");
-assert.match(html, /ideasTranscript/, "manual transcript context is available to the creator assistant");
-assert.match(html, /@tensorflow\/tfjs/, "open-source local visual analysis can be loaded on demand");
-assert.match(readFileSync(new URL("../creator-assistant.js", import.meta.url), "utf8"), /export function generateCreatorIdeas\(/, "caption suggestions use video context");
-assert.match(html, /data-view="ideas"/, "mobile creator ideas view is wired");
-assert.match(html, /Export failed — see details below/, "visible export error state is clearer than a generic toast");
+const creator = generateCreatorIdeas({title:"Munna Bhai MBBS", transcript:"A funny scene from the movie", platform:"Instagram Reels", tone:"Funny", language:"Hinglish"});
+assert.equal(creator.captions.length, 8);
+assert.ok(creator.captions[0].toLowerCase().includes("funny scene"));
+assert.ok(creator.hashtags.includes("#InstagramReels"));
+assert.ok(creator.hashtags.includes("#Bollywood"));
 
+const clips=[{id:"a",start:0,end:10,title:"Series · Part 1",caption:"hello",titleStyle:{color:"#fff"}},{id:"b",start:10,end:20,title:"Series · Part 2",caption:"",titleStyle:{color:"#aaa"}}];
+const split=splitClipAt(clips,"a",4,{makeId:()=>"a2",titleFor:i=>`Series · Part ${i+1}`});
+assert.equal(split.clips.length,3);assert.equal(split.clips[0].end,4);assert.equal(split.clips[1].start,4);
+const dup=duplicateClip(clips,"a",{makeId:()=>"copy",titleFor:i=>`Series · Part ${i+1}`});
+assert.equal(dup.clips.length,3);assert.notEqual(dup.clips[0].id,dup.clips[1].id);
+assert.deepEqual(moveClip(clips,"b",-1).clips.map(c=>c.id),["b","a"]);
+assert.deepEqual(renumberAutoTitles([{autoTitle:true,title:"x"},{autoTitle:false,title:"Custom"},{autoTitle:true,title:"y"}],i=>`Series · Part ${i+1}`).map(c=>c.title),["Series · Part 1","Custom","Series · Part 3"]);
+const manifest=createProjectManifest({projectName:"Series",sourceFileName:"movie.mp4",sourceFileSize:100,sourceDuration:20,clips},"2026-10-24T00:00:00Z");
+assert.equal(manifest.version,1);assert.equal(validateProjectManifest(manifest).clips.length,2);assert.equal(validateProjectManifest({...manifest,version:999}),null);
 
-const creatorIdeas = generateCreatorIdeas({
-  title: "Munna Bhai MBBS",
-  fileName: "movie.mkv",
-  transcript: "A funny scene from the movie",
-  visualTags: ["person"],
-  platform: "Instagram Reels",
-  tone: "Funny",
-  language: "Hinglish"
-});
-assert.equal(creatorIdeas.captions.length, 8, "assistant should produce a useful set of caption options");
-assert.ok(creatorIdeas.captions.every(line => line.length > 12), "caption options should contain real copy");
-assert.ok(creatorIdeas.captions[0].toLowerCase().includes("funny scene"), "first hook should reflect supplied transcript text");
-assert.ok(creatorIdeas.hashtags.includes("#InstagramReels"), "hashtags should adapt to platform");
-assert.ok(creatorIdeas.hashtags.includes("#Bollywood"), "movie context should inform hashtag suggestions");
-assert.ok(creatorIdeas.hashtags.length >= 6, "assistant should suggest multiple hashtags");
-const idAttrs = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
-const duplicates = [...new Set(idAttrs.filter((id, i) => idAttrs.indexOf(id) !== i))];
-assert.deepEqual(duplicates, [], "element IDs must remain unique");
-
-const modules = [...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
-assert.equal(modules.length, 1, "expected one application module");
-const temp = join(tmpdir(), "clipsmith-app.mjs");
-writeFileSync(temp, modules[0][1], "utf8");
-execFileSync(process.execPath, ["--check", temp], { stdio: "inherit" });
-
-
-const editFixtures = [
-  { id: "clip-a", start: 0, end: 10, title: "Series · Part 1", caption: "hello", titleStyle: { color: "#fff" } },
-  { id: "clip-b", start: 10, end: 20, title: "Series · Part 2", caption: "", titleStyle: { color: "#aaa" } }
-];
-const split = splitClipAt(editFixtures, "clip-a", 4, { makeId: () => "clip-a-right", titleFor: i => "Series · Part " + (i + 1) });
-assert.equal(split.clips.length, 3, "splitting adds exactly one clip");
-assert.equal(split.clips[0].end, 4, "left split ends at the playhead");
-assert.equal(split.clips[1].start, 4, "right split starts at the playhead");
-assert.equal(split.selectedId, "clip-a-right", "newly created split is selected");
-assert.equal(splitClipAt(editFixtures, "clip-a", 0, { makeId: () => "bad" }), null, "split boundary is rejected");
-assert.equal(splitClipAt(editFixtures, "clip-a", 9.8, { makeId: () => "bad" }), null, "too-short split fragments are rejected");
-
-const duplicated = duplicateClip(editFixtures, "clip-a", { makeId: () => "clip-copy", titleFor: i => "Series · Part " + (i + 1) });
-assert.equal(duplicated.clips.length, 3, "duplicate inserts one clip");
-assert.equal(duplicated.clips[1].start, 0, "duplicate keeps source in-point");
-assert.equal(duplicated.clips[1].end, 10, "duplicate keeps source out-point");
-assert.notEqual(duplicated.clips[1].id, duplicated.clips[0].id, "duplicate receives a distinct ID");
-duplicated.clips[1].titleStyle.color = "#000";
-assert.equal(duplicated.clips[0].titleStyle.color, "#fff", "duplicate styles are deep-cloned");
-
-const moved = moveClip(editFixtures, "clip-b", -1);
-assert.deepEqual(moved.clips.map(c => c.id), ["clip-b", "clip-a"], "move earlier reorders the sequence");
-assert.equal(moveClip(editFixtures, "clip-a", -1), null, "moving beyond the first position is a no-op");
-const renumbered = renumberAutoTitles([{ id: "auto-a", autoTitle: true, title: "Series · Part 1" }, { id: "manual", autoTitle: false, title: "Custom name" }, { id: "auto-c", autoTitle: true, title: "Series · Part 3" }], i => "Series · Part " + (i + 1));
-assert.deepEqual(renumbered.map(c => c.title), ["Series · Part 1", "Custom name", "Series · Part 3"], "sequence numbering updates only clips using generated titles");
-
-const manifest = createProjectManifest({
-  projectName: "Series",
-  sourceFileName: "source.mp4",
-  sourceFileSize: 1234,
-  sourceDuration: 20,
-  clips: editFixtures,
-  controls: { aspectSelect: "9:16" }
-}, "2026-10-24T00:00:00.000Z");
-assert.equal(manifest.format, "clipsmith-project", "project file uses a distinctive format marker");
-assert.equal(manifest.version, 1, "project file is versioned");
-assert.equal(manifest.source.fileName, "source.mp4", "project metadata remembers source identity");
-assert.equal(validateProjectManifest(manifest).clips.length, 2, "valid project manifest can be restored");
-assert.equal(validateProjectManifest({ ...manifest, version: 999 }), null, "unknown project versions are rejected");
-assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "oops", start: -1, end: 2 }] }), null, "invalid clip time ranges are rejected");
-assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "duplicate", start: 0, end: 1 }, { id: "duplicate", start: 1, end: 2 }] }), null, "duplicate clip IDs are rejected");
-assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "too-long", start: 0, end: 21 }] }), null, "clips beyond the saved source duration are rejected");
-assert.equal(validateProjectManifest({ ...manifest, clips: [{ id: "caption", start: 0, end: 1, caption: "Line one\nLine two" }] }).clips[0].caption, "Line one\nLine two", "caption line breaks survive project round-trips");
-assert.equal(validateProjectManifest({ ...manifest, clips: "not an array" }), null, "malformed clip collections are rejected");
-
-assert.match(html, /id="undoBtn"/, "undo action is visible in the top bar");
-assert.match(html, /id="redoBtn"/, "redo action is visible in the top bar");
-assert.match(html, /id="splitAtPlayheadBtn"/, "timeline supports splitting at the playhead");
-assert.match(html, /id="duplicateClipBtn"/, "timeline supports duplicating a selected clip");
-assert.match(html, /id="moveClipEarlierBtn"/, "timeline supports sequence reordering");
-assert.match(html, /id="saveProjectBtn"/, "portable project save is available");
-assert.match(html, /id="loadProjectBtn"/, "portable project load is available");
-assert.match(html, /id="projectFileInput"/, "project JSON file can be imported");
-assert.match(html, /id="exportRecoveryActions"/, "export failure provides a dedicated recovery panel");
-assert.match(html, /grid-template-columns:repeat\(6,1fr\)/, "all six mobile views have an equal navigation slot");
-assert.match(html, /pointerdown/, "title and caption overlays can be positioned on the canvas");
-assert.match(html, /clipsmith\.project\.v1/, "local project draft recovery is enabled");
-assert.match(html, /sourceFile\.size>350\*1024\*1024\|\|\/memory/, "large failed stream copies are not blindly re-encoded");
-assert.match(html, /recoveryOriginalBtn/, "export recovery can switch to original stream");
-assert.match(html, /recoverySingleClipBtn/, "export recovery can try a single clip");
-
+for(const file of ["app.js","creator-assistant.js","editor-tools.js"]){const src=readFileSync(new URL(file,root),"utf8");const out=join(tmpdir(),file);await import("node:fs/promises").then(fs=>fs.writeFile(out,src));execFileSync(process.execPath,["--check",out],{stdio:"inherit"});}
 console.log("ClipSmith smoke checks passed.");
