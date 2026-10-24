@@ -10,6 +10,9 @@ const css = readFileSync(new URL("studio-2.css", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
 const mobilePrepare = readFileSync(new URL("scripts/prepare-mobile.mjs", root), "utf8");
 const workflow = readFileSync(new URL(".github/workflows/android-apk.yml", root), "utf8");
+const worker = readFileSync(new URL("ffmpeg/worker.js", root), "utf8");
+const workerConst = readFileSync(new URL("ffmpeg/const.js", root), "utf8");
+const workerErrors = readFileSync(new URL("ffmpeg/errors.js", root), "utf8");
 
 for (const name of ["episode.mp4", "episode.mkv", "episode.avi", "episode.mov", "episode.webm", "episode.mts", "episode.3gp"]) {
   assert.equal(getImportKind({ name, type: "" }), "video", name + " should be recognized independent of MIME type");
@@ -25,8 +28,8 @@ assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
 
 assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker must not hide ZIP or uncommon video files with a narrow accept filter");
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
-assert.match(html, /studio-2\.css\?v=20261024-zipimport1/);
-assert.match(html, /app\.js\?v=20261024-zipimport1/);
+assert.match(html, /studio-2\.css\?v=20261024-workerfix1/);
+assert.match(html, /app\.js\?v=20261024-workerfix1/);
 assert.match(app, /chooseVideoFromZip/);
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app, /libx264/);
@@ -40,5 +43,21 @@ assert.match(css, /\.archive-episode-row\.selected/);
 assert.match(mobilePrepare, /"media-import\.js"/, "Android WebView must include the importer module");
 assert.equal((workflow.match(/- "media-import\.js"/g) || []).length, 2, "Android CI should watch the module for push and pull requests");
 assert.match(packageJson.scripts["check:mobile"], /tests\/media-import-smoke\.mjs/);
+
+assert.ok(app.includes('classWorkerURL:new URL("./ffmpeg/worker.js?v=20261024-workerfix1",import.meta.url).href'),
+  "FFmpeg must use the site's same-origin root worker instead of a CDN worker");
+assert.match(worker, /from "\.\/const\.js"/);
+assert.match(worker, /from "\.\/errors\.js"/);
+assert.match(worker, /self\.onmessage/);
+assert.match(worker, /createFFmpegCore/);
+assert.match(workerConst, /FFMessageType/);
+assert.match(workerErrors, /ERROR_IMPORT_FAILURE/);
+assert.match(mobilePrepare, /cp\(path\.join\(root,"ffmpeg"\),path\.join\(out,"ffmpeg"\),\{recursive:true\}\)/,
+  "Android packaging must copy the local FFmpeg worker and helper modules");
+assert.equal((workflow.match(/- "ffmpeg\/\*\*"/g) || []).length, 2,
+  "Android CI should watch same-origin worker files for pushes and pull requests");
+assert.match(css, /\.timeline-block \{\s*min-width: 62px !important;/);
+assert.match(css, /grid-template-rows: minmax\(0, 1fr\) clamp\(216px, 29vh, 248px\) !important;/);
+
 
 console.log("Media import smoke checks passed.");
