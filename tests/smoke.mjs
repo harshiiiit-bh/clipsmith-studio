@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateCreatorIdeas } from "../creator-assistant.js";
-import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest } from "../editor-tools.js";
+import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, renumberAutoTitles } from "../editor-tools.js";
 
 const here = fileURLToPath(new URL("../index.html", import.meta.url));
 const html = readFileSync(here, "utf8");
@@ -91,6 +91,8 @@ assert.equal(duplicated.clips[0].titleStyle.color, "#fff", "duplicate styles are
 const moved = moveClip(editFixtures, "clip-b", -1);
 assert.deepEqual(moved.clips.map(c => c.id), ["clip-b", "clip-a"], "move earlier reorders the sequence");
 assert.equal(moveClip(editFixtures, "clip-a", -1), null, "moving beyond the first position is a no-op");
+const renumbered = renumberAutoTitles([{ id: "auto-a", autoTitle: true, title: "Series · Part 1" }, { id: "manual", autoTitle: false, title: "Custom name" }, { id: "auto-c", autoTitle: true, title: "Series · Part 3" }], i => "Series · Part " + (i + 1));
+assert.deepEqual(renumbered.map(c => c.title), ["Series · Part 1", "Custom name", "Series · Part 3"], "sequence numbering updates only clips using generated titles");
 
 const manifest = createProjectManifest({
   projectName: "Series",
