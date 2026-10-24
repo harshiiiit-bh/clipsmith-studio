@@ -43,6 +43,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install browser-test runner
+        run: npm install --no-save --no-package-lock playwright
+      - name: Install Chromium for real browser checks
+        run: npx playwright install --with-deps chromium
       - name: Syntax and editor-feature checks
         run: |
           node --check app.js
@@ -51,3 +55,4 @@ jobs:
           node tests/smoke.mjs
           node tests/editor-upgrade-smoke.mjs
           node tests/ui-responsive-smoke.mjs
+          node tests/browser-smoke.mjs
