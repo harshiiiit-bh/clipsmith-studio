@@ -9,6 +9,7 @@ const css = readFileSync(join(root, "studio-2.css"), "utf8");
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const mobilePrepare = readFileSync(join(root, "scripts", "prepare-mobile.mjs"), "utf8");
 const androidWorkflow = readFileSync(join(root, ".github", "workflows", "android-apk.yml"), "utf8");
+const workspaceControls = readFileSync(join(root, "workspace-controls.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
 assert.match(html, /href="\.\/studio-2\.css\?[^"]+"/, "Studio 2.0 responsive layer is linked");
@@ -45,6 +46,19 @@ assert.equal(
   (androidWorkflow.match(/- "studio-2\.css"/g) || []).length,
   2,
   "Android workflow must rebuild when Studio 2.0 CSS changes on push or pull request"
+);
+
+
+assert.ok(html.includes('id="focusPreviewBtn"'), "desktop preview focus control exists");
+assert.ok(html.includes('src="./workspace-controls.js?'), "workspace controls module is loaded");
+assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
+assert.ok(workspaceControls.includes('classList.toggle("focus-preview"'), "focus control toggles focus mode");
+assert.ok(workspaceControls.includes("aria-pressed"), "focus control reports its active state");
+assert.ok(mobilePrepare.includes('"workspace-controls.js"'), "Android WebView packaging must copy workspace controls");
+assert.equal(
+  (androidWorkflow.match(/- "workspace-controls\\.js"/g) || []).length,
+  2,
+  "Android workflow must rebuild when workspace controls change on push or pull request"
 );
 
 console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");
