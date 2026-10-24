@@ -1,0 +1,88 @@
+name: ClipSmith Android APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "styles.css"
+      - "app.js"
+      - "creator-assistant.js"
+      - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "ai-creator-tools.js"
+      - "memory-store.js"
+      - "transcribe-worker.js"
+      - "capacitor.config.json"
+      - "package.json"
+      - "scripts/**"
+      - ".github/workflows/android-apk.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "styles.css"
+      - "app.js"
+      - "creator-assistant.js"
+      - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "ai-creator-tools.js"
+      - "memory-store.js"
+      - "transcribe-worker.js"
+      - "capacitor.config.json"
+      - "package.json"
+      - "scripts/**"
+      - ".github/workflows/android-apk.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund
+      - name: Create the Android project
+        run: npm run android:init
+      - name: Build APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --stacktrace
+      - name: Prepare APK download
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ClipSmith.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClipSmith-Android-APK
+          path: ClipSmith.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish latest APK to GitHub Releases
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          target_commitish: main
+          name: ClipSmith Android APK (Latest)
+          body: |
+            Latest automated ClipSmith Studio Android build.
+            
+            Install the APK on Android. If Android blocks installation, allow your browser or file manager to install unknown apps for this file.
+            
+            The application saves project state and a local source-video copy on this device where storage allows it. Large video processing and Whisper model downloads can still require free storage and internet access.
+          files: ClipSmith.apk
+          overwrite_files: true
+          make_latest: true
+          fail_on_unmatched_files: true
