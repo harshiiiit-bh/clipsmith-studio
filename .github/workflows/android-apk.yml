@@ -81,9 +81,9 @@ jobs:
           let gradle = readFileSync(path, 'utf8');
           const code = Number(process.env.APK_VERSION_CODE);
           if (!Number.isInteger(code) || code < 1) throw new Error('Invalid Android version code');
-          if (!/versionCode\\s+\\d+/.test(gradle)) throw new Error('Could not locate Android versionCode');
-          gradle = gradle.replace(/versionCode\\s+\\d+/, `versionCode ${code}`);
-          gradle = gradle.replace(/versionName\\s+['"][^'"]+['"]/, `versionName '1.0.${code}'`);
+          if (!/versionCode\s+\d+/.test(gradle)) throw new Error('Could not locate Android versionCode');
+          gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${code}`);
+          gradle = gradle.replace(/versionName\s+['"][^'"]+['"]/, `versionName '1.0.${code}'`);
           writeFileSync(path, gradle);
           NODE
 
