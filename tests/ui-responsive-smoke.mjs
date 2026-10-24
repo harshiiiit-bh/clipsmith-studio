@@ -104,7 +104,7 @@ assert.ok(powerTools.includes("parseTimecode") && powerTools.includes("powerPrev
 assert.ok(powerTools.includes("markerWrite") && powerTools.includes("powerLoopBtn"), "local markers and clip loop controls are implemented");
 assert.ok(powerTools.includes("exportSelected") && powerTools.includes("powerExportPrefix"), "single-clip export and naming prefix are wired");
 assert.ok(css.includes("grid-template-columns:repeat(7,minmax(0,1fr))"), "mobile navigation is sized for the new tool tab");
-assert.equal((androidWorkflow.match(/- "power-tools\\.js"/g) || []).length, 2, "Android builds when the Power Tools script changes");
-assert.equal((androidWorkflow.match(/- "runtime-guard\\.js"/g) || []).length, 2, "Android builds when the startup guard changes");
+assert.equal((androidWorkflow.match(/- "power-tools\.js"/g) || []).length, 2, "Android builds when the Power Tools script changes");
+assert.equal((androidWorkflow.match(/- "runtime-guard\.js"/g) || []).length, 2, "Android builds when the startup guard changes");
 
 console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");
