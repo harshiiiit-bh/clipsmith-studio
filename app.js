@@ -230,7 +230,7 @@ function renderClips(){const root=$("clip-strip");root.innerHTML="";if(!state.cl
 function syncClipStripSlider(){
   const strip=$("clip-strip"),slider=$("clipStripSlider"),prev=$("clipStripPrevBtn"),next=$("clipStripNextBtn"),position=$("clipStripPosition");
   if(!strip||!slider)return;
-  const cards=$(".clip-card",strip),maxScroll=Math.max(0,strip.scrollWidth-strip.clientWidth);
+  const cards=$$(".clip-card",strip),maxScroll=Math.max(0,strip.scrollWidth-strip.clientWidth);
   const ratio=maxScroll>0?clamp(strip.scrollLeft/maxScroll,0,1):0;
   slider.max="1000";
   slider.disabled=maxScroll<2;
@@ -254,7 +254,7 @@ function scrollClipStrip(direction){
 function scrollClipCardIntoView(id){
   const strip=$("clip-strip");
   if(!strip)return;
-  const card=$(".clip-card",strip).find(item=>item.dataset.clipId===id);
+  const card=$$(".clip-card",strip).find(item=>item.dataset.clipId===id);
   if(!card)return;
   const left=card.offsetLeft,right=left+card.offsetWidth,viewLeft=strip.scrollLeft,viewRight=viewLeft+strip.clientWidth;
   if(left<viewLeft+5)strip.scrollTo({left:Math.max(0,left-5),behavior:"smooth"});
