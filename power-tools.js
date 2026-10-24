@@ -119,7 +119,8 @@
     if (!modal) return;
     modal.classList.add("hidden");
     modal.setAttribute("aria-hidden", "true");
-    $("powerToolsBtn")?.focus({ preventScroll: true });
+    const returnTarget = window.matchMedia("(max-width: 820px)").matches ? $("powerToolsMobileBtn") : $("powerToolsBtn");
+    returnTarget?.focus({ preventScroll: true });
   }
 
   function seekTo(time) {
@@ -153,13 +154,14 @@
     const now = Number(video?.currentTime) || 0;
     const speed = Number(clip?.speed) || 1;
     const muted = Boolean(clip?.muted);
-    const prefix = safeName($("powerExportPrefix")?.value || "");
+    const rawPrefix = String($("powerExportPrefix")?.value || "").trim();
+    const prefix = rawPrefix ? safeName(rawPrefix) + "-" : "";
     const clipTitle = safeName(clip?.title || "clip-title");
     const clipIndex = String(Number(clip?.index) || 1).padStart(2, "0");
     const activeRatio = $("exportAspectSelect")?.value && $("exportAspectSelect").value !== "source"
       ? $("exportAspectSelect").value : ($("aspectSelect")?.value || "16:9");
     if ($("powerFilenamePreview")) $("powerFilenamePreview").textContent =
-      (prefix && prefix !== "clipsmith" ? prefix + "-" : "") + clipIndex + "-" + clipTitle + ".mp4";
+      prefix + clipIndex + "-" + clipTitle + ".mp4";
     document.querySelectorAll("[data-power-aspect]").forEach((button) => {
       button.classList.toggle("is-active", button.dataset.powerAspect === activeRatio);
     });
@@ -417,6 +419,10 @@
       const clip = currentClip();
       if (!clip || !video || video.readyState < 1) return notify("Select a clip and load a video first.", "error");
       loopClipId = loopClipId === clip.id ? null : clip.id;
+      if (loopClipId) {
+        seekTo(clip.start);
+        video.play().catch(() => {});
+      }
       syncControls();
       notify(loopClipId ? "Clip loop enabled for the selected range." : "Clip loop disabled.");
     });
