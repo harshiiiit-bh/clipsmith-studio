@@ -30,7 +30,7 @@ assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
 assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker must not hide ZIP or uncommon video files with a narrow accept filter");
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
 assert.match(html, /studio-2\.css\?v=20261024-workerfix1/);
-assert.match(html, /app\.js\?v=20261024-workerfix1/);
+assert.match(html, /app\.js\?v=20261024-continuous1/);
 assert.match(app, /chooseVideoFromZip/);
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app, /libx264/);
