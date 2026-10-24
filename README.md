@@ -62,7 +62,7 @@ The repository publishes from the main branch, root folder (/). The root index.h
 - Original stream mode preserves encoded streams when the codec/container combination is supported, but cuts may snap to keyframes and text/FX are not baked into video.
 - The MP4 compatibility/re-encode path uses H.264 at a high-quality CRF setting, but it is not mathematically lossless.
 - Direct video URLs need to allow browser CORS access. YouTube links remain preview-only; the studio does not download or rip videos from YouTube.
-- Speech-to-text transcription is not built in. Import subtitles or paste a transcript/summary for more useful creator ideas.
+- Automatic subtitles use a local Whisper model in the browser when you request transcription. The first run may download model files; you can also import subtitles or paste a transcript/summary for creator ideas.
 - Use only videos and audio you own or are authorised to edit and redistribute.
 
 
@@ -73,5 +73,5 @@ ClipSmith can be built as a native Android shell with its web editor packaged lo
 - Website install button: `https://github.com/harshiiiit-bh/clipsmith-studio/releases/download/android-latest/ClipSmith.apk`
 - Manual build on a machine with Node 22, Java 21 and Android SDK: `npm install`, `npm run prepare:mobile`, `npx cap add android`, `npx cap sync android`, `node scripts/patch-android.mjs`, then `cd android && ./gradlew assembleDebug`.
 - Editor assets are bundled into the app. Video conversion and speech/object models are loaded only when used and may require an internet connection on first use.
-- Memory-safe mode shows warnings for source files/durations that may strain a phone, keeps exports serial, and releases temporary FFmpeg/AI runtimes after heavy tasks. Draft state is autosaved locally; video bytes are deliberately not copied into autosave.
+- Memory-safe mode warns about source files/durations that may strain a phone, keeps exports serial, and releases temporary FFmpeg/AI runtimes after heavy tasks. The Memory Vault separately autosaves project state and remembers a source-video copy in IndexedDB when local storage permits it. If the media copy cannot be saved, re-import the video after reopening. Use Save to export an independent project backup for important work.
 - The automated APK is debug-signed for direct testing/sideloading, not a Play Store release. Debug builds may require uninstalling an older build before installing a later build if their signing keys differ.
