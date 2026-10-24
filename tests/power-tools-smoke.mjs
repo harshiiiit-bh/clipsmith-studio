@@ -27,7 +27,7 @@ const ids = [
 ];
 for (const id of ids) assert.ok(html.includes('id="' + id + '"'), id + " exists");
 
-assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v=20261024-clipslider1"'),
+assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v=20261024-canvashape1"'),
   "startup diagnostics load before the editor module");
 assert.match(guard, /addEventListener\(["']error["']/);
 assert.match(guard, /unhandledrejection/);

@@ -125,6 +125,39 @@ try {
   await page.waitForTimeout(100);
 
 
+  // The aspect dropdown must resize the actual canvas, not just update its label.
+  const ratioChecks = [
+    { value: "16:9", ratio: 16 / 9, name: "landscape" },
+    { value: "9:16", ratio: 9 / 16, name: "portrait" },
+    { value: "1:1", ratio: 1, name: "square" },
+    { value: "4:5", ratio: 4 / 5, name: "feed" }
+  ];
+  let previousCanvasWidth = 0;
+  for (const target of ratioChecks) {
+    await page.locator("#aspectSelect").selectOption(target.value);
+    await page.waitForFunction((value) => {
+      const canvas = document.querySelector("#preview-canvas");
+      if (!canvas || canvas.dataset.aspect !== value) return false;
+      const rect = canvas.getBoundingClientRect();
+      const expected = { "16:9": 16 / 9, "9:16": 9 / 16, "1:1": 1, "4:5": 4 / 5 }[value];
+      return rect.width > 1 && rect.height > 1 && Math.abs(rect.width / rect.height - expected) < 0.025;
+    }, target.value, { timeout: 4000 });
+    const dimensions = await page.evaluate(() => {
+      const canvas = document.querySelector("#preview-canvas").getBoundingClientRect();
+      const stage = document.querySelector("#preview-stage").getBoundingClientRect();
+      return { canvasWidth: canvas.width, canvasHeight: canvas.height, stageWidth: stage.width, stageHeight: stage.height,
+        centerDelta: Math.abs((canvas.left + canvas.right) / 2 - (stage.left + stage.right) / 2) };
+    });
+    assert.ok(dimensions.canvasWidth <= dimensions.stageWidth + 1 && dimensions.canvasHeight <= dimensions.stageHeight + 1,
+      target.name + " canvas must fit inside the preview stage");
+    assert.ok(dimensions.centerDelta < 3, target.name + " canvas must remain centered");
+    if (target.value === "16:9") previousCanvasWidth = dimensions.canvasWidth;
+    if (target.value === "9:16") assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
+      "portrait selection must visibly narrow the preview canvas");
+  }
+  await page.locator("#aspectSelect").selectOption("16:9");
+  await page.waitForFunction(() => document.querySelector("#preview-canvas")?.dataset.aspect === "16:9");
+
   // Exercise the real clip carousel without importing a large media file.
   await page.evaluate(() => {
     const strip = document.querySelector("#clip-strip");
