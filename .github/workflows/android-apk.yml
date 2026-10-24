@@ -1,0 +1,112 @@
+name: ClipSmith Android APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "styles.css"
+      - "app.js"
+      - "creator-assistant.js"
+      - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "transcribe-worker.js"
+      - "ai-creator-tools.js"
+      - "mobile-memory.js"
+      - "package.json"
+      - "capacitor.config.json"
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/android-apk.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "styles.css"
+      - "app.js"
+      - "creator-assistant.js"
+      - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "transcribe-worker.js"
+      - "ai-creator-tools.js"
+      - "mobile-memory.js"
+      - "package.json"
+      - "capacitor.config.json"
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clipsmith-android-apk-release
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install pinned Capacitor toolchain
+        run: npm install --no-audit --no-fund --no-progress
+      - name: Test mobile memory and packaging
+        run: npm run check:mobile
+      - name: Prepare bundled editor assets
+        run: npm run prepare:mobile
+      - name: Generate Android project
+        run: npx cap add android
+      - name: Sync local WebView assets
+        run: npx cap sync android
+      - name: Apply native memory lifecycle and ClipSmith icon
+        run: node scripts/patch-android.mjs
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleDebug
+          cd ..
+          cp android/app/build/outputs/apk/debug/app-debug.apk ClipSmith.apk
+          unzip -t ClipSmith.apk
+          sha256sum ClipSmith.apk > ClipSmith.apk.sha256
+      - name: Upload APK to this workflow run
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClipSmith-Android-APK
+          path: ClipSmith.apk
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload APK checksum
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClipSmith-Android-APK-checksum
+          path: ClipSmith.apk.sha256
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish the latest APK download
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          git tag -f android-latest "$GITHUB_SHA"
+          git push --force origin refs/tags/android-latest
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release upload android-latest ClipSmith.apk ClipSmith.apk.sha256 --clobber
+            gh release edit android-latest --title "ClipSmith Studio for Android" --notes "Latest main-branch Android APK. Built from commit $GITHUB_SHA. This debug-signed build is for direct testing/sideloading, not Play Store distribution."
+          else
+            gh release create android-latest ClipSmith.apk ClipSmith.apk.sha256 --target "$GITHUB_SHA" --title "ClipSmith Studio for Android" --notes "Latest main-branch Android APK. Built from commit $GITHUB_SHA. This debug-signed build is for direct testing/sideloading, not Play Store distribution."
+          fi

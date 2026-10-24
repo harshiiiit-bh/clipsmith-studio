@@ -64,3 +64,14 @@ The repository publishes from the main branch, root folder (/). The root index.h
 - Direct video URLs need to allow browser CORS access. YouTube links remain preview-only; the studio does not download or rip videos from YouTube.
 - Speech-to-text transcription is not built in. Import subtitles or paste a transcript/summary for more useful creator ideas.
 - Use only videos and audio you own or are authorised to edit and redistribute.
+
+
+## Android APK
+
+ClipSmith can be built as a native Android shell with its web editor packaged locally by Capacitor. The APK builder runs on pushes to `main` and publishes the latest downloadable `ClipSmith.apk` on the GitHub Release tagged `android-latest`.
+
+- Website install button: `https://github.com/harshiiiit-bh/clipsmith-studio/releases/download/android-latest/ClipSmith.apk`
+- Manual build on a machine with Node 22, Java 21 and Android SDK: `npm install`, `npm run prepare:mobile`, `npx cap add android`, `npx cap sync android`, `node scripts/patch-android.mjs`, then `cd android && ./gradlew assembleDebug`.
+- Editor assets are bundled into the app. Video conversion and speech/object models are loaded only when used and may require an internet connection on first use.
+- Memory-safe mode shows warnings for source files/durations that may strain a phone, keeps exports serial, and releases temporary FFmpeg/AI runtimes after heavy tasks. Draft state is autosaved locally; video bytes are deliberately not copied into autosave.
+- The automated APK is debug-signed for direct testing/sideloading, not a Play Store release. Debug builds may require uninstalling an older build before installing a later build if their signing keys differ.
