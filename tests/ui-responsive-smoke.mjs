@@ -54,6 +54,9 @@ assert.ok(html.includes('src="./workspace-controls.js?'), "workspace controls mo
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
 assert.ok(workspaceControls.includes('classList.toggle("focus-preview"'), "focus control toggles focus mode");
 assert.ok(workspaceControls.includes("aria-pressed"), "focus control reports its active state");
+assert.ok(workspaceControls.includes('event.key.toLowerCase() === "f"'), "F toggles preview focus mode");
+assert.ok(workspaceControls.includes('event.key === "Escape"'), "Escape exits preview focus mode");
+assert.ok(html.includes("<kbd>F</kbd>"), "keyboard help documents the focus shortcut");
 assert.ok(mobilePrepare.includes('"workspace-controls.js"'), "Android WebView packaging must copy workspace controls");
 assert.equal(
   (androidWorkflow.split('- "workspace-controls.js"').length - 1),
