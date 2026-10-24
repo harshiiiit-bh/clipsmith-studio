@@ -26,5 +26,33 @@ if (shell && focusButton) {
   });
 
   desktopViewport.addEventListener("change", syncFocusControl);
+
+  document.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const isTyping = target instanceof HTMLElement && (
+      target.isContentEditable ||
+      ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+    );
+
+    if (event.key === "Escape" && shell.classList.contains("focus-preview")) {
+      shell.classList.remove("focus-preview");
+      syncFocusControl();
+      return;
+    }
+
+    if (
+      !isTyping &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      event.key.toLowerCase() === "f" &&
+      desktopViewport.matches
+    ) {
+      event.preventDefault();
+      shell.classList.toggle("focus-preview");
+      syncFocusControl();
+    }
+  });
+
   syncFocusControl();
 }
