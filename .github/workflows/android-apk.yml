@@ -5,6 +5,8 @@ on:
     paths:
       - "index.html"
       - "styles.css"
+      - "studio-2.css"
+      - "workspace-controls.js"
       - "app.js"
       - "creator-assistant.js"
       - "editor-tools.js"
@@ -22,6 +24,8 @@ on:
     paths:
       - "index.html"
       - "styles.css"
+      - "studio-2.css"
+      - "workspace-controls.js"
       - "app.js"
       - "creator-assistant.js"
       - "editor-tools.js"

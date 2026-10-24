@@ -6,6 +6,9 @@ on:
       - "index.html"
       - "app.js"
       - "styles.css"
+      - "studio-2.css"
+      - "workspace-controls.js"
+      - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
       - "subtitle-tools.js"
@@ -19,6 +22,9 @@ on:
       - "index.html"
       - "app.js"
       - "styles.css"
+      - "studio-2.css"
+      - "workspace-controls.js"
+      - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
       - "subtitle-tools.js"
@@ -39,5 +45,9 @@ jobs:
           node-version: 22
       - name: Syntax and editor-feature checks
         run: |
+          node --check app.js
+          node --check subtitle-tools.js
+          node --check workspace-controls.js
           node tests/smoke.mjs
           node tests/editor-upgrade-smoke.mjs
+          node tests/ui-responsive-smoke.mjs
