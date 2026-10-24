@@ -1,0 +1,7 @@
+{
+  "appId": "com.clipsmith.studio",
+  "appName": "ClipSmith Studio",
+  "webDir": "mobile-www",
+  "androidScheme": "https",
+  "backgroundColor": "#07080c"
+}
