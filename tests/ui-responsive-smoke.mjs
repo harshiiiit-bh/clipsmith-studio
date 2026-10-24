@@ -91,4 +91,12 @@ assert.ok(subtitleTools.includes("${(titleShadow/3).toFixed(1)}"), "MP4/ASS titl
 assert.ok(workspaceControls.includes("const actions = ["), "quick actions palette has command definitions");
 assert.ok(workspaceControls.includes('event.key === "ArrowDown"'), "quick actions supports keyboard navigation");
 assert.ok(css.includes(".command-palette-scrim") && css.includes(".text-style-toggles"), "new typography and command palette styles exist");
-console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");
+assert.match(css, /--studio-max-vibe/, "Studio Max visual tokens are defined");
+assert.match(css, /\.tool\.active::before/, "active desktop tool has a clear spatial indicator");
+assert.match(css, /\.mobile-tab\.active::before/, "active mobile tool has a clear spatial indicator");
+assert.match(css, /@media \(max-width: 1180px\)/, "dedicated laptop layout breakpoint exists");
+assert.match(css, /@media \(max-width: 680px\)/, "large-phone responsive tuning exists");
+assert.match(css, /\.panel:focus-within/, "panels surface focus context without losing editor structure");
+assert.match(css, /--studio-max-shadow/, "Studio Max elevation token is defined");
+
+console.log("ClipSmith Studio Max responsive smoke checks passed.");
