@@ -114,13 +114,11 @@ try {
   // Confirm Quick Actions opens, filters, runs a real command, and closes.
   await page.keyboard.press("Control+k");
   assert.equal(await page.locator("#commandPaletteModal").isVisible(), true, "Ctrl+K should open Quick Actions");
-  await page.locator("#commandPaletteSearch").fill("export clips");
-  assert.equal(await page.locator(".command-item").count(), 1, "search should filter to the Export clips command");
+  await page.locator("#commandPaletteSearch").fill("open captions");
+  assert.equal(await page.locator(".command-item").count(), 1, "search should filter to the Open Captions command");
   await page.locator(".command-item").click();
   assert.equal(await page.locator("#commandPaletteModal").isVisible(), false, "command palette should close after running an action");
-  assert.equal(await page.locator("#export-queue").isVisible(), true, "Export command should open Export Center");
-  await page.locator("#closeExportBtn").click();
-  assert.equal(await page.locator("#export-queue").isVisible(), false, "Export Center should close again");
+  assert.equal(await page.locator("#pane-captions").isVisible(), true, "Quick Actions command should open the selected inspector pane");
 
   // Check the smaller viewport and mobile tab integration too.
   await page.setViewportSize({ width: 390, height: 844 });
