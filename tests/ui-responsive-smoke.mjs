@@ -40,9 +40,9 @@ assert.equal(
   "UI refresh must not introduce a heavy framework dependency"
 );
 
-assert.match(mobilePrepare, /["']studio-2\\.css["']/, "Android WebView packaging must copy the Studio 2.0 stylesheet");
+assert.match(mobilePrepare, /["']studio-2\.css["']/, "Android WebView packaging must copy the Studio 2.0 stylesheet");
 assert.equal(
-  (androidWorkflow.match(/- "studio-2\\.css"/g) || []).length,
+  (androidWorkflow.match(/- "studio-2\.css"/g) || []).length,
   2,
   "Android workflow must rebuild when Studio 2.0 CSS changes on push or pull request"
 );
