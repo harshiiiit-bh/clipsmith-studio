@@ -1976,7 +1976,6 @@ body.archive-picker-open{overflow:hidden}
   .preview-stage[data-aspect="1:1"] { padding: 38px 10px 8px !important; }
   .preview-stage[data-aspect="4:5"] { padding: 38px 10px 8px !important; }
 
-  .editor-center[data-aspect="9:16"] + .some-unused-selector { display: none; }
   .timeline-panel[data-aspect="9:16"] {
     grid-template-rows: 27px minmax(0, auto) 40px minmax(72px, 1fr) !important;
     gap: 4px !important;
