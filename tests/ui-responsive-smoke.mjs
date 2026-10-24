@@ -16,7 +16,7 @@ const powerTools = readFileSync(join(root, "power-tools.js"), "utf8");
 const runtimeGuard = readFileSync(join(root, "runtime-guard.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
-assert.match(html, /href="\.\/studio-2\.css\?v=20261024-power3"/, "Studio stylesheet cache key is refreshed for this release");
+assert.match(html, /href="\.\/studio-2\.css\?v=20261024-maxpower4"/, "Studio stylesheet cache key is refreshed for this release");
 assert.ok(
   html.indexOf('href="./studio-2.css?') > html.indexOf('href="./styles.css?'),
   "Studio 2.0 overrides must load after the legacy editor CSS"
@@ -107,4 +107,19 @@ assert.ok(css.includes("grid-template-columns:repeat(7,minmax(0,1fr))"), "mobile
 assert.equal((androidWorkflow.match(/- "power-tools\.js"/g) || []).length, 2, "Android builds when the Power Tools script changes");
 assert.equal((androidWorkflow.match(/- "runtime-guard\.js"/g) || []).length, 2, "Android builds when the startup guard changes");
 
-console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");
+assert.match(css, /--studio-max-vibe/, "Studio Max visual tokens are defined");
+assert.match(css, /\.tool\.active::before/, "active desktop tool has a clear spatial indicator");
+assert.match(css, /\.mobile-tab\.active::before/, "active mobile tool has a clear spatial indicator");
+assert.match(css, /@media \(max-width: 1180px\)/, "dedicated laptop layout breakpoint exists");
+assert.match(css, /@media \(max-width: 680px\)/, "large-phone responsive tuning exists");
+assert.match(css, /\.panel:focus-within/, "panels surface focus context without losing editor structure");
+assert.match(css, /--studio-max-shadow/, "Studio Max elevation token is defined");
+
+assert.match(html, /class="tool-icon" aria-hidden="true"><svg/, "desktop tool navigation uses crisp inline SVG icons");
+assert.match(html, /class="mobile-icon" aria-hidden="true"><svg/, "mobile navigation uses crisp inline SVG icons");
+assert.match(css, /\.tool-icon svg/, "desktop tool icons have consistent sizing and stroke styling");
+assert.match(css, /\.mobile-tab span svg/, "mobile tool icons have consistent sizing and stroke styling");
+
+assert.match(css, /@media \(max-width: 960px\) and \(min-width: 821px\)[\s\S]*?\.top-actions #loadProjectBtn \{ display: inline-flex/, "laptop layout keeps Open project available");
+
+console.log("ClipSmith Studio Max responsive smoke checks passed.");
