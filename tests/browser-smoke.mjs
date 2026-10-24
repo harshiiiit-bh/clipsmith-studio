@@ -144,9 +144,19 @@ try {
     }, target.value, { timeout: 4000 });
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector("#preview-canvas").getBoundingClientRect();
-      const stage = document.querySelector("#preview-stage").getBoundingClientRect();
+      const stageEl = document.querySelector("#preview-stage");
+      const stage = stageEl.getBoundingClientRect();
+      const style = getComputedStyle(stageEl);
+      const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+      const borderTop = parseFloat(style.borderTopWidth) || 0;
+      const padLeft = parseFloat(style.paddingLeft) || 0;
+      const padRight = parseFloat(style.paddingRight) || 0;
+      const padTop = parseFloat(style.paddingTop) || 0;
+      const padBottom = parseFloat(style.paddingBottom) || 0;
+      const contentCenterX = stage.left + borderLeft + padLeft + (stageEl.clientWidth - padLeft - padRight) / 2;
+      const contentCenterY = stage.top + borderTop + padTop + (stageEl.clientHeight - padTop - padBottom) / 2;
       return { canvasWidth: canvas.width, canvasHeight: canvas.height, stageWidth: stage.width, stageHeight: stage.height,
-        centerDelta: Math.abs((canvas.left + canvas.right) / 2 - (stage.left + stage.right) / 2) };
+        centerDelta: Math.hypot((canvas.left + canvas.right) / 2 - contentCenterX, (canvas.top + canvas.bottom) / 2 - contentCenterY) };
     });
     assert.ok(dimensions.canvasWidth <= dimensions.stageWidth + 1 && dimensions.canvasHeight <= dimensions.stageHeight + 1,
       target.name + " canvas must fit inside the preview stage");
@@ -311,6 +321,26 @@ try {
 
   // Check the smaller viewport and mobile tab integration too.
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("#aspectSelect").selectOption("9:16");
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector("#preview-canvas");
+    return canvas?.dataset.aspect === "9:16" &&
+      Math.abs(canvas.getBoundingClientRect().width / canvas.getBoundingClientRect().height - 9 / 16) < 0.03;
+  }, null, { timeout: 4000 });
+  const mobileCanvasLayout = await page.evaluate(() => {
+    const canvas = document.querySelector("#preview-canvas"), stage = document.querySelector("#preview-stage");
+    const tools = document.querySelector("#canvasTitleTools"), badges = document.querySelector(".preview-badges");
+    const c = canvas.getBoundingClientRect(), t = tools.getBoundingClientRect(), b = badges.getBoundingClientRect();
+    const intersects = (a, z) => a.left < z.right && a.right > z.left && a.top < z.bottom && a.bottom > z.top;
+    const text = document.querySelector("#titleOverlayText");
+    return { toolsOverlap: intersects(c, t), badgesOverlap: intersects(c, b),
+      ratio: c.width / c.height, textFits: text.scrollWidth <= text.clientWidth + 3 };
+  });
+  assert.equal(mobileCanvasLayout.toolsOverlap, false, "mobile editing toolbar must not cover the portrait canvas");
+  assert.equal(mobileCanvasLayout.badgesOverlap, false, "mobile status badges must not cover the portrait canvas");
+  assert.ok(Math.abs(mobileCanvasLayout.ratio - 9 / 16) < 0.03, "mobile portrait canvas must keep the selected ratio");
+  assert.ok(mobileCanvasLayout.textFits, "mobile portrait heading must wrap inside the canvas");
+  await page.locator("#aspectSelect").selectOption("16:9");
   await page.locator('.mobile-tab[data-tool="text"]').click();
   assert.equal(await page.locator("#pane-text").isVisible(), true, "mobile tab should open its tool pane");
   assert.equal(await page.locator("#inspector").evaluate((el) => el.classList.contains("open")), true,
