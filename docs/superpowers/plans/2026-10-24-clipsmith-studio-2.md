@@ -28,21 +28,27 @@
 **Interfaces:** Test reads `index.html`, `studio-2.css`, and `package.json`.
 
 - [x] Add assertions for stylesheet order, expected layout selectors, responsive breakpoints, safe areas, reduced motion, focus visibility, and no React dependency.
-- [ ] Wire the smoke script into the existing `check:mobile` test chain and verify assertions after implementation.
+- [x] Wire the smoke script into the existing `check:mobile` test chain; verified by the passing GitHub smoke workflow and Android packaging test step.
 
 ### Task 2: Design layer
 
 **Files:** Create `studio-2.css`.
 **Interfaces:** Override styles only; consume the existing classes and IDs.
 
-- [ ] Establish refined design tokens and legible control typography.
-- [ ] Improve large desktop/laptop grid, preview stage, clip timeline, inspector, and focus states.
-- [ ] Improve phone/tablet breakpoints without removing current controls.
-- [ ] Respect reduced motion and safe-area insets.
+- [x] Establish refined design tokens and legible control typography.
+- [x] Improve large desktop/laptop grid, preview stage, clip timeline, inspector, and focus states.
+- [x] Improve phone/tablet breakpoints without removing current controls.
+- [x] Respect reduced motion and safe-area insets.
 
 ### Task 3: Connect and verify
 
 **Files:** Modify `index.html`, `package.json`.
-- [ ] Load `studio-2.css` after the existing `styles.css` with cache-busting.
-- [ ] Add responsive smoke script to the test chain.
-- [ ] Review the final diff and test available checks.
+- [x] Load `studio-2.css` after the existing `styles.css` with cache-busting.
+- [x] Add responsive smoke script to the test chain.
+- [x] Review the final diff and run the GitHub smoke workflow; the Android package checks and asset sync passed. Full Gradle APK build is a separate running check.
+
+## Verification notes
+- The first packaging regression test correctly failed because `scripts/prepare-mobile.mjs` did not copy the new CSS; the asset list was fixed and the check rerun successfully.
+- `ClipSmith smoke checks` passed on the feature branch after the regression fix.
+- Android WebView asset preparation and Capacitor sync passed; the Gradle APK build was still running at the time this plan was updated.
+- A real browser visual check was not available in this session, so verify the actual rendered experience before merging.
