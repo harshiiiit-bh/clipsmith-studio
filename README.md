@@ -62,7 +62,7 @@ The repository publishes from the main branch, root folder (/). The root index.h
 - Original stream mode preserves encoded streams when the codec/container combination is supported, but cuts may snap to keyframes and text/FX are not baked into video.
 - The MP4 compatibility/re-encode path uses H.264 at a high-quality CRF setting, but it is not mathematically lossless.
 - Direct video URLs need to allow browser CORS access. YouTube links remain preview-only; the studio does not download or rip videos from YouTube.
-- Speech-to-text transcription is not built in. Import subtitles or paste a transcript/summary for more useful creator ideas.
+- Automatic subtitles use a local Whisper model in the browser when you request transcription. The first run may download model files; you can also import subtitles or paste a transcript/summary for creator ideas.
 - Use only videos and audio you own or are authorised to edit and redistribute.
 
 
