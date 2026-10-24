@@ -1,4 +1,5 @@
 name: ClipSmith smoke checks
+
 on:
   push:
     branches: [main]
@@ -8,14 +9,14 @@ on:
       - "styles.css"
       - "creator-assistant.js"
       - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "transcribe-worker.js"
+      - "ai-creator-tools.js"
       - "memory-vault.js"
       - "package.json"
       - "capacitor.config.json"
       - "scripts/**"
       - ".github/workflows/android-apk.yml"
-      - "subtitle-tools.js"
-      - "transcribe-worker.js"
-      - "ai-creator-tools.js"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
   pull_request:
@@ -28,8 +29,14 @@ on:
       - "subtitle-tools.js"
       - "transcribe-worker.js"
       - "ai-creator-tools.js"
+      - "memory-vault.js"
+      - "package.json"
+      - "capacitor.config.json"
+      - "scripts/**"
+      - ".github/workflows/android-apk.yml"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
