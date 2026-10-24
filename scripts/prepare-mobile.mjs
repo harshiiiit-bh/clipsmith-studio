@@ -11,7 +11,7 @@ const files = [
   "editor-tools.js",
   "subtitle-tools.js",
   "ai-creator-tools.js",
-  "memory-store.js",
+  "memory-vault.js",
   "transcribe-worker.js"
 ];
 
@@ -20,4 +20,4 @@ await mkdir(out, { recursive: true });
 for (const file of files) {
   await copyFile(resolve(root, file), resolve(out, file));
 }
-console.log("Prepared " + files.length + " ClipSmith web assets for the Android package.");
+console.log(`Prepared ${files.length} ClipSmith web assets for the Android package.`);
