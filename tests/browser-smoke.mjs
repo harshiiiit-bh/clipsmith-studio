@@ -51,7 +51,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
   const pageErrors = [];
   const localRequestFailures = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
+  page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
   page.on("requestfailed", (request) => {
     if (request.url().startsWith(origin + "/")) {
       localRequestFailures.push(request.url() + " — " + (request.failure()?.errorText || "request failed"));
