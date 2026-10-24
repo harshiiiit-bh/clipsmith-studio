@@ -34,7 +34,7 @@ export function splitClipAt(clips, clipId, position, options = {}) {
     ...copyJSON(clip),
     id: optionId(options),
     start: at,
-    title: optionTitle(options, index + 1, String(clip.title || "Clip") + " · continued")
+    title: clip.autoTitle ? optionTitle(options, index + 1, String(clip.title || "Clip") + " · continued") : String(clip.title || "Clip") + " · continued"
   };
   const result = clips.slice();
   result.splice(index, 1, left, right);
@@ -49,7 +49,7 @@ export function duplicateClip(clips, clipId, options = {}) {
   const duplicate = {
     ...copyJSON(clip),
     id: optionId(options),
-    title: optionTitle(options, index + 1, String(clip.title || "Clip") + " · copy")
+    title: clip.autoTitle ? optionTitle(options, index + 1, String(clip.title || "Clip") + " · copy") : String(clip.title || "Clip") + " · copy"
   };
   const result = clips.slice();
   result.splice(index + 1, 0, duplicate);
@@ -66,6 +66,13 @@ export function moveClip(clips, clipId, direction) {
   const result = clips.slice();
   [result[index], result[nextIndex]] = [result[nextIndex], result[index]];
   return { clips: result, selectedId: clipId };
+}
+
+export function renumberAutoTitles(clips, titleFor) {
+  if (!Array.isArray(clips) || typeof titleFor !== "function") return null;
+  return clips.map((clip, index) => clip?.autoTitle
+    ? { ...clip, title: String(titleFor(index)) }
+    : clip);
 }
 
 function safeText(value, max = 500) {
