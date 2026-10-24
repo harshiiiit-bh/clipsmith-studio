@@ -28,7 +28,7 @@ function refreshMemoryPanel(){
   if(label)label.textContent=profile.label;
   if(advice)advice.textContent=profile.description;
   if(toggle)toggle.checked=memorySafeMode;
-  if(status&&!status.dataset.custom)status.textContent="Draft memory saves clip timings, subtitles and settings on this device. The original video file is not copied into autosave; re-import it after reopening a project.";
+  if(status&&!status.dataset.custom)status.textContent="Project edits and subtitles autosave locally. The Memory Vault separately remembers the source video when storage permits.";
 }
 function setMemoryStatus(message,type="ready"){
   const status=$("memorySystemStatus");if(status){status.textContent=message;status.dataset.custom="true";status.dataset.state=type}
