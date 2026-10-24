@@ -123,6 +123,14 @@ try {
   // Creator Power Tools must work as real controls, not a visual-only modal.
   await page.locator("#powerToolsBtn").click();
   assert.equal(await page.locator("#powerToolsModal").isVisible(), true, "Power Tools opens from the desktop toolbar");
+  const timecodeChecks = await page.evaluate(() => ({
+    full: window.ClipSmithPowerTools.parseTimecode("01:02:03.5"),
+    short: window.ClipSmithPowerTools.parseTimecode("01:23"),
+    decimal: window.ClipSmithPowerTools.parseTimecode("12.25"),
+    invalid: window.ClipSmithPowerTools.parseTimecode("01:60")
+  }));
+  assert.deepEqual(timecodeChecks, { full: 3723.5, short: 83, decimal: 12.25, invalid: null },
+    "timecode parser accepts supported formats and rejects out-of-range seconds");
   await page.locator("#presetShortsBtn").click();
   assert.equal(await page.locator("#aspectSelect").inputValue(), "9:16", "Shorts preset changes the preview ratio");
   assert.equal(await page.locator("#exportAspectSelect").inputValue(), "9:16", "Shorts preset also changes the export ratio");
@@ -130,6 +138,10 @@ try {
   assert.equal(await page.locator("#powerFilenamePreview").textContent(), "WatchToon-01-clip-title.mp4", "custom export filename preview updates live");
   await page.locator("#closePowerToolsBtn").click();
   assert.equal(await page.locator("#powerToolsModal").isVisible(), false, "Power Tools closes cleanly");
+  await page.keyboard.press("Alt+p");
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), true, "Alt+P opens Creator Power Tools");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator("#powerToolsModal").isVisible(), false, "Escape closes Creator Power Tools");
 
 
   // Check the smaller viewport and mobile tab integration too.
