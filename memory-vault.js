@@ -113,6 +113,9 @@ export async function getCurrentMemoryInfo() {
 }
 
 export async function clearCurrentMemory() {
+  clearTimeout(snapshotTimer);
+  snapshotTimer = undefined;
+  await mediaWriteQueue.catch(() => {});
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(["sessions", "media"], "readwrite");
