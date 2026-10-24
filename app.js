@@ -220,13 +220,59 @@ function releaseTemporaryMemory({silent=false}={}){
 function makeClip(start,end,i){return{id:uid(),start,end,title:state.autoParts?`${state.seriesTitle} · Part ${i+1}`:state.seriesTitle,autoTitle:state.autoParts,caption:state.captionStyle.text,titleStyle:{...state.titleStyle},captionStyle:{...state.captionStyle},fx:{...DEFAULT_FX}}}
 function generateClips({notify=true}={}){if(!state.duration)return toast("Add a video first");const seg=buildClipSegmentsExcludingRanges(state.duration,state.durationPreset,state.skipRanges);if(seg===null)return toast("That would create too many clips. Choose a longer duration");if(!seg.length)return toast("No usable footage remains. Check the marked skip ranges or choose a shorter clip length");state.clips=seg.map(s=>makeClip(s.start,s.end,s.index));state.selectedId=state.clips[0]?.id||null;commit();renderAll();if(notify)toast(`${state.clips.length} clips ready`)}
 function applyTitle(){state.seriesTitle=$("seriesTitle").value.trim()||"Untitled";state.autoParts=$("autoParts").checked;state.clips.forEach((c,i)=>{if(c.autoTitle!==false)c.title=state.autoParts?`${state.seriesTitle} · Part ${i+1}`:state.seriesTitle;c.autoTitle=state.autoParts});commit();renderAll();toast("Title pattern applied")}
-function selectClip(id){state.selectedId=id;const c=selected();if(c&&$("previewVideo").src)$("previewVideo").currentTime=clamp(c.start,0,state.duration);syncInspector();renderTimeline();renderClips();updatePreview();persist()}
+function selectClip(id){state.selectedId=id;const c=selected();if(c&&$("previewVideo").src)$("previewVideo").currentTime=clamp(c.start,0,state.duration);syncInspector();renderTimeline();renderClips();updatePreview();requestAnimationFrame(()=>scrollClipCardIntoView(id));persist()}
 function splitSelected(){const c=selected();if(!c)return toast("Select a clip first");const t=$("previewVideo").currentTime;if(t<=c.start+.05||t>=c.end-.05)return toast("Put the playhead inside the selected clip");const r=splitClipAt(state.clips,c.id,t,{makeId:uid,titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});if(!r)return toast("Could not split here");state.clips=renumberAutoTitles(r.clips,i=>`${state.seriesTitle} · Part ${i+1}`);state.selectedId=r.selectedId;commit();renderAll();toast("Split at playhead")}
 function duplicateSelected(){const c=selected();if(!c)return toast("Select a clip first");const r=duplicateClip(state.clips,c.id,{makeId:uid,titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});state.clips=renumberAutoTitles(r.clips,i=>`${state.seriesTitle} · Part ${i+1}`);state.selectedId=r.selectedId;commit();renderAll();toast("Clip duplicated")}
 function moveSelected(d){const c=selected();if(!c)return toast("Select a clip first");const r=moveClip(state.clips,c.id,d);if(!r)return;state.clips=renumberAutoTitles(r.clips,i=>`${state.seriesTitle} · Part ${i+1}`);commit();renderAll()}
 function deleteSelected(){const c=selected();if(!c)return toast("Select a clip first");const result=removeClipAndRenumber(state.clips,c.id,{titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});if(!result)return;state.clips=result.clips;state.selectedId=result.selectedId;commit();renderAll();toast("Clip removed · part numbers fixed")}
 function renderTimeline(){const root=$("timeline");root.innerHTML="";if(!state.clips.length){root.innerHTML='<div class="timeline-empty">Import a video to build your clip sequence.</div>';return}const total=Math.max(1,state.duration||state.clips.at(-1).end);state.clips.forEach((c,i)=>{const e=document.createElement("button");e.type="button";e.dataset.clipId=c.id;e.className=`timeline-block ${c.id===state.selectedId?"selected":""}`;const baseWidth=Math.max(62,Math.min(260,(c.end-c.start)*2));e.dataset.baseWidth=String(baseWidth);e.style.width=`${baseWidth}px`;e.innerHTML=`<span>${i+1}</span><b>${esc(c.title)}</b>`;e.title=`${fmt(c.start)} – ${fmt(c.end)}`;e.onclick=()=>selectClip(c.id);root.appendChild(e)})}
 function renderClips(){const root=$("clip-strip");root.innerHTML="";if(!state.clips.length){root.innerHTML='<div class="queue-empty">No clips yet</div>';return}state.clips.forEach((c,i)=>{const e=document.createElement("button");e.type="button";e.draggable=true;e.dataset.clipId=c.id;e.className=`clip-card ${c.id===state.selectedId?"selected":""}`;e.innerHTML=`<div class="clip-thumb"><span>${String(i+1).padStart(2,"0")}</span><span class="drag-hint">⠿ drag</span></div><div><div class="clip-meta">PART ${i+1}</div><div class="clip-title">${esc(c.title)}</div><div class="clip-time">${fmt(c.start)} → ${fmt(c.end)}</div></div>`;e.onclick=()=>selectClip(c.id);e.addEventListener("dragstart",event=>{event.dataTransfer?.setData("text/plain",c.id);if(event.dataTransfer)event.dataTransfer.effectAllowed="move";e.classList.add("dragging")});e.addEventListener("dragend",()=>e.classList.remove("dragging"));e.addEventListener("dragover",event=>{event.preventDefault();e.classList.add("drag-over")});e.addEventListener("dragleave",()=>e.classList.remove("drag-over"));e.addEventListener("drop",event=>{event.preventDefault();e.classList.remove("drag-over");const from=event.dataTransfer?.getData("text/plain");if(!from||from===c.id)return;const result=reorderClip(state.clips,from,c.id,{titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});if(!result)return;state.clips=result.clips;state.selectedId=result.selectedId;commit();renderAll();toast("Clip order updated")});root.appendChild(e)})}
+function syncClipStripSlider(){
+  const strip=$("clip-strip"),slider=$("clipStripSlider"),prev=$("clipStripPrevBtn"),next=$("clipStripNextBtn"),position=$("clipStripPosition");
+  if(!strip||!slider)return;
+  const cards=$(".clip-card",strip),maxScroll=Math.max(0,strip.scrollWidth-strip.clientWidth);
+  const ratio=maxScroll>0?clamp(strip.scrollLeft/maxScroll,0,1):0;
+  slider.max="1000";
+  slider.disabled=maxScroll<2;
+  if(document.activeElement!==slider)slider.value=String(Math.round(ratio*1000));
+  if(prev)prev.disabled=maxScroll<2||strip.scrollLeft<=2;
+  if(next)next.disabled=maxScroll<2||strip.scrollLeft>=maxScroll-2;
+  const step=cards.length?cards[0].getBoundingClientRect().width+12:172;
+  const first=cards.length?Math.min(cards.length,Math.floor(strip.scrollLeft/Math.max(1,step))+1):0;
+  const visibleCount=cards.length?Math.max(1,Math.ceil(strip.clientWidth/Math.max(1,step))):0;
+  const last=cards.length?Math.min(cards.length,first+visibleCount-1):0;
+  const label=cards.length?(first+"–"+last+" / "+cards.length):"No clips";
+  if(position)position.textContent=label;
+  slider.setAttribute("aria-valuetext",cards.length?("Clips "+first+" to "+last+" of "+cards.length):"No clips");
+}
+function scrollClipStrip(direction){
+  const strip=$("clip-strip");
+  if(!strip)return;
+  const step=Math.max(172,Math.min(strip.clientWidth*.82,strip.clientWidth-20));
+  strip.scrollBy({left:direction*step,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+}
+function scrollClipCardIntoView(id){
+  const strip=$("clip-strip");
+  if(!strip)return;
+  const card=$(".clip-card",strip).find(item=>item.dataset.clipId===id);
+  if(!card)return;
+  const left=card.offsetLeft,right=left+card.offsetWidth,viewLeft=strip.scrollLeft,viewRight=viewLeft+strip.clientWidth;
+  if(left<viewLeft+5)strip.scrollTo({left:Math.max(0,left-5),behavior:"smooth"});
+  else if(right>viewRight-5)strip.scrollTo({left:Math.max(0,right-strip.clientWidth+5),behavior:"smooth"});
+  requestAnimationFrame(syncClipStripSlider);
+}
+function initializeClipStripSlider(){
+  const strip=$("clip-strip"),slider=$("clipStripSlider");
+  if(!strip||!slider)return;
+  slider.addEventListener("input",()=>{const maxScroll=Math.max(0,strip.scrollWidth-strip.clientWidth);strip.scrollLeft=(Number(slider.value)/1000)*maxScroll;syncClipStripSlider()});
+  $("clipStripPrevBtn")?.addEventListener("click",()=>scrollClipStrip(-1));
+  $("clipStripNextBtn")?.addEventListener("click",()=>scrollClipStrip(1));
+  strip.addEventListener("scroll",()=>requestAnimationFrame(syncClipStripSlider),{passive:true});
+  window.addEventListener("resize",syncClipStripSlider,{passive:true});
+  new MutationObserver(()=>requestAnimationFrame(syncClipStripSlider)).observe(strip,{childList:true});
+  requestAnimationFrame(syncClipStripSlider);
+}
+initializeClipStripSlider();
 function updatePreview(){const c=selected(),style=c?.titleStyle||state.titleStyle,cap=c?.captionStyle||state.captionStyle;const title=$("titleOverlay"),caption=$("captionOverlay");$("titleOverlayText").textContent=c?.title||`${state.seriesTitle} · Part 1`;const shadow=clamp(Number(style.shadow??6),0,16);Object.assign(title.style,{fontFamily:style.font,fontSize:String(style.size)+"px",fontWeight:style.bold===false?500:800,fontStyle:style.italic?"italic":"normal",letterSpacing:String(Number(style.spacing)||0)+"px",color:style.color,opacity:style.opacity,textShadow:shadow?"0 "+Math.max(1,shadow*.33)+"px "+Math.max(2,shadow*.5)+"px "+style.outline+",0 "+Math.max(2,shadow*.83)+"px "+Math.max(4,shadow*3)+"px #000":"none"});caption.textContent=c?.caption||cap.text||"";caption.style.color=cap.highlight;caption.style.bottom=`${100-cap.positionY}%`;updateActiveSubtitle();const v=$("previewVideo");if(v){const fx={...DEFAULT_FX,...(c?.fx||state.fx)};v.style.filter=`brightness(${clamp(100*(1+Number(fx.brightness||0)),0,200)}%) contrast(${Number(fx.contrast??1)*100}%) saturate(${Number(fx.saturation??1)*100}%) blur(${Math.max(0,Number(fx.blur)||0)}px)`;v.playbackRate=clamp(Number(fx.speed)||1,.25,4);v.volume=clamp(Number(fx.volume??1),0,1);v.muted=!!fx.mute}}
 function syncInspector(){const c=selected(),fx={...DEFAULT_FX,...(c?.fx||state.fx)};if(c?.titleStyle)state.titleStyle={...state.titleStyle,...c.titleStyle};if($("canvasTitleColor"))$("canvasTitleColor").value=state.titleStyle.color;if($("subtitleStyle"))$("subtitleStyle").value=state.subtitleSettings.style;if($("subtitleHighlightColor"))$("subtitleHighlightColor").value=state.subtitleSettings.highlight;if($("subtitlePositionY"))$("subtitlePositionY").value=state.subtitleSettings.positionY;if($("selectedClipLabel"))$("selectedClipLabel").textContent=c?c.title:"No clip selected";setTimeInputs("clipStart",c?.start??null);setTimeInputs("clipEnd",c?.end??null);if($("captionText"))$("captionText").value=c?.caption??state.captionStyle.text;if($("seriesTitle"))$("seriesTitle").value=state.seriesTitle;if($("autoParts"))$("autoParts").checked=state.autoParts;if($("titleFont"))$("titleFont").value=state.titleStyle.font;if($("titleSize"))$("titleSize").value=state.titleStyle.size;if($("titleColor"))$("titleColor").value=state.titleStyle.color;if($("titleOutline"))$("titleOutline").value=state.titleStyle.outline;if($("titleOpacity"))$("titleOpacity").value=state.titleStyle.opacity;if($("titleBold"))$("titleBold").checked=state.titleStyle.bold!==false;if($("titleItalic"))$("titleItalic").checked=!!state.titleStyle.italic;if($("titleSpacing"))$("titleSpacing").value=state.titleStyle.spacing??0;if($("titleShadow"))$("titleShadow").value=state.titleStyle.shadow??6;["fxPreset","fxBrightness","fxContrast","fxSaturation","fxBlur","fxSpeed","fxVolume"].forEach(id=>{if($(id))$(id).value=fx[id.slice(2).toLowerCase()]});if($("fxMute"))$("fxMute").checked=!!fx.mute}
 function renderSkipRanges(){const root=$("skipRangeList");if(!root)return;if(!state.skipRanges.length){root.innerHTML='<p class="hint">No promo or ad ranges marked yet.</p>';return}root.innerHTML=state.skipRanges.map((r,i)=>`<div class="skip-range-item"><div><strong>${esc(r.label||('Promo / ad break '+(i+1)))}</strong><small>${fmt(r.start)} → ${fmt(r.end)} · ${fmt(r.end-r.start)}</small></div><button class="remove-skip-btn" type="button" data-remove-skip="${esc(r.id)}" aria-label="Remove skip range">×</button></div>`).join('')}
