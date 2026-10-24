@@ -1292,3 +1292,38 @@ button, .apk-download-btn, .clip-card, .tool, .mobile-tab { touch-action: manipu
   .hint, .muted, .timeline-head span { color: #c2cadb; }
   .field, .soft-btn, .top-btn, .icon-btn { border-color: #667087; }
 }
+
+
+/* Lightweight inline SVG navigation icons (no runtime icon package or CDN). */
+.tool-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  color: #a9b1c5;
+}
+.tool-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: color .16s ease, transform .16s ease;
+}
+.tool.active .tool-icon { color: #e8e0ff; }
+.tool.active .tool-icon svg { filter: drop-shadow(0 0 7px #b8a4ff25); }
+.tool:hover .tool-icon svg { transform: translateY(-1px); }
+.mobile-tab span svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mobile-tab.active span svg { filter: drop-shadow(0 0 7px #b8a4ff25); }
