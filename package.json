@@ -6,7 +6,7 @@
   "scripts": {
     "prepare:mobile": "node scripts/prepare-mobile.mjs",
     "sync:android": "npm run prepare:mobile && npx cap sync android",
-    "check:mobile": "node tests/mobile-memory-smoke.mjs"
+    "check:mobile": "node tests/mobile-memory-smoke.mjs && node tests/android-packaging-smoke.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
