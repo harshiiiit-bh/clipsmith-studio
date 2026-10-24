@@ -122,8 +122,8 @@ try {
 
   // Check the smaller viewport and mobile tab integration too.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('.mobile-tab[data-tool="captions"]').click();
-  assert.equal(await page.locator("#pane-captions").isVisible(), true, "mobile tab should open its tool pane");
+  await page.locator('.mobile-tab[data-tool="text"]').click();
+  assert.equal(await page.locator("#pane-text").isVisible(), true, "mobile tab should open its tool pane");
   assert.equal(await page.locator("#inspector").evaluate((el) => el.classList.contains("open")), true,
     "mobile inspector drawer should open with the selected tool");
 
