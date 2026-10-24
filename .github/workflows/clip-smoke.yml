@@ -45,6 +45,8 @@ jobs:
           node-version: 22
       - name: Syntax and editor-feature checks
         run: |
+          node --check app.js
+          node --check subtitle-tools.js
           node --check workspace-controls.js
           node tests/smoke.mjs
           node tests/editor-upgrade-smoke.mjs

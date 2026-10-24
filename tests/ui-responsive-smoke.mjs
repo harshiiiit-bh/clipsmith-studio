@@ -10,6 +10,8 @@ const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
 const mobilePrepare = readFileSync(join(root, "scripts", "prepare-mobile.mjs"), "utf8");
 const androidWorkflow = readFileSync(join(root, ".github", "workflows", "android-apk.yml"), "utf8");
 const workspaceControls = readFileSync(join(root, "workspace-controls.js"), "utf8");
+const app = readFileSync(join(root, "app.js"), "utf8");
+const subtitleTools = readFileSync(join(root, "subtitle-tools.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
 assert.match(html, /href="\.\/studio-2\.css\?[^"]+"/, "Studio 2.0 responsive layer is linked");
@@ -70,4 +72,20 @@ assert.equal(
   "Android workflow must rebuild when workspace controls change on push or pull request"
 );
 
+assert.ok(html.includes('id="commandPaletteBtn"'), "quick actions trigger exists");
+assert.ok(html.includes('id="commandPaletteSearch"'), "quick actions search field exists");
+assert.ok(html.includes('id="commandPaletteList"'), "quick actions list exists");
+assert.ok(html.includes('id="titleBold"') && html.includes('id="titleItalic"'), "bold and italic controls exist");
+assert.ok(html.includes('id="titleSpacing"') && html.includes('id="titleShadow"'), "letter spacing and shadow controls exist");
+for (const font of ["Manrope", "Poppins", "Montserrat", "Roboto Condensed", "Permanent Marker", "Playfair Display"]) assert.ok(html.includes(`<option>${font}</option>`), `heading font available: ${font}`);
+assert.ok(app.includes("fontWeight:style.bold===false?500:800"), "on-canvas heading reflects bold state");
+assert.ok(app.includes('fontStyle:style.italic?"italic":"normal"'), "on-canvas heading reflects italic state");
+assert.ok(app.includes("letterSpacing:"), "on-canvas heading reflects letter spacing");
+assert.ok(app.includes('"titleBold","titleItalic","titleSpacing","titleShadow"'), "new typography controls persist through the existing style handler");
+assert.ok(subtitleTools.includes("${titleBold},${titleItalic}"), "MP4/ASS title style exports bold and italic settings");
+assert.ok(subtitleTools.includes("${titleSpacing}"), "MP4/ASS title style exports letter spacing");
+assert.ok(subtitleTools.includes("${(titleShadow/3).toFixed(1)}"), "MP4/ASS title style exports shadow depth");
+assert.ok(workspaceControls.includes("const actions = ["), "quick actions palette has command definitions");
+assert.ok(workspaceControls.includes('event.key === "ArrowDown"'), "quick actions supports keyboard navigation");
+assert.ok(css.includes(".command-palette-scrim") && css.includes(".text-style-toggles"), "new typography and command palette styles exist");
 console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");

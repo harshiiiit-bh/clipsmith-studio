@@ -565,3 +565,43 @@ textarea:focus-visible, [tabindex]:focus-visible {
 @media (max-width: 960px) {
   .timeline-zoom-controls { display: none; }
 }
+
+
+/* Expanded typography controls for consistent on-canvas and exported headings. */
+.text-style-toggles { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:9px 0 3px; }
+.text-style-toggles .text-style-toggle { display:inline-flex; align-items:center; gap:7px; margin:0; padding:8px 11px; border:1px solid var(--line); border-radius:10px; background:#ffffff04; color:var(--text); font-size:11px; font-weight:700; }
+.text-style-toggles .text-style-toggle input { accent-color:var(--accent2); }
+
+/* Searchable command palette — fast access without crowding the workspace. */
+.command-palette-scrim { position:fixed; inset:0; z-index:10050; display:flex; align-items:flex-start; justify-content:center; padding:min(12vh,90px) 18px 18px; background:#05060bd9; backdrop-filter:blur(15px); }
+.command-palette { width:min(640px,100%); max-height:min(690px,78dvh); overflow:hidden; display:flex; flex-direction:column; padding:16px; border:1px solid #a994ff40; border-radius:20px; background:linear-gradient(165deg,#171923,#0c0e15 76%); box-shadow:0 28px 90px #000a,inset 0 1px #ffffff10; }
+.command-palette-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:13px; }
+.command-palette-head h2 { margin:4px 0 0; color:#f7f5ff; font-size:21px; letter-spacing:-.7px; }
+.command-palette-head .eyebrow { color:#b4a3ff; font-size:9px; letter-spacing:1.7px; }
+.command-search-label { display:block; margin-bottom:7px; color:#aab1c1; font-size:10px; font-weight:700; }
+.command-palette-search { display:flex; align-items:center; gap:10px; padding:0 12px; border:1px solid #49405f; border-radius:12px; background:#090a11; }
+.command-palette-search > span { color:#b5a5ff; font-size:23px; line-height:1; }
+.command-palette-search input { width:100%; min-width:0; height:47px; border:0; outline:0; background:transparent; color:#faf9ff; font-size:13px; }
+.command-palette-search input:focus-visible { outline:0; }
+.command-palette-list { display:flex; flex-direction:column; gap:4px; min-height:0; max-height:48dvh; margin-top:10px; overflow-y:auto; overscroll-behavior:contain; }
+.command-item { display:flex; width:100%; align-items:center; justify-content:space-between; gap:14px; min-height:53px; padding:9px 11px; border:1px solid transparent; border-radius:10px; background:transparent; color:#f1f0f8; text-align:left; cursor:pointer; }
+.command-item:hover, .command-item[aria-selected="true"] { border-color:#9e89ff4d; background:linear-gradient(100deg,#34274d99,#1c1c2b); }
+.command-item-copy { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.command-item-title { color:#f5f2ff; font-size:12px; font-weight:800; }
+.command-item-detail { color:#a5adbd; font-size:10px; font-weight:500; line-height:1.45; }
+.command-item-category { flex:0 0 auto; color:#b4a4ff; font-size:8px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+.command-empty { padding:22px 10px; color:#a8afbf; font-size:12px; text-align:center; }
+.command-palette-foot { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:9px; padding-top:12px; margin-top:8px; border-top:1px solid #ffffff12; color:#929bad; font-size:9px; }
+.command-palette-foot > span:last-child { display:flex; align-items:center; gap:4px; }
+.command-palette-foot kbd { min-width:19px; padding:3px 5px; border:1px solid #3c4050; border-radius:5px; color:#d1c8f8; background:#ffffff06; font:9px "JetBrains Mono",monospace; text-align:center; }
+.command-palette-trigger { color:#d2c7ff; border-color:#3e3557; }
+@media (max-width:520px) {
+  .command-palette-trigger { display:none; }
+  .command-palette-scrim { padding:12px 8px; align-items:flex-start; }
+  .command-palette { max-height:88dvh; padding:12px; border-radius:16px; }
+  .command-palette-head h2 { font-size:18px; }
+  .command-palette-list { max-height:63dvh; }
+  .command-item { min-height:49px; padding:8px; }
+  .command-item-detail { max-width:230px; }
+  .command-palette-foot { font-size:8px; }
+}
