@@ -6,13 +6,13 @@ on:
       - "index.html"
       - "creator-assistant.js"
       - "editor-tools.js"
-      - "editor-tools.js"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
   pull_request:
     paths:
       - "index.html"
       - "creator-assistant.js"
+      - "editor-tools.js"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
 jobs:
