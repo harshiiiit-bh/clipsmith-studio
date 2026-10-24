@@ -23,6 +23,61 @@ export function buildClipSegments(duration, clipSeconds = 30, options = {}) {
   return segments;
 }
 
+
+/**
+ * Build clips from the portions of a source video that remain after marked
+ * promo/ad ranges are excluded. Boundaries always refer to the original file.
+ */
+export function buildClipSegmentsExcludingRanges(duration, clipSeconds = 30, skipRanges = [], options = {}) {
+  const total = Number(duration);
+  const step = Number(clipSeconds);
+  const minSegment = Number.isFinite(Number(options.minSegmentSeconds)) && Number(options.minSegmentSeconds) > 0
+    ? Number(options.minSegmentSeconds)
+    : MIN_SPLIT_FRAGMENT_SECONDS;
+  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(step) || step <= 0) return [];
+
+  const ranges = (Array.isArray(skipRanges) ? skipRanges : [])
+    .map((range) => ({
+      start: Math.max(0, Math.min(total, Number(range?.start))),
+      end: Math.max(0, Math.min(total, Number(range?.end)))
+    }))
+    .filter((range) => Number.isFinite(range.start) && Number.isFinite(range.end) && range.end - range.start >= 0.05)
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const merged = [];
+  for (const range of ranges) {
+    const previous = merged[merged.length - 1];
+    if (previous && range.start <= previous.end + 0.01) {
+      previous.end = Math.max(previous.end, range.end);
+    } else {
+      merged.push({ ...range });
+    }
+  }
+
+  const kept = [];
+  let cursor = 0;
+  for (const range of merged) {
+    if (range.start - cursor >= minSegment) kept.push([cursor, range.start]);
+    cursor = Math.max(cursor, range.end);
+  }
+  if (total - cursor >= minSegment) kept.push([cursor, total]);
+
+  const segments = [];
+  for (const [rangeStart, rangeEnd] of kept) {
+    for (let start = rangeStart; start < rangeEnd - 0.05; start += step) {
+      const end = Math.min(rangeEnd, start + step);
+      if (end - start < minSegment) break;
+      segments.push({
+        start: Number(start.toFixed(3)),
+        end: Number(end.toFixed(3)),
+        index: segments.length
+      });
+      if (segments.length > MAX_AUTO_CLIPS) return null;
+    }
+  }
+  return segments;
+}
+
 function copyJSON(value) {
   return JSON.parse(JSON.stringify(value));
 }
