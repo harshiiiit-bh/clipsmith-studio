@@ -133,6 +133,8 @@ try {
     { value: "4:5", ratio: 4 / 5, name: "feed" }
   ];
   let previousCanvasWidth = 0;
+  let previousCanvasHeight = 0;
+  let previousPanelWidth = 0;
   let previousTitleFontSize = 0;
   for (const target of ratioChecks) {
     await page.locator("#aspectSelect").selectOption(target.value);
@@ -145,6 +147,9 @@ try {
     }, target.value, { timeout: 4000 });
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector("#preview-canvas").getBoundingClientRect();
+      const panel = document.querySelector(".preview-panel").getBoundingClientRect();
+      const editor = document.querySelector(".editor-center");
+      const timelinePanel = document.querySelector(".timeline-panel").getBoundingClientRect();
       const stageEl = document.querySelector("#preview-stage");
       const stage = stageEl.getBoundingClientRect();
       const style = getComputedStyle(stageEl);
@@ -157,6 +162,7 @@ try {
       const contentCenterX = stage.left + borderLeft + padLeft + (stageEl.clientWidth - padLeft - padRight) / 2;
       const contentCenterY = stage.top + borderTop + padTop + (stageEl.clientHeight - padTop - padBottom) / 2;
       return { canvasWidth: canvas.width, canvasHeight: canvas.height, stageWidth: stage.width, stageHeight: stage.height,
+        previewPanelWidth: panel.width, timelinePanelHeight: timelinePanel.height, workspaceAspect: editor.dataset.aspect,
         centerDelta: Math.hypot((canvas.left + canvas.right) / 2 - contentCenterX, (canvas.top + canvas.bottom) / 2 - contentCenterY) };
     });
     assert.ok(dimensions.canvasWidth <= dimensions.stageWidth + 1 && dimensions.canvasHeight <= dimensions.stageHeight + 1,
