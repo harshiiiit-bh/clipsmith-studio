@@ -20,8 +20,8 @@ assert.equal(getImportKind({ name: "camera-file", type: "video/mp4" }), "video",
 assert.equal(getImportKind({ name: "notes.pdf", type: "application/pdf" }), "unsupported");
 assert.equal(getVideoMimeType("episode.mkv"), "video/x-matroska");
 assert.equal(getVideoMimeType("episode.mp4"), "video/mp4");
-assert.equal(formatMediaBytes(1024), "1 KB");
-assert.equal(formatMediaBytes(1024 * 1024), "1 MB");
+assert.equal(formatMediaBytes(1024), "1.00 KB");
+assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
 
 assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker must not hide ZIP or uncommon video files with a narrow accept filter");
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
@@ -30,7 +30,7 @@ assert.match(html, /app\.js\?v=20261024-zipimport1/);
 assert.match(app, /chooseVideoFromZip/);
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app, /libx264/);
-assert.match(app, /Original source retained for export/);
+assert.match(app, /original source retained for export/i);
 assert.match(importer, /new ZipReader\(new BlobReader\(file\)\)/, "archive indexing should seek through the selected local File");
 assert.match(importer, /entry\.getData\(new BlobWriter\(mime\)/, "only the selected entry should be extracted");
 assert.match(importer, /entry\.uncompressedSize/);
