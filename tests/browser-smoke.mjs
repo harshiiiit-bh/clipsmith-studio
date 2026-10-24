@@ -52,6 +52,18 @@ try {
   const pageErrors = [];
   const localRequestFailures = [];
   const localConsoleErrors = [];
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Runtime.enable");
+  cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => {
+    const frame = exceptionDetails.stackTrace?.callFrames?.[0];
+    pageErrors.push(JSON.stringify({
+      text: exceptionDetails.text,
+      url: frame?.url || exceptionDetails.url || "",
+      line: (frame?.lineNumber ?? exceptionDetails.lineNumber ?? -1) + 1,
+      column: (frame?.columnNumber ?? exceptionDetails.columnNumber ?? -1) + 1,
+      description: exceptionDetails.exception?.description || ""
+    }));
+  });
   page.on("pageerror", (error) => pageErrors.push(error.stack || error.message));
   page.on("console", (message) => {
     if (message.type() !== "error") return;
