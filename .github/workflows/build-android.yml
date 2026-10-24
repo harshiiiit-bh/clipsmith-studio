@@ -1,0 +1,110 @@
+name: Build and publish ClipSmith Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "app.js"
+      - "styles.css"
+      - "creator-assistant.js"
+      - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "ai-creator-tools.js"
+      - "transcribe-worker.js"
+      - "memory-vault.js"
+      - "capacitor.config.json"
+      - "package.json"
+      - ".github/workflows/build-android.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clipsmith-android-apk
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build installable Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "package.json"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Capacitor toolchain
+        run: npm install --no-audit --no-fund
+
+      - name: Assemble local web app bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android-web
+          cp index.html app.js styles.css creator-assistant.js editor-tools.js subtitle-tools.js ai-creator-tools.js transcribe-worker.js memory-vault.js android-web/
+          test -s android-web/index.html
+          test -s android-web/memory-vault.js
+          grep -q 'memory-vault.js' android-web/app.js
+
+      - name: Generate Android shell
+        run: npx cap add android
+
+      - name: Sync bundled editor into Android
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare stable download asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/ClipSmith-Android.apk
+          test -s dist/ClipSmith-Android.apk
+          sha256sum dist/ClipSmith-Android.apk | tee dist/ClipSmith-Android.apk.sha256
+          ls -lh dist/ClipSmith-Android.apk
+
+      - name: Upload build artifact for diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClipSmith-Android-APK
+          path: |
+            dist/ClipSmith-Android.apk
+            dist/ClipSmith-Android.apk.sha256
+          retention-days: 30
+
+      - name: Publish stable APK download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release upload android-latest dist/ClipSmith-Android.apk dist/ClipSmith-Android.apk.sha256 --clobber
+            gh release edit android-latest --title "ClipSmith Studio for Android" --notes "Latest installable ClipSmith Studio Android build. Install the APK on Android and allow installation from this source when prompted. Source video stays on-device; Memory Vault saves project state and can optionally keep one source video locally. First-time Whisper transcription and FFmpeg features may need an internet connection to download their browser models/runtime."
+          else
+            gh release create android-latest dist/ClipSmith-Android.apk dist/ClipSmith-Android.apk.sha256 --target "${GITHUB_SHA}" --title "ClipSmith Studio for Android" --notes "Latest installable ClipSmith Studio Android build. Install the APK on Android and allow installation from this source when prompted. Source video stays on-device; Memory Vault saves project state and can optionally keep one source video locally. First-time Whisper transcription and FFmpeg features may need an internet connection to download their browser models/runtime."
+          fi
+          echo "APK release asset published: https://github.com/harshiiiit-bh/clipsmith-studio/releases/download/android-latest/ClipSmith-Android.apk" >> "$GITHUB_STEP_SUMMARY"
