@@ -1545,3 +1545,222 @@ body.archive-picker-open{overflow:hidden}
   .timeline-block b { font-size: 7px; }
   .clip-card { flex-basis: 132px; min-width: 132px; }
 }
+
+
+/* Clip browser: explicit grid rows keep scene status, source timeline and cards
+   in separate spaces. The range control scrubs horizontally through all parts. */
+.editor-center {
+  grid-template-rows: minmax(0, 1fr) clamp(248px, 31vh, 300px) !important;
+}
+.timeline-panel {
+  min-height: 0;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, auto) 56px minmax(82px, 1fr) !important;
+  align-content: stretch;
+  gap: 8px !important;
+  overflow: hidden;
+}
+.timeline-head { grid-row: 1; min-width: 0; }
+.scene-scan-stack {
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  max-height: 72px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.scene-scan-status:empty { display: none !important; }
+.scene-scan-results.hidden { display: none !important; }
+#timeline {
+  grid-row: 3;
+  min-width: 0;
+  min-height: 56px !important;
+  height: 56px;
+  max-height: 56px;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  align-items: stretch;
+  gap: 6px !important;
+}
+.clip-strip-section {
+  grid-row: 4;
+  display: grid;
+  grid-template-rows: 26px minmax(0, 1fr);
+  gap: 6px;
+  min-width: 0;
+  min-height: 82px;
+  overflow: hidden;
+}
+.clip-strip-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  min-height: 26px;
+}
+.clip-strip-label {
+  flex: 0 0 auto;
+  color: #aeb5c7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .15px;
+}
+.clip-strip-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: 0;
+}
+.clip-strip-nav {
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  min-width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 1px solid #3a4051;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #202434, #151925);
+  color: #e6e3f6;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, opacity .15s ease;
+}
+.clip-strip-nav:hover:not(:disabled) {
+  border-color: #a28bef;
+  background: #2a2340;
+}
+.clip-strip-nav:disabled { opacity: .32; cursor: default; }
+.clip-strip-slider {
+  display: block;
+  width: clamp(90px, 15vw, 230px);
+  min-width: 70px;
+  max-width: 230px;
+  height: 25px;
+  margin: 0;
+  accent-color: #b6a0ff;
+  cursor: ew-resize;
+  touch-action: pan-x;
+}
+.clip-strip-slider:disabled { opacity: .35; cursor: default; }
+.clip-strip-position {
+  min-width: 58px;
+  color: #949db2;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.clip-strip {
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 0 !important;
+  height: 100%;
+  max-height: 100%;
+  padding: 4px 5px 8px !important;
+  margin: 0;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #71639c #171a25;
+  border: 1px solid #303747;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #0b0e15, #10131c);
+}
+.clip-card {
+  position: relative;
+  flex: 0 0 160px !important;
+  width: 160px !important;
+  min-width: 160px !important;
+  max-width: 160px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none;
+  margin: 0 !important;
+  padding: 7px !important;
+  align-self: stretch;
+  overflow: hidden;
+  scroll-snap-align: start;
+  border: 1px solid #384052;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #171c29, #10131b);
+}
+.clip-card > div:last-child { min-width: 0; overflow: hidden; }
+.clip-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #292b45, #151a25);
+}
+.clip-thumb > span:first-child { font-size: 11px; }
+.clip-thumb .drag-hint { max-width: 100%; color: #8f97ad; font-size: 7px; white-space: nowrap; }
+.clip-title { max-width: 100%; line-height: 1.35; }
+.clip-time { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-height: 760px) and (min-width: 821px) {
+  .editor-center {
+    grid-template-rows: minmax(0, 1fr) clamp(248px, 34vh, 290px) !important;
+  }
+  .timeline-panel {
+    grid-template-rows: auto minmax(0, auto) 54px minmax(82px, 1fr) !important;
+    gap: 7px !important;
+    padding: 9px 11px !important;
+  }
+  #timeline { height: 54px; min-height: 54px !important; }
+}
+@media (max-width: 820px) {
+  .editor-center {
+    grid-template-rows: minmax(0, 1fr) clamp(174px, 25dvh, 218px) !important;
+  }
+  .timeline-panel {
+    grid-template-rows: auto minmax(0, auto) 42px minmax(65px, 1fr) !important;
+    gap: 5px !important;
+    padding: 7px !important;
+  }
+  #timeline { height: 42px; min-height: 42px !important; }
+  .clip-strip-section {
+    grid-template-rows: 23px minmax(0, 1fr);
+    gap: 4px;
+    min-height: 65px;
+  }
+  .clip-strip-toolbar { min-height: 23px; }
+  .clip-strip-label { display: none; }
+  .clip-strip-controls { flex: 1; gap: 6px; }
+  .clip-strip-slider { width: auto; max-width: none; flex: 1; min-width: 60px; height: 23px; }
+  .clip-strip-nav { width: 23px; min-width: 23px; height: 23px; }
+  .clip-strip-position { min-width: 52px; font-size: 8px; }
+  .clip-strip { gap: 9px !important; padding: 3px 4px 5px !important; }
+  .clip-card { flex-basis: 142px !important; width: 142px !important; min-width: 142px !important; max-width: 142px !important; padding: 5px !important; }
+}
+@media (max-height: 620px) and (max-width: 820px) {
+  .editor-center { grid-template-rows: minmax(0, 1fr) 176px !important; }
+  .timeline-panel {
+    grid-template-rows: auto minmax(0, auto) 38px minmax(60px, 1fr) !important;
+    gap: 4px !important;
+    padding: 5px !important;
+  }
+  #timeline { height: 38px; min-height: 38px !important; }
+  .clip-strip-section { grid-template-rows: 21px minmax(0, 1fr); gap: 3px; min-height: 60px; }
+  .clip-strip-toolbar { min-height: 21px; }
+  .clip-strip-nav { width: 21px; min-width: 21px; height: 21px; }
+  .clip-strip-slider { height: 21px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clip-strip { scroll-behavior: auto !important; }
+}
