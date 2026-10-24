@@ -56,7 +56,7 @@ assert.ok(workspaceControls.includes('classList.toggle("focus-preview"'), "focus
 assert.ok(workspaceControls.includes("aria-pressed"), "focus control reports its active state");
 assert.ok(mobilePrepare.includes('"workspace-controls.js"'), "Android WebView packaging must copy workspace controls");
 assert.equal(
-  (androidWorkflow.split('- "workspace-controls.js"').length - 1,
+  (androidWorkflow.split('- "workspace-controls.js"').length - 1),
   2,
   "Android workflow must rebuild when workspace controls change on push or pull request"
 );
