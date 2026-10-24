@@ -92,8 +92,8 @@ function chooseArchiveEntry(file, entries) {
       const visible = sortedEntries.filter((entry) => entry.filename.toLocaleLowerCase().includes(query));
       list.replaceChildren();
       counter.textContent = `${visible.length.toLocaleString()} of ${sortedEntries.length.toLocaleString()} episodes`;
-      useButton.disabled = !selected || !visible.includes(selected);
       if (selected && !visible.includes(selected)) selected = null;
+      useButton.disabled = !selected;
       for (const entry of visible) {
         const row = document.createElement("button");
         row.type = "button";
