@@ -44,7 +44,7 @@ assert.match(tools, /powerSnapshotBtn/);
 assert.match(tools, /Alt\+P|event\.altKey/);
 assert.match(workspace, /Open Creator Power Tools/);
 assert.match(css, /\.power-tools-scrim/);
-assert.match(css, /grid-template-columns:\s*repeat\(7,\s*1fr\)/);
+assert.match(css, /grid-template-columns:\s*repeat\(7,\s*minmax\(0,\s*1fr\)\)/);
 assert.ok(mobilePrepare.includes('"runtime-guard.js"'), "mobile bundle includes startup diagnostics");
 assert.ok(mobilePrepare.includes('"power-tools.js"'), "mobile bundle includes Creator Power Tools");
 assert.ok(smokeWorkflow.includes('node --check power-tools.js'));
