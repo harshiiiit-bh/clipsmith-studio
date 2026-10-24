@@ -3,6 +3,7 @@ import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validatePr
 import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261024-power3";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
+import { getImportKind, chooseVideoFromZip } from "./media-import.js?v=20261024-zipimport1";
 import { scheduleCurrentSession, saveCurrentSession, loadCurrentSession, storeCurrentMedia, loadCurrentMedia, getCurrentMemoryInfo, clearCurrentMemory, flushCurrentSession } from "./memory-vault.js?v=20261024-power3";
 
 const $=id=>document.getElementById(id); const $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -16,6 +17,8 @@ const DEFAULT_FX={preset:"Original",brightness:0,contrast:1,saturation:1,blur:0,
 const state={projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},exportAspect:"source",burnOverlays:true,aspect:"16:9",showSafe:false,seriesTitle:"Your series title",autoParts:true,titleStyle:{font:"Inter",size:30,color:"#fff",outline:"#000",opacity:1,bold:true,italic:false,spacing:0,shadow:6},captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},clips:[],fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null};
 const MAX_CONCURRENT_EXPORTS=1; let lastCommitted=null, visionModelPromise=null, ffmpegInstance=null, ffmpegLoading=null, exportMode="smart", exportBusy=false, exportAspect="source";
 let aiHighlights=[],aiAudit=null,aiCleanup=null,aiChapters=[],aiReadability=null,aiReadiness=null,lastCreatorIdeas=null;
+let previewSourceVersion=0,previewCompatibilityBusy=false,queuedPreviewRecoveryFile=null;
+const previewCompatibilityAttempts=new WeakSet();
 const MEMORY_SAFE_MODE_KEY="clipsmith.memory-safe-mode";
 let memorySafeMode=true;
 try{memorySafeMode=localStorage.getItem(MEMORY_SAFE_MODE_KEY)!=="false"}catch{}
@@ -253,10 +256,115 @@ async function scanSceneChanges(){const video=$("previewVideo"),button=$("sceneS
 function renderAll(){renderTimeline();renderClips();renderSkipRanges();renderSubtitleCueList();syncInspector();updatePreview();$("aspectSelect").value=state.aspect;if($("burnOverlaysToggle"))$("burnOverlaysToggle").checked=state.burnOverlays!==false;$("ratioBadge").textContent=state.aspect;$("safeZones").classList.toggle("hidden",!state.showSafe);$$('#durationChips button').forEach(b=>b.classList.toggle('active',b.dataset.duration===String(state.durationPreset)||(b.dataset.duration==="custom"&&![15,30,45,60].includes(state.durationPreset))));setTimeInputs("duration",state.durationPreset);$("durationBadge").textContent=fmt(state.duration);$("totalTime").textContent=fmt(state.duration);$("timelineHint").textContent=state.clips.length?`${state.clips.length} clips · select one to edit`:"Your sequence is empty";if($("projectName"))$("projectName").value=state.projectName}
 function setTool(tool){if(typeof tool!=="string"||!tool)return;if(tool==="preview"){state.activeTool="preview";$("inspector").classList.remove("open");$$('.tool,.mobile-tab').forEach(x=>x.classList.remove('active'));$$('.mobile-tab[data-tool="preview"]').forEach(x=>x.classList.add('active'));return}state.activeTool=tool;$$('.tool,.mobile-tab').forEach(x=>x.classList.toggle('active',x.dataset.tool===tool));$$('.inspector-pane').forEach(x=>x.classList.add('hidden'));const pane=$("pane-"+tool);if(pane)pane.classList.remove('hidden');$("inspectorTitle").textContent=tool==="cut"?"Clips":tool==="creator"?"Creator Intelligence":tool[0].toUpperCase()+tool.slice(1);if(innerWidth<=820)$("inspector").classList.add('open')}
 function updateImportStatus(text,type="info"){const n=$("importStatus");if(n){n.textContent=text;n.dataset.state=type}}
-function updateSource(file,{sourceUrl=""}={}){if(!file)return;if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}restoreExistingClipsOnLoad=false;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.subtitleCues=[];subtitleCueLimit=80;renderSubtitleCueList();updateActiveSubtitle();state.skipRanges=[];setTimeInputs("skipStart",null);setTimeInputs("skipEnd",null);renderSkipRanges();state.sourceFile=file;state.sourceUrl=sourceUrl;state.sourceMeta={fileName:file.name,fileSize:file.size,sourceUrl,duration:0};state.objectUrl=URL.createObjectURL(file);const v=$("previewVideo");v.src=state.objectUrl;v.load();$("mediaName").textContent=file.name;$("previewEmptyTitle").textContent="Preparing your edit…";$("previewEmptyHint").textContent="Reading the video and building your first clip plan."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Reading video metadata…","loading");setSave("● Media loaded");persist();void rememberSourceMedia(file)}
-function loadFile(file){if(!file)return;const ok=/\.(mp4|webm|mov|mkv|m4v|ogv|avi)$/i.test(file.name)||String(file.type).startsWith('video/');if(!ok)return toast("Choose a video file such as MP4, WebM or MOV","error");if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:file.size,duration:0});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nClose other apps before continuing. Continue anyway?"))return}updateSource(file)}
+function updateSource(file,{sourceUrl=""}={}){if(!file)return;previewSourceVersion++;if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}restoreExistingClipsOnLoad=false;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.subtitleCues=[];subtitleCueLimit=80;renderSubtitleCueList();updateActiveSubtitle();state.skipRanges=[];setTimeInputs("skipStart",null);setTimeInputs("skipEnd",null);renderSkipRanges();state.sourceFile=file;state.sourceUrl=sourceUrl;state.sourceMeta={fileName:file.name,fileSize:file.size,sourceUrl,duration:0};state.objectUrl=URL.createObjectURL(file);const v=$("previewVideo");v.src=state.objectUrl;v.load();$("mediaName").textContent=file.name;$("previewEmptyTitle").textContent="Preparing your edit…";$("previewEmptyHint").textContent="Reading the video and building your first clip plan."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Reading video metadata…","loading");setSave("● Media loaded");persist();void rememberSourceMedia(file)}
+async function loadFile(file){
+  if(!file)return;
+  const kind=getImportKind(file);
+  if(kind==="zip"){
+    try{
+      const episode=await chooseVideoFromZip(file,{onStatus:updateImportStatus});
+      if(episode)await loadFile(episode);
+      else updateImportStatus("ZIP selection cancelled.","info");
+    }catch(error){
+      const message=error?.message||"Could not read that ZIP archive.";
+      updateImportStatus(message,"error");
+      toast(message,"error");
+    }
+    return;
+  }
+  if(kind==="unsupported-archive"){
+    const message="ClipSmith can browse .zip archives directly. Convert this .7z/.rar/.tar archive to ZIP first.";
+    updateImportStatus(message,"error");toast(message,"error");return;
+  }
+  if(kind!=="video"){
+    const message="Choose a video file or a ZIP archive containing video episodes. ClipSmith accepts common video containers and can attempt a local compatibility conversion if the browser cannot decode the video.";
+    updateImportStatus(message,"error");toast("Choose a video file or ZIP archive","error");return;
+  }
+  if(memorySafeMode){
+    const warning=getMediaMemoryWarning({fileSize:file.size,duration:0});
+    if(warning&&!confirm("ClipSmith memory-safety check:\\n\\n"+warning+"\\n\\nClose other apps before continuing. Continue anyway?"))return;
+  }
+  updateSource(file);
+}
+
+async function recoverPreviewCompatibility(file){
+  if(!file||getImportKind(file)!=="video")return;
+  if(previewCompatibilityBusy){queuedPreviewRecoveryFile=file;return;}
+  if(previewCompatibilityAttempts.has(file)){
+    $("previewEmptyTitle").textContent="This video could not be decoded";
+    $("previewEmptyHint").textContent="ClipSmith already tried a local H.264/AAC compatibility conversion. Try a smaller MP4 or a different source file.";
+    updateImportStatus("Preview failed after compatibility conversion. The original file is still selected.","error");
+    return;
+  }
+  if(file.size>1.75*1024*1024*1024){
+    previewCompatibilityAttempts.add(file);
+    const message="This source is over ClipSmith's 1.75 GB in-browser conversion limit. The browser could not decode it; try a smaller compatible MP4.";
+    $("previewEmptyTitle").textContent="Source too large to convert safely";
+    $("previewEmptyHint").textContent=message;
+    updateImportStatus(message,"error");
+    return;
+  }
+  if(memorySafeMode&&file.size>1024*1024*1024&&!confirm("This format needs local video conversion. A source over 1 GB may use substantial RAM. Continue?")){
+    previewCompatibilityAttempts.add(file);
+    updateImportStatus("Compatibility conversion cancelled. The original file remains selected.","error");
+    return;
+  }
+  previewCompatibilityBusy=true;
+  previewCompatibilityAttempts.add(file);
+  const sourceVersion=previewSourceVersion;
+  let ff=null,input="",output="",progressHandler=null;
+  try{
+    $("previewEmpty").classList.remove("hidden");
+    $("previewEmptyTitle").textContent="Preparing a compatible preview…";
+    $("previewEmptyHint").textContent="Converting locally in your browser. The original episode is kept for clip export.";
+    updateImportStatus("Browser could not decode this source. Loading the local compatibility converter…","loading");
+    ff=await getFFmpeg();
+    const ext=(file.name.match(/\.([a-z0-9]{1,8})$/i)?.[1]||"mp4").toLowerCase();
+    const inputExt=/^(mp4|m4v|mov|webm|mkv|avi|ogv|ogg|mpeg|mpg|mts|m2ts|ts|flv|wmv|3gp|3g2|asf|vob|divx|mxf|m2v|mpv|qt|f4v|rm|rmvb)$/.test(ext)?ext:"mp4";
+    input="compat-source-"+uid()+"."+inputExt;
+    output="compat-preview-"+uid()+".mp4";
+    progressHandler=({progress})=>{
+      if(sourceVersion===previewSourceVersion)updateImportStatus("Converting preview locally… "+Math.round(clamp(Number(progress)||0,0,1)*100)+"%","loading");
+    };
+    ff.on("progress",progressHandler);
+    await ff.writeFile(input,new Uint8Array(await file.arrayBuffer()));
+    await ff.exec(["-hide_banner","-y","-i",input,"-map","0:v:0","-map","0:a:0?","-sn","-dn","-c:v","libx264","-preset","ultrafast","-crf","21","-pix_fmt","yuv420p","-c:a","aac","-b:a","160k","-movflags","+faststart",output]);
+    const bytes=await ff.readFile(output);
+    const previewName=(file.name.replace(/\.[^.]+$/,"")||"episode")+".clipsmith-preview.mp4";
+    const compatibleFile=new File([bytes],previewName,{type:"video/mp4",lastModified:file.lastModified||Date.now()});
+    if(sourceVersion!==previewSourceVersion||state.sourceFile!==file)return;
+    if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);
+    state.objectUrl=URL.createObjectURL(compatibleFile);
+    const video=$("previewVideo");
+    video.pause();video.src=state.objectUrl;video.load();
+    previewSourceVersion++;
+    $("previewEmptyTitle").textContent="Preparing a compatible preview…";
+    $("previewEmptyHint").textContent="The original source stays local and is still used for clip exports.";
+    updateImportStatus("Compatible preview ready · original source retained for export.","ready");
+    toast("Compatible preview prepared");
+  }catch(error){
+    if(sourceVersion===previewSourceVersion){
+      const detail=error?.message||"The converter could not read this file.";
+      $("previewEmptyTitle").textContent="Could not prepare this video";
+      $("previewEmptyHint").textContent="Try another episode or use an MP4 with H.264 video and AAC audio. "+detail;
+      updateImportStatus("Compatibility conversion failed: "+detail,"error");
+      toast("Could not decode this video","error");
+    }
+  }finally{
+    if(ff){
+      if(progressHandler){try{ff.off("progress",progressHandler)}catch{}}
+      for(const path of [input,output])if(path){try{await ff.deleteFile(path)}catch{}}
+      if(memorySafeMode)releaseTemporaryMemory({silent:true});
+    }
+    previewCompatibilityBusy=false;
+    const queued=queuedPreviewRecoveryFile;queuedPreviewRecoveryFile=null;
+    if(queued&&queued===state.sourceFile)void recoverPreviewCompatibility(queued);
+  }
+}
+
 async function loadUrl(){const raw=$("videoUrl").value.trim();if(!raw)return toast("Paste a direct video file link first","error");let url;try{url=new URL(raw);if(!/^https?:$/.test(url.protocol))throw Error("Only http/https links are supported")}catch(e){updateImportStatus(e.message,"error");return}const b=$("loadUrlBtn");b.disabled=true;updateImportStatus("Fetching the video into this tab…","loading");try{const r=await fetch(url,{mode:'cors',credentials:'omit'});if(!r.ok)throw Error(`Host returned HTTP ${r.status}`);const mime=(r.headers.get('content-type')||'').toLowerCase();const blob=await r.blob();if(blob.size>300*1024*1024)throw Error("This video is over 300 MB. Upload the local file instead for better reliability.");if(mime.includes('text/html'))throw Error("That URL is a webpage, not a direct video file");let name=decodeURIComponent(url.pathname.split('/').pop()||'video.mp4').replace(/[\\/:*?"<>|]/g,'-');if(!/\.(mp4|webm|mov|mkv|m4v|ogv)$/i.test(name))name=mime.includes('webm')?'video.webm':'video.mp4';const linkedFile=new File([blob],name,{type:blob.type||'video/mp4'});if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:linkedFile.size,duration:0});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nContinue anyway?"))return}updateSource(linkedFile,{sourceUrl:url.href});updateImportStatus("Video imported locally · preparing preview…","loading")}catch(e){updateImportStatus(e.message||"Could not import that link","error");toast("Link import failed","error")}finally{b.disabled=false}}
-$("uploadBtn").onclick=$("dropBrowseBtn").onclick=$("emptyUploadBtn").onclick=()=>$("videoInput").click();$("videoInput").onchange=e=>{loadFile(e.target.files?.[0]);e.target.value=''};$("dropCard").ondragover=e=>e.preventDefault();$("dropCard").ondrop=e=>{e.preventDefault();loadFile(e.dataTransfer.files?.[0])};$("loadUrlBtn").onclick=loadUrl;$("videoUrl").onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadUrl()}};
+$("uploadBtn").onclick=$("dropBrowseBtn").onclick=$("emptyUploadBtn").onclick=()=>$("videoInput").click();$("videoInput").onchange=e=>{void loadFile(e.target.files?.[0]);e.target.value=''};$("dropCard").ondragover=e=>e.preventDefault();$("dropCard").ondrop=e=>{e.preventDefault();void loadFile(e.dataTransfer.files?.[0])};$("loadUrlBtn").onclick=loadUrl;$("videoUrl").onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadUrl()}};
+$("previewVideo").onerror=()=>{const video=$("previewVideo"),file=state.sourceFile;if(!file)return;if(video.currentSrc&&state.objectUrl&&video.currentSrc!==state.objectUrl)return;void recoverPreviewCompatibility(file)};
 $("previewVideo").onloadedmetadata=()=>{const d=Number($("previewVideo").duration);if(!Number.isFinite(d)||d<=0)return $("previewVideo").onerror?.();state.duration=d;state.sourceMeta={...(state.sourceMeta||{}),duration:d};$("previewEmpty").classList.add("hidden");$("totalTime").textContent=fmt(d);$("durationBadge").textContent=fmt(d);if(restoreExistingClipsOnLoad&&state.clips.length){restoreExistingClipsOnLoad=false;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);renderAll();lastCommitted=snap();updateImportStatus(`Memory restored · ${state.clips.length} saved clips reconnected`,"ready");setMemoryStatus("Project fully restored",`${state.clips.length} clips, subtitles and source video are ready. Changes continue to autosave.`);setMemoryVaultStatus("Project fully restored",`${state.clips.length} clips, subtitles and source video are ready. Changes continue to autosave.`);void refreshMemoryVaultStats();toast("Project and source video restored")}else{restoreExistingClipsOnLoad=false;generateClips({notify:false});updateImportStatus(`Ready · ${state.clips.length} clips planned at ${state.durationPreset}s`,"ready");toast("Video ready")}};$("previewVideo").onerror=()=>{updateImportStatus("Browser could not decode this file. Try MP4/H.264 or WebM.","error");$("previewEmptyTitle").textContent="Video format not supported";$("previewEmptyHint").textContent="Try MP4/H.264 or WebM on mobile.";$("previewEmpty").classList.remove('hidden')};
 $("previewVideo").ontimeupdate=()=>{const v=$("previewVideo");$("currentTime").textContent=fmt(v.currentTime);$("seekBar").value=state.duration?v.currentTime/state.duration*100:0;updateActiveSubtitle();const c=selected();if(c&&!v.paused&&v.currentTime>=c.end){v.pause();v.currentTime=c.end;$("playBtn").textContent='▶'}};
 $("playBtn").onclick=()=>{const v=$("previewVideo"),c=selected();if(v.paused){if(c&&v.currentTime>=c.end)v.currentTime=c.start;v.play().catch(()=>toast("Playback could not start","error"));$("playBtn").textContent='Ⅱ'}else{v.pause();$("playBtn").textContent='▶'}};$("backBtn").onclick=()=>$("previewVideo").currentTime=clamp($("previewVideo").currentTime-5,0,state.duration);$("forwardBtn").onclick=()=>$("previewVideo").currentTime=clamp($("previewVideo").currentTime+5,0,state.duration);$("seekBar").oninput=e=>$("previewVideo").currentTime=Number(e.target.value)/100*state.duration;
