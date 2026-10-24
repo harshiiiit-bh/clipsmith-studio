@@ -1,0 +1,11 @@
+{
+  "appId": "com.harshiiiitbh.clipsmithstudio",
+  "appName": "ClipSmith Studio",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
