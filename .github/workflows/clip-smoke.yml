@@ -6,6 +6,8 @@ on:
       - "index.html"
       - "app.js"
       - "styles.css"
+      - "studio-2.css"
+      - "package.json"
       - "creator-assistant.js"
       - "editor-tools.js"
       - "subtitle-tools.js"
@@ -41,3 +43,4 @@ jobs:
         run: |
           node tests/smoke.mjs
           node tests/editor-upgrade-smoke.mjs
+          node tests/ui-responsive-smoke.mjs
