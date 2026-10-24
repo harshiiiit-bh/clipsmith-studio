@@ -17,6 +17,22 @@ on:
       - "scripts/**"
       - "tests/**"
       - ".github/workflows/android-apk.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "styles.css"
+      - "app.js"
+      - "creator-assistant.js"
+      - "editor-tools.js"
+      - "subtitle-tools.js"
+      - "transcribe-worker.js"
+      - "ai-creator-tools.js"
+      - "mobile-memory.js"
+      - "package.json"
+      - "capacitor.config.json"
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/android-apk.yml"
   workflow_dispatch:
 
 permissions:
@@ -45,7 +61,7 @@ jobs:
           java-version: "21"
       - name: Install pinned Capacitor toolchain
         run: npm install --no-audit --no-fund --no-progress
-      - name: Test mobile memory safeguards
+      - name: Test mobile memory and packaging
         run: npm run check:mobile
       - name: Prepare bundled editor assets
         run: npm run prepare:mobile
@@ -81,6 +97,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Publish the latest APK download
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_SHA: ${{ github.sha }}
