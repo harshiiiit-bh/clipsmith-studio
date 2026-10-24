@@ -57,7 +57,7 @@ assert.ok(html.includes('id="focusPreviewBtn"'), "desktop preview focus control 
 assert.ok(html.includes('id="timelineZoomRange"'), "timeline zoom control exists");
 assert.ok(html.includes('id="timelineZoomFitBtn"'), "timeline reset-to-fit control exists");
 assert.ok(html.includes('src="./workspace-controls.js?v=20261024-power3"'), "workspace controls cache key is refreshed for this release");
-assert.ok(html.includes('src="./app.js?v=20261024-workerfix1"'), "editor application cache key is refreshed for this release");
+assert.ok(html.includes('src="./app.js?v=20261024-continuous1"'), "editor application cache key is refreshed for this release");
 assert.ok(app.includes('from "./subtitle-tools.js?v=20261024-power3"'), "changed subtitle module cache key is refreshed");
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
 assert.ok(css.includes(".timeline-zoom-controls"), "timeline zoom controls receive responsive styling");
@@ -95,7 +95,7 @@ assert.ok(workspaceControls.includes('event.key === "ArrowDown"'), "quick action
 assert.ok(css.includes(".command-palette-scrim") && css.includes(".text-style-toggles"), "new typography and command palette styles exist");
 
 assert.ok(html.includes('src="./runtime-guard.js?v=20261024-power3"'), "startup guard loads before editor module");
-assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v=20261024-workerfix1"'), "startup diagnostics must load before editor modules");
+assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v=20261024-continuous1"'), "startup diagnostics must load before editor modules");
 assert.ok(html.includes('src="./power-tools.js?v=20261024-power3"'), "Power Tools module is loaded");
 assert.ok(mobilePrepare.includes('"runtime-guard.js"') && mobilePrepare.includes('"power-tools.js"'), "Android WebView packages both new runtime modules");
 assert.ok(runtimeGuard.includes("clipsmith:app-ready") && runtimeGuard.includes("clipsmithStartupRecovery"), "startup failures receive a visible recovery route");

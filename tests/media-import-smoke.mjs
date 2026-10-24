@@ -30,11 +30,24 @@ assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
 assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker must not hide ZIP or uncommon video files with a narrow accept filter");
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
 assert.match(html, /studio-2\.css\?v=20261024-workerfix1/);
-assert.match(html, /app\.js\?v=20261024-workerfix1/);
+assert.match(html, /app\.js\?v=20261024-continuous1/);
 assert.match(app, /chooseVideoFromZip/);
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app, /libx264/);
 assert.match(app, /original source retained for export/i);
+
+assert.match(app, /function syncPlaybackClip\(time\)/,
+  "the active clip should follow the playhead while the video plays");
+assert.match(app, /syncPlaybackClip\(v\.currentTime\);updateActiveSubtitle\(\)/,
+  "time updates should switch the active part without interrupting playback");
+assert.doesNotMatch(app, /if\(c&&!v\.paused&&v\.currentTime>=c\.end\)\{v\.pause\(\)/,
+  "clip boundaries must never pause whole-source playback");
+assert.doesNotMatch(app, /if\(c&&v\.currentTime>=c\.end\)v\.currentTime=c\.start/,
+  "resuming playback must not jump backward to the selected part");
+assert.match(app, /\$\("previewVideo"\)\.onplay=/, "play control should follow the real media playing state");
+assert.match(app, /\$\("previewVideo"\)\.onended=/, "the play control should reset only at the end of the full source");
+assert.match(app, /e\.dataset\.clipId=c\.id;/, "timeline segments need stable clip IDs for live selection highlighting");
+
 assert.match(importer, /new ZipReader\(new BlobReader\(file\)\)/, "archive indexing should seek through the selected local File");
 assert.match(importer, /entry\.getData\(new BlobWriter\(mime\)/, "only the selected entry should be extracted");
 assert.match(importer, /entry\.uncompressedSize/);
