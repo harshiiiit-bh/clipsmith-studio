@@ -183,6 +183,9 @@ try {
         canvasBounds: { left: c.left, right: c.right, top: c.top, bottom: c.bottom },
         titleBounds: { left: h.left, right: h.right, top: h.top, bottom: h.bottom },
         titleFontSize: parseFloat(getComputedStyle(titleText).fontSize),
+        parentFontSize: parseFloat(getComputedStyle(title).fontSize),
+        canvasClientWidth: canvas.clientWidth,
+        titleInlineFont: titleText.style.fontSize,
         textFits: titleText.scrollWidth <= titleText.clientWidth + 3
       };
     });
@@ -199,7 +202,7 @@ try {
       assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
         "portrait selection must visibly narrow the preview canvas");
       assert.ok(overlayLayout.titleFontSize < previousTitleFontSize,
-        "portrait heading font must shrink compared with landscape");
+        "portrait heading font must shrink compared with landscape: " + JSON.stringify({ landscape: previousTitleFontSize, portrait: overlayLayout.titleFontSize, parent: overlayLayout.parentFontSize, canvas: overlayLayout.canvasClientWidth, inline: overlayLayout.titleInlineFont }));
     }
     assert.ok(overlayLayout.textFits, target.name + " heading must wrap instead of overflowing horizontally");
 
