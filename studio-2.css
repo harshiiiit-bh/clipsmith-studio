@@ -506,3 +506,62 @@ textarea:focus-visible, [tabindex]:focus-visible {
 @media (max-width: 820px) {
   .focus-preview-toggle { display: none !important; }
 }
+
+/* Timeline zoom: horizontal scroll stays inside the timeline panel. */
+.timeline {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #57506f transparent;
+  overscroll-behavior-x: contain;
+}
+.timeline-zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.timeline-zoom-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  min-width: 27px;
+  min-height: 29px !important;
+  height: 29px;
+  padding: 0 !important;
+  border-radius: 8px;
+  font-size: 15px !important;
+  line-height: 1;
+}
+#timelineZoomRange {
+  width: 48px;
+  min-width: 48px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: ew-resize;
+}
+#timelineZoomValue {
+  width: 34px;
+  color: #b6bdcd;
+  font: 9px "JetBrains Mono", monospace;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.timeline-zoom-fit {
+  min-height: 29px !important;
+  height: 29px;
+  padding-inline: 8px !important;
+  border-radius: 8px;
+  font-size: 9px !important;
+}
+@media (max-width: 1100px) and (min-width: 961px) {
+  .timeline-zoom-controls { gap: 3px; }
+  #timelineZoomRange { width: 38px; min-width: 38px; }
+  .timeline-zoom-fit { display: none; }
+}
+@media (max-width: 960px) {
+  .timeline-zoom-controls { display: none; }
+}
