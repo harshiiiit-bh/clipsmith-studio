@@ -30,6 +30,13 @@ Optional **Analyze frames** loads TensorFlow.js and the COCO-SSD object-detectio
 
 The creator caption generator is a lightweight in-browser template/rules engine, not a hosted LLM. Your video is not uploaded to a ClipSmith API.
 
+## ZIP episode import and format recovery
+
+- **ZIP episode browser:** choose a `.zip` archive from Add video or drag it into the editor. ClipSmith reads the archive's index, shows the video episodes with search and file sizes, and extracts **only the selected episode**. You do not need to unpack a season containing 100+ episodes first, and the archive is not uploaded.
+- **Common video containers:** MP4, M4V, MOV, WebM, MKV, AVI, OGV/OGG, MPEG, TS/MTS/M2TS, FLV, WMV, 3GP, VOB and several other common containers can be imported by extension even if Windows or the browser reports a blank MIME type.
+- **Decoder recovery:** if Chrome cannot decode the selected episode's container or codec, ClipSmith attempts a local FFmpeg.wasm H.264/AAC compatibility preview. The original selected episode remains the source for exports, so preview conversion does not replace the original with a lower-quality file.
+- **Practical limits:** the app limits compatibility conversion to 1.75 GB per episode; real limits can be lower depending on browser/WebView memory. A large archive can contain many episodes, but select one at a time. ZIP is supported for archive browsing; convert RAR/7z/TAR archives to ZIP first. Non-video documents and password-protected ZIPs cannot be edited as video.
+
 ## Export and phone-memory safeguards
 
 - Individual export is the recommended path for large videos and series. Each clip is delivered as its own download and its in-memory output is released before the next clip is processed.
