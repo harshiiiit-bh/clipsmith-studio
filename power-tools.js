@@ -153,6 +153,16 @@
     const now = Number(video?.currentTime) || 0;
     const speed = Number(clip?.speed) || 1;
     const muted = Boolean(clip?.muted);
+    const prefix = safeName($("powerExportPrefix")?.value || "");
+    const clipTitle = safeName(clip?.title || "clip-title");
+    const clipIndex = String(Number(clip?.index) || 1).padStart(2, "0");
+    const activeRatio = $("exportAspectSelect")?.value && $("exportAspectSelect").value !== "source"
+      ? $("exportAspectSelect").value : ($("aspectSelect")?.value || "16:9");
+    if ($("powerFilenamePreview")) $("powerFilenamePreview").textContent =
+      (prefix && prefix !== "clipsmith" ? prefix + "-" : "") + clipIndex + "-" + clipTitle + ".mp4";
+    document.querySelectorAll("[data-power-aspect]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.powerAspect === activeRatio);
+    });
     if ($("powerCurrentTime")) $("powerCurrentTime").textContent = formatTimecode(now);
     if ($("powerTimecodeInput") && document.activeElement !== $("powerTimecodeInput")) {
       $("powerTimecodeInput").value = formatTimecode(now);
@@ -426,10 +436,19 @@
     bind("powerExportSelectedBtn", "click", exportSelected);
     bind("powerExportPrefix", "input", (event) => {
       try { localStorage.setItem(prefixStorageKey, event.target.value.slice(0, 48)); } catch {}
+      syncControls();
+    });
+    bind("powerFrameRate", "change", (event) => {
+      try { localStorage.setItem("clipsmith.power-frame-rate.v1", event.target.value); } catch {}
     });
     try {
       $("powerExportPrefix").value = localStorage.getItem(prefixStorageKey) || "";
+      const savedRate = localStorage.getItem("clipsmith.power-frame-rate.v1");
+      if (savedRate && $("powerFrameRate")?.querySelector('option[value="' + savedRate + '"]')) $("powerFrameRate").value = savedRate;
     } catch {}
+    ["aspectSelect", "exportAspectSelect"].forEach((id) => {
+      $(id)?.addEventListener("change", syncControls);
+    });
     if (video) {
       video.addEventListener("timeupdate", () => {
         const time = Number(video.currentTime) || 0;
