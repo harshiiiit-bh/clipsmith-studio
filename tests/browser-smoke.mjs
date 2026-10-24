@@ -114,11 +114,11 @@ try {
   // Confirm Quick Actions opens, filters, runs a real command, and closes.
   await page.keyboard.press("Control+k");
   assert.equal(await page.locator("#commandPaletteModal").isVisible(), true, "Ctrl+K should open Quick Actions");
-  await page.locator("#commandPaletteSearch").fill("open captions");
-  assert.equal(await page.locator(".command-item").count(), 1, "search should filter to the Open Captions command");
+  await page.locator("#commandPaletteSearch").fill("open text styling");
+  assert.equal(await page.locator(".command-item").count(), 1, "search should filter to the Open Text styling command");
   await page.locator(".command-item").click();
   assert.equal(await page.locator("#commandPaletteModal").isVisible(), false, "command palette should close after running an action");
-  assert.equal(await page.locator("#pane-captions").isVisible(), true, "Quick Actions command should open the selected inspector pane");
+  assert.equal(await page.locator("#pane-text").isVisible(), true, "Quick Actions command should open the selected inspector pane");
 
   // Check the smaller viewport and mobile tab integration too.
   await page.setViewportSize({ width: 390, height: 844 });
