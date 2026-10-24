@@ -7,6 +7,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const html = readFileSync(join(root, "index.html"), "utf8");
 const css = readFileSync(join(root, "studio-2.css"), "utf8");
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const mobilePrepare = readFileSync(join(root, "scripts", "prepare-mobile.mjs"), "utf8");
+const androidWorkflow = readFileSync(join(root, ".github", "workflows", "android-apk.yml"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
 assert.match(html, /href="\.\/studio-2\.css\?[^"]+"/, "Studio 2.0 responsive layer is linked");
@@ -36,6 +38,13 @@ assert.equal(
   packageJson.dependencies?.["react"] ?? packageJson.devDependencies?.["react"],
   undefined,
   "UI refresh must not introduce a heavy framework dependency"
+);
+
+assert.match(mobilePrepare, /["']studio-2\\.css["']/, "Android WebView packaging must copy the Studio 2.0 stylesheet");
+assert.equal(
+  (androidWorkflow.match(/- "studio-2\\.css"/g) || []).length,
+  2,
+  "Android workflow must rebuild when Studio 2.0 CSS changes on push or pull request"
 );
 
 console.log("ClipSmith Studio 2.0 responsive smoke checks passed.");
