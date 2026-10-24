@@ -29,8 +29,27 @@ assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
 
 assert.match(html, /id="videoInput" type="file" accept="\*\/\*"/, "the picker must not hide ZIP or uncommon video files with a narrow accept filter");
 assert.match(html, /ZIP archives\. Open a ZIP and choose one episode without extracting the whole folder/i);
-assert.match(html, /studio-2\.css\?v=20261024-workerfix1/);
-assert.match(html, /app\.js\?v=20261024-continuous1/);
+assert.match(html, /studio-2\.css\?v=20261024-clipslider1/);
+assert.match(html, /app\.js\?v=20261024-clipslider1/);
+
+assert.match(html, /id="clipStripSlider"[^>]*aria-label="Slide through clips"/,
+  "the clip browser needs a visible range slider");
+assert.match(html, /id="clipStripPrevBtn"/);
+assert.match(html, /id="clipStripNextBtn"/);
+assert.match(html, /class="scene-scan-stack"/);
+assert.match(html, /class="clip-strip-section"/);
+assert.match(css, /grid-template-rows: auto minmax\(0, auto\) 56px minmax\(82px, 1fr\) !important;/,
+  "scene scan, source timeline and clip cards need explicit non-overlapping grid rows");
+assert.match(css, /gap: 12px !important;/, "clip cards should have real spacing");
+assert.match(css, /flex: 0 0 160px !important;/, "each clip should have its own fixed-width card");
+assert.match(app, /function syncClipStripSlider\(\)/);
+assert.match(app, /strip\.scrollBy\(\{left:direction\*step,behavior:/,
+  "prev/next controls should slide the clip strip horizontally");
+assert.match(app, /strip\.scrollLeft=\(Number\(slider\.value\)\/1000\)\*maxScroll/,
+  "the range slider should move through the horizontal clip strip");
+assert.match(app, /requestAnimationFrame\(\(\)=>scrollClipCardIntoView\(id\)\)/,
+  "selecting a clip should bring that card into view");
+
 assert.match(app, /chooseVideoFromZip/);
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app, /libx264/);
