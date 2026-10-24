@@ -35,7 +35,8 @@
   window.addEventListener("error", (event) => {
     if (ready) return;
     const filename = String(event.filename || event.target?.src || "");
-    const localScript = /(?:^|\/)(?:app|workspace-controls|power-tools|runtime-guard)\.js(?:\?|$)/i.test(filename);
+    const scriptName = filename.split(/[?#]/)[0].split("/").pop();
+    const localScript = /^(?:app|workspace-controls|power-tools|runtime-guard)\.js$/i.test(scriptName);
     if (localScript || event.error?.name === "SyntaxError") {
       showRecovery(event.message || "A JavaScript module failed to load.");
     }
