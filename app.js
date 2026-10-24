@@ -304,7 +304,7 @@ function applyCanvasAspect(){
   if(!stage||!canvas)return;
   const sizes={"16:9":[16,9],"9:16":[9,16],"1:1":[1,1],"4:5":[4,5]};
   const aspect=state.aspect in sizes?state.aspect:"16:9";
-  const aspectTargets=[stage,canvas,$(".preview-panel"),$(".editor-center"),$(".timeline-panel")];
+  const aspectTargets=[stage,canvas,document.querySelector(".preview-panel"),document.querySelector(".editor-center"),document.querySelector(".timeline-panel")];
   aspectTargets.forEach(el=>{if(el)el.dataset.aspect=aspect});
   const [ratioWidth,ratioHeight]=sizes[aspect];
   const stageStyle=getComputedStyle(stage);
