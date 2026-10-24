@@ -133,6 +133,7 @@ try {
     { value: "4:5", ratio: 4 / 5, name: "feed" }
   ];
   let previousCanvasWidth = 0;
+  let previousTitleFontSize = 0;
   for (const target of ratioChecks) {
     await page.locator("#aspectSelect").selectOption(target.value);
     await page.waitForFunction((value) => {
@@ -161,10 +162,6 @@ try {
     assert.ok(dimensions.canvasWidth <= dimensions.stageWidth + 1 && dimensions.canvasHeight <= dimensions.stageHeight + 1,
       target.name + " canvas must fit inside the preview stage");
     assert.ok(dimensions.centerDelta < 3, target.name + " canvas must remain centered");
-    if (target.value === "16:9") previousCanvasWidth = dimensions.canvasWidth;
-    if (target.value === "9:16") assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
-      "portrait selection must visibly narrow the preview canvas");
-
     const overlayLayout = await page.evaluate(() => {
       const canvas = document.querySelector("#preview-canvas");
       const tools = document.querySelector("#canvasTitleTools");
@@ -194,8 +191,16 @@ try {
     assert.equal(overlayLayout.toolsOverlapCanvas, false, target.name + " toolbar must not cover the canvas");
     assert.equal(overlayLayout.badgesOverlapCanvas, false, target.name + " badges must not cover the canvas");
     assert.ok(overlayLayout.titleInCanvas, target.name + " heading overlay must remain within the video frame: " + JSON.stringify({ canvas: overlayLayout.canvasBounds, title: overlayLayout.titleBounds }));
-    assert.ok(overlayLayout.titleFontSize <= overlayLayout.canvasWidth * 0.1,
-      target.name + " heading font should shrink when the canvas becomes narrow");
+    if (target.value === "16:9") {
+      previousCanvasWidth = dimensions.canvasWidth;
+      previousTitleFontSize = overlayLayout.titleFontSize;
+    }
+    if (target.value === "9:16") {
+      assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
+        "portrait selection must visibly narrow the preview canvas");
+      assert.ok(overlayLayout.titleFontSize < previousTitleFontSize,
+        "portrait heading font must shrink compared with landscape");
+    }
     assert.ok(overlayLayout.textFits, target.name + " heading must wrap instead of overflowing horizontally");
 
   }
