@@ -183,6 +183,8 @@ try {
         badgesOverlapCanvas: intersects(c, b),
         titleInCanvas: h.left >= c.left - 1 && h.right <= c.right + 1 && h.top >= c.top - 1 && h.bottom <= c.bottom + 1,
         canvasWidth: c.width,
+        canvasBounds: { left: c.left, right: c.right, top: c.top, bottom: c.bottom },
+        titleBounds: { left: h.left, right: h.right, top: h.top, bottom: h.bottom },
         titleFontSize: parseFloat(getComputedStyle(titleText).fontSize),
         textFits: titleText.scrollWidth <= titleText.clientWidth + 3
       };
@@ -191,7 +193,7 @@ try {
     assert.equal(overlayLayout.badgesInsideCanvas, false, "duration/ratio badges must stay outside the ratio-sized video frame");
     assert.equal(overlayLayout.toolsOverlapCanvas, false, target.name + " toolbar must not cover the canvas");
     assert.equal(overlayLayout.badgesOverlapCanvas, false, target.name + " badges must not cover the canvas");
-    assert.ok(overlayLayout.titleInCanvas, target.name + " heading overlay must remain within the video frame");
+    assert.ok(overlayLayout.titleInCanvas, target.name + " heading overlay must remain within the video frame: " + JSON.stringify({ canvas: overlayLayout.canvasBounds, title: overlayLayout.titleBounds }));
     assert.ok(overlayLayout.titleFontSize <= overlayLayout.canvasWidth * 0.1,
       target.name + " heading font should shrink when the canvas becomes narrow");
     assert.ok(overlayLayout.textFits, target.name + " heading must wrap instead of overflowing horizontally");
