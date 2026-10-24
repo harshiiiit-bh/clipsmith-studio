@@ -6,7 +6,7 @@
   "scripts": {
     "prepare:mobile": "node scripts/prepare-mobile.mjs",
     "sync:android": "npm run prepare:mobile && npx cap sync android",
-    "check:mobile": "node tests/smoke.mjs && node tests/editor-upgrade-smoke.mjs && node tests/mobile-memory-smoke.mjs && node tests/android-packaging-smoke.mjs && node tests/ui-responsive-smoke.mjs && node tests/power-tools-smoke.mjs",
+    "check:mobile": "node tests/smoke.mjs && node tests/editor-upgrade-smoke.mjs && node tests/mobile-memory-smoke.mjs && node tests/android-packaging-smoke.mjs && node tests/ui-responsive-smoke.mjs && node tests/media-import-smoke.mjs && node tests/power-tools-smoke.mjs",
     "test": "npm run check:mobile"
   },
   "dependencies": {
