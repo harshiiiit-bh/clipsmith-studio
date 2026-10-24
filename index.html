@@ -8,7 +8,7 @@
 <title>ClipSmith Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Archivo+Black&family=Bebas+Neue&family=Bangers&family=Anton&family=Oswald:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./styles.css?v=20261024-ai1">
+<link rel="stylesheet" href="./styles.css?v=20261024-apk2">
 </head>
 <body>
 <div id="app-shell" class="app-shell">
@@ -60,8 +60,9 @@
         <label class="check memory-safe-check"><input id="memorySafeModeToggle" type="checkbox" checked> Memory-safe mode · warn before heavy jobs</label>
         <div class="memory-status-row"><span id="memoryDraftStatus" data-state="ready">Draft autosave</span><span>Serial exports</span></div>
         <button id="releaseTemporaryMemoryBtn" type="button" class="soft-btn full">♧ Free temporary RAM</button>
-        <p id="memorySystemStatus" class="hint">Autosave keeps clip timings, subtitles and settings on this device, not the original video bytes. Re-import your video after reopening a project.</p>
+        <p id="memorySystemStatus" class="hint">Project edits and subtitles autosave locally. The Memory Vault separately remembers the source video when storage permits; if it cannot save the video, re-import it after reopening.</p>
       </div>
+      <div class="memory-vault-card" aria-live="polite"><div class="memory-vault-top"><div><span class="eyebrow">ON-DEVICE MEMORY</span><strong id="memoryVaultStatus">Starting memory vault…</strong></div><span class="memory-local-pill">LOCAL ONLY</span></div><p id="memoryVaultDetail" class="hint">Your project autosaves. ClipSmith also tries to remember the source video for the next session.</p><div class="memory-vault-meta"><span id="memoryVaultUsage">Checking storage…</span><span>No cloud upload</span></div><div class="memory-vault-actions"><button id="memorySaveNowBtn" type="button" class="soft-btn">Save memory now</button><button id="memoryClearBtn" type="button" class="soft-btn">Clear device memory</button></div></div>
       <div class="smart-card"><div><span class="eyebrow">SMART SPLIT</span><strong>How long should each clip be?</strong></div><div class="chip-row" id="durationChips"><button data-duration="15">15s</button><button data-duration="30" class="active">30s</button><button data-duration="45">45s</button><button data-duration="60">60s</button><button data-duration="custom">Custom</button></div></div>
       <div id="customDurationWrap" class="field-block hidden"><label>Custom clip length</label><div class="time-parts duration-parts">
         <label class="time-part"><input id="durationHours" class="field" type="number" min="0" max="24" step="1" inputmode="numeric" placeholder="0"><span>hours</span></label>
@@ -156,5 +157,5 @@
 <div id="keyboardHelpModal" class="modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="keyboardHelpTitle"><div class="keyboard-modal panel"><div class="queue-head"><div><span class="eyebrow">QUICK CONTROLS</span><h2 id="keyboardHelpTitle">Keyboard shortcuts</h2></div><button id="closeKeyboardHelpBtn" class="icon-btn" aria-label="Close shortcuts">×</button></div><div class="shortcut-list"><div><kbd>Space</kbd><span>Play / pause preview</span></div><div><kbd>Ctrl / ⌘ + Z</kbd><span>Undo</span></div><div><kbd>Ctrl / ⌘ + Shift + Z</kbd><span>Redo</span></div><div><kbd>S</kbd><span>Split selected clip at playhead</span></div><div><kbd>Delete</kbd><span>Delete selected clip and close part-number gaps</span></div><div><kbd>← / →</kbd><span>Seek by one second</span></div><div><kbd>Esc</kbd><span>Close panels</span></div></div></div></div>
 <nav id="mobile-nav" class="mobile-nav"><button class="mobile-tab active" data-tool="media"><span>▣</span>Media</button><button class="mobile-tab" data-tool="preview"><span>▶</span>Preview</button><button class="mobile-tab" data-tool="cut"><span>☷</span>Clips</button><button class="mobile-tab" data-tool="text"><span>Tt</span>Text</button><button class="mobile-tab" data-tool="fx"><span>◈</span>FX</button><button class="mobile-tab" data-tool="creator"><span>✦</span>Creator</button></nav>
 </div>
-<script type="module" src="./app.js?v=20261024-buttons2"></script>
+<script type="module" src="./app.js?v=20261024-apk2"></script>
 </body></html>
