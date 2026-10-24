@@ -238,6 +238,8 @@ export function generateCreatorIdeas({
   if (clean(keywords)) signals.push("your keywords");
   return {
     captions,
+    hooks: uniq([contextualHook, ...baseCaptions.slice(0, 5)]).slice(0, 6),
+    titles: uniq([`${topic} — Best Moment`, `The ${topic} Scene You Need to See`, `Wait for the ${topic} Moment`, `This ${topic} Scene Hits Different`, `${topic} Explained in 30 Seconds`, `Part 1: ${topic}`]).slice(0, 6),
     hashtags: tags,
     visualTags: uniq((visualTags ?? []).map(clean)).slice(0,12),
     signals: signals.length ? signals : ["generic creator prompts — add keywords or run frame analysis for better matches"],
