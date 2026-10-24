@@ -16,7 +16,7 @@
 <header class="topbar">
   <div class="brand"><div class="brandmark">✂</div><div><strong>ClipSmith</strong><small>VIDEO CLIPPING STUDIO</small></div></div>
   <div class="project-title"><span class="project-label">PROJECT</span><input id="projectName" class="ghost-input" value="Untitled Project" aria-label="Project name"><span id="saveState" class="save-state">● Ready</span></div>
-  <div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo (Ctrl+Z)">↶</button><button id="redoBtn" class="icon-btn" title="Redo (Ctrl+Shift+Z)">↷</button><button id="keyboardHelpBtn" class="icon-btn" title="Keyboard shortcuts">?</button><button id="saveProjectBtn" class="top-btn">Save</button><button id="loadProjectBtn" class="top-btn">Open</button><input id="projectFileInput" type="file" accept=".json,.clipsmith" hidden><input id="videoInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.ogv,.avi" hidden><button id="exportBtn" class="primary-btn export-top">Export</button></div>
+  <div class="top-actions"><button id="undoBtn" class="icon-btn" title="Undo (Ctrl+Z)">↶</button><button id="redoBtn" class="icon-btn" title="Redo (Ctrl+Shift+Z)">↷</button><button id="keyboardHelpBtn" class="icon-btn" title="Keyboard shortcuts">?</button><button id="saveProjectBtn" class="top-btn">Save</button><button id="loadProjectBtn" class="top-btn">Open</button><a id="apkDownloadBtn" class="apk-download-btn" href="https://github.com/harshiiiit-bh/clipsmith-studio/releases/download/android-latest/ClipSmith.apk" aria-label="Download ClipSmith Studio for Android" title="Install the native Android app"><span aria-hidden="true">↓</span><b>Download APK</b></a><input id="projectFileInput" type="file" accept=".json,.clipsmith" hidden><input id="videoInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.ogv,.avi" hidden><button id="exportBtn" class="primary-btn export-top">Export</button></div>
 </header>
 <main class="workspace">
   <aside class="tool-rail" aria-label="Editor tools">
@@ -54,6 +54,14 @@
       <div class="pane-intro"><span class="step-number">01</span><div><strong>Start here</strong><p>Choose a video. ClipSmith will read it and build a first cut automatically.</p></div></div>
       <div class="drop-card" id="dropCard"><div class="drop-icon">↥</div><strong>Drop your video here</strong><p>MP4, WebM, MOV, MKV and other browser-playable files.</p><button id="dropBrowseBtn" class="primary-btn full">Browse files</button></div>
       <div class="field-block link-import"><label for="videoUrl">Or use a direct video link</label><div class="url-import-row"><input id="videoUrl" class="field" type="url" inputmode="url" placeholder="https://example.com/video.mp4"><button id="loadUrlBtn" class="soft-btn">Load</button></div><p id="importStatus" class="hint" data-state="info">Direct MP4/WebM links only. The host must allow browser access.</p></div>
+      <div class="smart-card memory-system-card">
+        <div><span class="eyebrow">DEVICE MEMORY SYSTEM</span><strong id="memoryProfileLabel">Checking device memory…</strong></div>
+        <p id="memoryAdvice" class="hint">ClipSmith will use serial exports and release temporary AI/video engines after heavy tasks.</p>
+        <label class="check memory-safe-check"><input id="memorySafeModeToggle" type="checkbox" checked> Memory-safe mode · warn before heavy jobs</label>
+        <div class="memory-status-row"><span id="memoryDraftStatus" data-state="ready">Draft autosave</span><span>Serial exports</span></div>
+        <button id="releaseTemporaryMemoryBtn" type="button" class="soft-btn full">♧ Free temporary RAM</button>
+        <p id="memorySystemStatus" class="hint">Autosave keeps clip timings, subtitles and settings on this device, not the original video bytes. Re-import your video after reopening a project.</p>
+      </div>
       <div class="smart-card"><div><span class="eyebrow">SMART SPLIT</span><strong>How long should each clip be?</strong></div><div class="chip-row" id="durationChips"><button data-duration="15">15s</button><button data-duration="30" class="active">30s</button><button data-duration="45">45s</button><button data-duration="60">60s</button><button data-duration="custom">Custom</button></div></div>
       <div id="customDurationWrap" class="field-block hidden"><label>Custom clip length</label><div class="time-parts duration-parts">
         <label class="time-part"><input id="durationHours" class="field" type="number" min="0" max="24" step="1" inputmode="numeric" placeholder="0"><span>hours</span></label>
