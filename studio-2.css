@@ -605,3 +605,104 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .command-item-detail { max-width:230px; }
   .command-palette-foot { font-size:8px; }
 }
+
+
+/* Creator Power Tools — a compact, self-contained workbench rather than a long new page. */
+.power-tools-launch { min-height:34px; padding:0 10px; color:#e8deff; border-color:#554674; background:linear-gradient(135deg,#211b30,#171923); white-space:nowrap; }
+.power-tools-launch:hover { border-color:#a78bfa; background:#2b2440; }
+.power-tools-scrim { position:fixed; inset:0; z-index:10100; display:flex; align-items:center; justify-content:center; padding:20px; background:#05060bdc; backdrop-filter:blur(16px); }
+.power-tools-modal { width:min(1120px,100%); max-height:min(900px,88dvh); overflow:auto; overscroll-behavior:contain; padding:22px; border:1px solid #9b82ed4d; border-radius:22px; background:radial-gradient(750px 300px at 6% 0%,#8468e51a,transparent 67%),linear-gradient(160deg,#171923,#0b0d13 80%); box-shadow:0 32px 100px #000b,inset 0 1px #ffffff0b; scrollbar-width:thin; scrollbar-color:#49415f transparent; }
+.power-modal-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding-bottom:17px; border-bottom:1px solid #ffffff12; }
+.power-modal-header h2 { margin:7px 0 5px; color:#f7f5ff; font:800 clamp(22px,3vw,31px)/1.12 "Bricolage Grotesque",Inter,sans-serif; letter-spacing:-1px; }
+.power-modal-header h2 span { display:inline-grid; place-items:center; width:30px; height:30px; border:1px solid #a48bff45; border-radius:9px; color:#c8b5ff; background:#9d7cff14; font-size:16px; vertical-align:middle; }
+.power-modal-header p { max-width:590px; margin:0; color:#969db0; font-size:11px; line-height:1.6; }
+.power-tools-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:15px; }
+.power-card { min-width:0; padding:14px; border:1px solid #ffffff12; border-radius:15px; background:linear-gradient(150deg,#1a1d27,#11131b); }
+.power-card-wide { grid-column:span 2; }
+.power-card-heading { display:flex; align-items:center; gap:10px; min-width:0; margin-bottom:14px; }
+.power-card-icon { display:grid; flex:0 0 34px; width:34px; height:34px; place-items:center; border:1px solid #a48bff32; border-radius:11px; color:#c3b2ff; background:#9d7cff12; font-size:17px; }
+.power-card-heading > div { display:flex; flex:1; flex-direction:column; gap:4px; min-width:0; }
+.power-card-heading strong { color:#f0eef8; font-size:12px; font-weight:800; }
+.power-card-heading small { color:#858da0; font-size:9px; line-height:1.5; }
+.power-timecode { flex:0 0 auto; padding:6px 8px; border:1px solid #333847; border-radius:8px; color:#c9bbff; background:#090b11; font:600 10px "JetBrains Mono",monospace; font-variant-numeric:tabular-nums; }
+.power-control-row { display:flex; align-items:flex-end; gap:8px; min-width:0; }
+.power-control-row + .power-control-row { margin-top:10px; }
+.power-control-row > label { display:flex; flex:1; flex-direction:column; gap:6px; min-width:105px; color:#929bad; font-size:9px; font-weight:700; }
+.power-control-row .field { min-width:0; min-height:36px; width:100%; padding:8px 9px; font-size:10px; }
+.power-frame-buttons { display:flex; flex:1; gap:6px; min-width:0; }
+.power-frame-buttons button { flex:1; padding:0 9px; }
+.power-control-row button { min-height:36px; font-size:9px; white-space:nowrap; }
+.power-timecode-row .primary-btn { padding-inline:12px; }
+.power-marker-input { display:flex; gap:7px; min-width:0; }
+.power-marker-input .field { flex:1; min-width:0; min-height:36px; padding:8px 9px; font-size:10px; }
+.power-marker-input button { padding:0 9px; font-size:9px; white-space:nowrap; }
+.power-marker-list { display:flex; flex-direction:column; gap:6px; max-height:148px; margin-top:10px; overflow:auto; }
+.power-marker-row { display:flex; align-items:center; gap:6px; min-width:0; }
+.power-marker-jump { flex:1; min-width:0; overflow:hidden; padding:8px 9px; border:1px solid #343849; border-radius:9px; color:#d6d1e8; background:#0b0d13; text-align:left; text-overflow:ellipsis; white-space:nowrap; font-size:9px; cursor:pointer; }
+.power-marker-jump:hover { border-color:#7d69bb; background:#211b30; }
+.power-marker-remove { flex:0 0 29px; width:29px; height:29px; border:1px solid #42303b; border-radius:8px; color:#e7a5b4; background:#23151c; cursor:pointer; }
+.power-empty { margin:0; padding:12px 6px; color:#7b8497; font-size:10px; line-height:1.6; }
+.power-aspect-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.power-preset-btn { display:flex; flex-direction:column; align-items:flex-start; min-height:73px; padding:10px; border:1px solid #333747; border-radius:11px; color:#e8e5f4; background:#0c0e14; text-align:left; cursor:pointer; transition:border-color .15s,background .15s,transform .15s; }
+.power-preset-btn:hover,.power-preset-btn.is-active { border-color:#9b82ed; background:linear-gradient(135deg,#302443,#181725); }
+.power-preset-btn:active { transform:scale(.985); }
+.power-preset-btn b { color:#bdabff; font-size:15px; line-height:1; }
+.power-preset-btn span { margin-top:7px; font-size:10px; font-weight:800; }
+.power-preset-btn small { margin-top:3px; color:#82899b; font-size:8px; }
+.power-card > label { display:flex; flex-direction:column; gap:6px; margin-top:10px; color:#969daf; font-size:9px; font-weight:700; }
+.power-card > label .field { min-height:36px; width:100%; min-width:0; font-size:10px; }
+.power-button-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:9px; }
+.power-button-pair button { min-width:0; padding-inline:8px; font-size:9px; }
+.power-card .full { width:100%; margin-top:8px; }
+.power-note { margin:9px 0 0; color:#777f92; font-size:9px; line-height:1.55; }
+.power-export-filename { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:7px; margin-top:10px; padding:9px 10px; border:1px solid #2f3442; border-radius:9px; background:#0b0d13; }
+.power-export-filename span { color:#7f8899; font-size:9px; }
+.power-export-filename strong { overflow:hidden; color:#cfc5ff; font:500 9px "JetBrains Mono",monospace; text-overflow:ellipsis; white-space:nowrap; }
+.power-modal-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-top:15px; padding-top:13px; border-top:1px solid #ffffff12; color:#737b8e; font-size:9px; }
+.power-modal-footer kbd { padding:3px 6px; border:1px solid #424052; border-radius:5px; color:#d4cbf7; background:#ffffff06; font:9px "JetBrains Mono",monospace; }
+#clipsmithStartupRecovery { position:fixed; left:16px; right:16px; bottom:16px; z-index:11000; display:flex; align-items:center; gap:16px; padding:15px 16px; border:1px solid #9b6b43; border-radius:14px; background:#211810f5; box-shadow:0 20px 60px #000b; color:#f8efe4; backdrop-filter:blur(15px); }
+.clipsmith-recovery-copy { display:flex; flex:1; flex-direction:column; gap:5px; min-width:0; }
+.clipsmith-recovery-copy strong { font-size:12px; }
+.clipsmith-recovery-copy span { color:#ffd08f; font-size:10px; }
+.clipsmith-recovery-copy small { color:#bda993; font-size:9px; line-height:1.5; }
+#clipsmithStartupRecovery button { min-height:36px; padding:0 12px; border:1px solid #725235; border-radius:9px; color:#fff4e5; background:#46301d; font-size:10px; font-weight:800; }
+#clipsmithStartupRecovery button:last-child { flex:0 0 32px; padding:0; }
+.power-tools-launch:focus-visible,.power-tools-mobile-tab:focus-visible,.power-tools-modal button:focus-visible { outline:2px solid #c7b5ff; outline-offset:2px; }
+@media (max-width:1100px) and (min-width:821px) { .power-tools-launch { display:none !important; } .power-tools-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .power-card-wide { grid-column:span 2; } }
+@media (max-width:820px) {
+  .mobile-nav { grid-template-columns:repeat(7,minmax(0,1fr)) !important; }
+  .mobile-tab { min-width:0; padding-inline:1px; }
+  .mobile-tab span { font-size:15px; }
+  .mobile-tab.power-tools-mobile-tab { color:#c7b4ff; }
+  .power-tools-scrim { align-items:flex-start; padding:calc(8px + env(safe-area-inset-top)) 7px calc(8px + env(safe-area-inset-bottom)); }
+  .power-tools-modal { width:100%; max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding:13px; border-radius:17px; }
+  .power-modal-header { gap:9px; padding-bottom:12px; }
+  .power-modal-header h2 { font-size:22px; }
+  .power-modal-header p { font-size:10px; }
+  .power-tools-grid { grid-template-columns:minmax(0,1fr); gap:9px; margin-top:10px; }
+  .power-card-wide { grid-column:auto; }
+  .power-card { padding:12px; border-radius:13px; }
+  .power-card-heading { margin-bottom:11px; }
+  .power-card-heading strong { font-size:11px; }
+  .power-timecode { font-size:8px; }
+  .power-control-row { gap:6px; }
+  .power-control-row button { padding-inline:7px; font-size:8px; }
+  .power-timecode-row { flex-wrap:wrap; }
+  .power-timecode-row > label { flex-basis:100%; }
+  .power-timecode-row .primary-btn,.power-timecode-row #powerCopyTimeBtn { flex:1; }
+  .power-modal-footer { font-size:8px; }
+  #clipsmithStartupRecovery { left:8px; right:8px; bottom:calc(70px + env(safe-area-inset-bottom)); gap:8px; padding:10px; }
+  #clipsmithStartupRecovery button { padding-inline:8px; font-size:9px; }
+  .clipsmith-recovery-copy small { display:none; }
+}
+@media (max-width:420px) {
+  .mobile-tab { font-size:7px !important; }
+  .mobile-tab span { font-size:14px !important; }
+  .power-control-row:first-of-type { flex-wrap:wrap; }
+  .power-control-row:first-of-type > label { flex-basis:100%; }
+  .power-frame-buttons { flex-basis:100%; }
+  .power-marker-input { flex-wrap:wrap; }
+  .power-marker-input .field { flex-basis:100%; }
+  .power-marker-input button { width:100%; }
+  .power-modal-footer > span:last-child { display:none; }
+}
