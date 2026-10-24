@@ -133,6 +133,7 @@ try {
     { value: "4:5", ratio: 4 / 5, name: "feed" }
   ];
   let previousCanvasWidth = 0;
+  let previousTitleFontSize = 0;
   for (const target of ratioChecks) {
     await page.locator("#aspectSelect").selectOption(target.value);
     await page.waitForFunction((value) => {
@@ -144,16 +145,67 @@ try {
     }, target.value, { timeout: 4000 });
     const dimensions = await page.evaluate(() => {
       const canvas = document.querySelector("#preview-canvas").getBoundingClientRect();
-      const stage = document.querySelector("#preview-stage").getBoundingClientRect();
+      const stageEl = document.querySelector("#preview-stage");
+      const stage = stageEl.getBoundingClientRect();
+      const style = getComputedStyle(stageEl);
+      const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+      const borderTop = parseFloat(style.borderTopWidth) || 0;
+      const padLeft = parseFloat(style.paddingLeft) || 0;
+      const padRight = parseFloat(style.paddingRight) || 0;
+      const padTop = parseFloat(style.paddingTop) || 0;
+      const padBottom = parseFloat(style.paddingBottom) || 0;
+      const contentCenterX = stage.left + borderLeft + padLeft + (stageEl.clientWidth - padLeft - padRight) / 2;
+      const contentCenterY = stage.top + borderTop + padTop + (stageEl.clientHeight - padTop - padBottom) / 2;
       return { canvasWidth: canvas.width, canvasHeight: canvas.height, stageWidth: stage.width, stageHeight: stage.height,
-        centerDelta: Math.abs((canvas.left + canvas.right) / 2 - (stage.left + stage.right) / 2) };
+        centerDelta: Math.hypot((canvas.left + canvas.right) / 2 - contentCenterX, (canvas.top + canvas.bottom) / 2 - contentCenterY) };
     });
     assert.ok(dimensions.canvasWidth <= dimensions.stageWidth + 1 && dimensions.canvasHeight <= dimensions.stageHeight + 1,
       target.name + " canvas must fit inside the preview stage");
     assert.ok(dimensions.centerDelta < 3, target.name + " canvas must remain centered");
-    if (target.value === "16:9") previousCanvasWidth = dimensions.canvasWidth;
-    if (target.value === "9:16") assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
-      "portrait selection must visibly narrow the preview canvas");
+    const overlayLayout = await page.evaluate(() => {
+      const canvas = document.querySelector("#preview-canvas");
+      const tools = document.querySelector("#canvasTitleTools");
+      const badges = document.querySelector(".preview-badges");
+      const title = document.querySelector("#titleOverlay");
+      const titleText = document.querySelector("#titleOverlayText");
+      const intersects = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      const c = canvas.getBoundingClientRect();
+      const t = tools.getBoundingClientRect();
+      const b = badges.getBoundingClientRect();
+      const h = title.getBoundingClientRect();
+      return {
+        toolsInsideCanvas: canvas.contains(tools),
+        badgesInsideCanvas: canvas.contains(badges),
+        toolsOverlapCanvas: intersects(c, t),
+        badgesOverlapCanvas: intersects(c, b),
+        titleInCanvas: h.left >= c.left - 1 && h.right <= c.right + 1 && h.top >= c.top - 1 && h.bottom <= c.bottom + 1,
+        canvasWidth: c.width,
+        canvasBounds: { left: c.left, right: c.right, top: c.top, bottom: c.bottom },
+        titleBounds: { left: h.left, right: h.right, top: h.top, bottom: h.bottom },
+        titleFontSize: parseFloat(getComputedStyle(titleText).fontSize),
+        parentFontSize: parseFloat(getComputedStyle(title).fontSize),
+        canvasClientWidth: canvas.clientWidth,
+        titleInlineFont: titleText.style.fontSize,
+        textFits: titleText.scrollWidth <= titleText.clientWidth + 3
+      };
+    });
+    assert.equal(overlayLayout.toolsInsideCanvas, false, "editor toolbar must stay outside the ratio-sized video frame");
+    assert.equal(overlayLayout.badgesInsideCanvas, false, "duration/ratio badges must stay outside the ratio-sized video frame");
+    assert.equal(overlayLayout.toolsOverlapCanvas, false, target.name + " toolbar must not cover the canvas");
+    assert.equal(overlayLayout.badgesOverlapCanvas, false, target.name + " badges must not cover the canvas");
+    assert.ok(overlayLayout.titleInCanvas, target.name + " heading overlay must remain within the video frame: " + JSON.stringify({ canvas: overlayLayout.canvasBounds, title: overlayLayout.titleBounds }));
+    if (target.value === "16:9") {
+      previousCanvasWidth = dimensions.canvasWidth;
+      previousTitleFontSize = overlayLayout.titleFontSize;
+    }
+    if (target.value === "9:16") {
+      assert.ok(dimensions.canvasWidth < previousCanvasWidth * 0.8,
+        "portrait selection must visibly narrow the preview canvas");
+      assert.ok(overlayLayout.titleFontSize < previousTitleFontSize,
+        "portrait heading font must shrink compared with landscape: " + JSON.stringify({ landscape: previousTitleFontSize, portrait: overlayLayout.titleFontSize, parent: overlayLayout.parentFontSize, canvas: overlayLayout.canvasClientWidth, inline: overlayLayout.titleInlineFont }));
+    }
+    assert.ok(overlayLayout.textFits, target.name + " heading must wrap instead of overflowing horizontally");
+
   }
   await page.locator("#aspectSelect").selectOption("16:9");
   await page.waitForFunction(() => document.querySelector("#preview-canvas")?.dataset.aspect === "16:9");
@@ -279,6 +331,26 @@ try {
 
   // Check the smaller viewport and mobile tab integration too.
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator("#aspectSelect").selectOption("9:16");
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector("#preview-canvas");
+    return canvas?.dataset.aspect === "9:16" &&
+      Math.abs(canvas.getBoundingClientRect().width / canvas.getBoundingClientRect().height - 9 / 16) < 0.03;
+  }, null, { timeout: 4000 });
+  const mobileCanvasLayout = await page.evaluate(() => {
+    const canvas = document.querySelector("#preview-canvas"), stage = document.querySelector("#preview-stage");
+    const tools = document.querySelector("#canvasTitleTools"), badges = document.querySelector(".preview-badges");
+    const c = canvas.getBoundingClientRect(), t = tools.getBoundingClientRect(), b = badges.getBoundingClientRect();
+    const intersects = (a, z) => a.left < z.right && a.right > z.left && a.top < z.bottom && a.bottom > z.top;
+    const text = document.querySelector("#titleOverlayText");
+    return { toolsOverlap: intersects(c, t), badgesOverlap: intersects(c, b),
+      ratio: c.width / c.height, textFits: text.scrollWidth <= text.clientWidth + 3 };
+  });
+  assert.equal(mobileCanvasLayout.toolsOverlap, false, "mobile editing toolbar must not cover the portrait canvas");
+  assert.equal(mobileCanvasLayout.badgesOverlap, false, "mobile status badges must not cover the portrait canvas");
+  assert.ok(Math.abs(mobileCanvasLayout.ratio - 9 / 16) < 0.03, "mobile portrait canvas must keep the selected ratio");
+  assert.ok(mobileCanvasLayout.textFits, "mobile portrait heading must wrap inside the canvas");
+  await page.locator("#aspectSelect").selectOption("16:9");
   await page.locator('.mobile-tab[data-tool="text"]').click();
   assert.equal(await page.locator("#pane-text").isVisible(), true, "mobile tab should open its tool pane");
   assert.equal(await page.locator("#inspector").evaluate((el) => el.classList.contains("open")), true,

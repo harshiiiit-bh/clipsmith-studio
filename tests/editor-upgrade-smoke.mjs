@@ -11,4 +11,8 @@ assert.match(app,/canvas\.style\.width=width\+"px"/,"aspect changes must resize 
 assert.match(app,/canvas\.style\.height=height\+"px"/,"aspect changes must resize the canvas height");
 assert.match(app,/canvasAspectObserver\?\.observe\(\$\("preview-stage"\)\)/,"canvas ratio must respond to workspace resize");
 assert.match(studioCss,/\.preview-canvas > #previewVideo/,"video should fit inside the target-ratio canvas");
+assert.match(html,/id="subtitleOverlay"[^]*id="canvasTitleTools"/,"heading tools should be after the preview canvas closing tag");
+assert.match(studioCss,/\.preview-stage > \.canvas-title-tools/,"editor controls should sit on the stage, not inside the ratio canvas");
+assert.match(app,/Math\.max\(12,\(Number\(style\?\.size\)\|\|30\)\*scale\)/,"heading size should scale down for narrow portrait canvases");
+assert.match(app,/\$\("preview-canvas"\)\|\|\$\("preview-stage"\)/,"dragging an overlay should use canvas coordinates");
 assert.match(app,/navigator\.deviceMemory/);assert.match(html,/Original stream/i);assert.match(html,/Mobile safe/i);assert.match(html,/caption ideas/i);assert.match(html,/hashtags/i);assert.match(html,/Hinglish/);console.log('Editor upgrade smoke checks passed.');
