@@ -303,7 +303,10 @@ function applyCanvasAspect(){
   const stage=$("preview-stage"),canvas=$("preview-canvas");
   if(!stage||!canvas)return;
   const sizes={"16:9":[16,9],"9:16":[9,16],"1:1":[1,1],"4:5":[4,5]};
-  const [ratioWidth,ratioHeight]=sizes[state.aspect]||sizes["16:9"];
+  const aspect=state.aspect in sizes?state.aspect:"16:9";
+  const aspectTargets=[stage,canvas,$(".preview-panel"),$(".editor-center"),$(".timeline-panel")];
+  aspectTargets.forEach(el=>{if(el)el.dataset.aspect=aspect});
+  const [ratioWidth,ratioHeight]=sizes[aspect];
   const stageStyle=getComputedStyle(stage);
   const availableWidth=stage.clientWidth-(parseFloat(stageStyle.paddingLeft)||0)-(parseFloat(stageStyle.paddingRight)||0);
   const availableHeight=stage.clientHeight-(parseFloat(stageStyle.paddingTop)||0)-(parseFloat(stageStyle.paddingBottom)||0);
@@ -317,9 +320,9 @@ function applyCanvasAspect(){
   canvas.style.width=width+"px";
   canvas.style.height=height+"px";
   canvas.style.aspectRatio=ratioWidth+" / "+ratioHeight;
-  canvas.dataset.aspect=state.aspect;
+  canvas.dataset.aspect=aspect;
   const badge=$("ratioBadge");
-  if(badge)badge.textContent=state.aspect;
+  if(badge)badge.textContent=aspect;
   fitCanvasOverlayText();
 }
 function fitCanvasOverlayText(){
