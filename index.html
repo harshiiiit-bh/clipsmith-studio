@@ -8,7 +8,7 @@
 <title>ClipSmith Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Archivo+Black&family=Bebas+Neue&family=Bangers&family=Anton&family=Oswald:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./styles.css?v=20261024-ai1">
+<link rel="stylesheet" href="./styles.css?v=20261024-apk2">
 </head>
 <body>
 <div id="app-shell" class="app-shell">
@@ -60,7 +60,7 @@
         <label class="check memory-safe-check"><input id="memorySafeModeToggle" type="checkbox" checked> Memory-safe mode · warn before heavy jobs</label>
         <div class="memory-status-row"><span id="memoryDraftStatus" data-state="ready">Draft autosave</span><span>Serial exports</span></div>
         <button id="releaseTemporaryMemoryBtn" type="button" class="soft-btn full">♧ Free temporary RAM</button>
-        <p id="memorySystemStatus" class="hint">Autosave keeps clip timings, subtitles and settings on this device, not the original video bytes. Re-import your video after reopening a project.</p>
+        <p id="memorySystemStatus" class="hint">Project edits and subtitles autosave locally. The Memory Vault separately remembers the source video when storage permits; if it cannot save the video, re-import it after reopening.</p>
       </div>
       <div class="memory-vault-card" aria-live="polite"><div class="memory-vault-top"><div><span class="eyebrow">ON-DEVICE MEMORY</span><strong id="memoryVaultStatus">Starting memory vault…</strong></div><span class="memory-local-pill">LOCAL ONLY</span></div><p id="memoryVaultDetail" class="hint">Your project autosaves. ClipSmith also tries to remember the source video for the next session.</p><div class="memory-vault-meta"><span id="memoryVaultUsage">Checking storage…</span><span>No cloud upload</span></div><div class="memory-vault-actions"><button id="memorySaveNowBtn" type="button" class="soft-btn">Save memory now</button><button id="memoryClearBtn" type="button" class="soft-btn">Clear device memory</button></div></div>
       <div class="smart-card"><div><span class="eyebrow">SMART SPLIT</span><strong>How long should each clip be?</strong></div><div class="chip-row" id="durationChips"><button data-duration="15">15s</button><button data-duration="30" class="active">30s</button><button data-duration="45">45s</button><button data-duration="60">60s</button><button data-duration="custom">Custom</button></div></div>
