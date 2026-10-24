@@ -10,17 +10,17 @@ function normalizeCues(cues) {
 }
 
 function scoreCue(text, cues, index) {
-  const value=normalize(text), words=value.split(/\s+/).filter(Boolean), unique=new Set(words);
+  const original=clean(text),value=normalize(original),words=value.split(/\s+/).filter(Boolean),unique=new Set(words);
   let score=.18, signals=[];
   const matched=[...unique].filter(word=>CATCH_WORDS.has(word));
   if(matched.length){score+=Math.min(.3,.11*matched.length);signals.push(`Hook language: ${matched.slice(0,3).join(', ')}`)}
-  if(/[?!？！]/.test(value)){score+=.13;signals.push('Question or strong punctuation')}
+  if(/[?!？！]/.test(original)){score+=.13;signals.push('Question or strong punctuation')}
   if(/\b\d+(?:\.\d+)?%?\b/.test(value)){score+=.07;signals.push('Specific number or statistic')}
   if(/\b(you|your|tum|tera|aap|dekho|imagine|pov|notice)\b/i.test(value)){score+=.07;signals.push('Speaks directly to the viewer')}
   if(/\b(but|however|until|then|suddenly|instead|finally|because|lekin|magar|par)\b/i.test(value)){score+=.07;signals.push('Contrast or payoff language')}
   if(words.length>=3&&words.length<=14){score+=.08;signals.push('Compact subtitle line')}
   if(words.length>0&&words.length<=3)score+=.025;
-  if(/\b(i|we|you|he|she|they)\b/i.test(value)&&/[.!?]$/.test(value))score+=.03;
+  if(/\b(i|we|you|he|she|they)\b/i.test(value)&&/[.!?]$/.test(original))score+=.03;
   const previous=index>0?normalize(cues[index-1].text):'', next=index+1<cues.length?normalize(cues[index+1].text):'';
   if(previous&&previous===value){score-=.12;signals.push('Repeated line')}
   if(next&&next===value){score-=.08;signals.push('Repeated line')}
@@ -80,7 +80,7 @@ export function makeChapterLabels(input, options = {}) {
 export function calculateReadingLoad(input, options = {}) {
   const cues=normalizeCues(input),maxChars=Math.max(24,Number(options.maxChars)||42),maxWords=Math.max(4,Number(options.maxWords)||9),maxWordsPerSecond=Math.max(1,Number(options.maxWordsPerSecond)||3.6),lengthy=[],fast=[],warnings=[];
   for(const cue of cues){const words=wordCount(cue.text),duration=Math.max(.15,cue.end-cue.start),wps=words/duration;if(cue.text.length>maxChars||words>maxWords)lengthy.push({cueIndex:cue.index,start:cue.start,end:cue.end,text:cue.text,charCount:cue.text.length,wordCount:words,suggestion:'Split this subtitle into shorter lines or extend its display time.'});if(wps>maxWordsPerSecond)fast.push({cueIndex:cue.index,start:cue.start,end:cue.end,text:cue.text,wordsPerSecond:Number(wps.toFixed(2)),suggestion:'This line may be too fast to read comfortably.'})}
-  warnings.push(...lengthy.map(item=>({...item,kind:'lengthy'})),...fast.map(item=>({...item,kind:'fast'})));return {lengthy,fast,warnings,summary:{cueCount:cues.length,lengthyCues:lengthy.length,fastCues:fast.length,readabilityScore:cues.length?Math.round(100*(1-warnings.length/Math.max(1,cues.length))):0}};
+  warnings.push(...lengthy.map(item=>({...item,kind:'lengthy'})),...fast.map(item=>({...item,kind:'fast'})));return {lengthy,fast,warnings,summary:{cueCount:cues.length,lengthyCues:lengthy.length,fastCues:fast.length,readabilityScore:cues.length?Math.max(0,Math.round(100*(1-warnings.length/Math.max(1,cues.length)))):0}};
 }
 
 /** Transparent checklist for short-form readiness, not a prediction of views. */
