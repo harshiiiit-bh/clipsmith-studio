@@ -36,6 +36,13 @@ The creator caption generator is a lightweight in-browser template/rules engine,
 
 FFmpeg.wasm documents a 2 GB input-file ceiling because of its WebAssembly memory limit; a phone may hit practical memory limits well before that. See the [official FAQ](https://ffmpegwasm.netlify.app/docs/faq/).
 
+## Timeline editing and project recovery
+
+- Select a clip and use **Split** at the preview playhead, **Duplicate**, **Earlier / Later**, or **Delete** to organize the sequence. Undo/redo is available in the top bar, including `Ctrl/Cmd + Z` and `Ctrl/Cmd + Shift + Z`.
+- Drag the heading or caption directly on the preview to reposition it. Keyboard arrow keys can fine-tune the active overlay when it has focus.
+- **Save** downloads a versioned `.json` project recipe; **Load** restores it. Local autosave keeps clip timing, names, styling and control values on the device. Project files and autosaves never contain the video itself. Re-select the same source file to preview/export a saved project; a mismatched filename, file size, or duration pauses exporting to avoid applying old edit points to the wrong video.
+- Export errors reveal recovery options: switch to Original stream, disable burn-in/effects/crop, or retry a single clip. For larger or memory-sensitive sources, a failed stream copy no longer silently launches a full compatibility transcode. Converting the source to a smaller MP4 may still be required on low-memory phones.
+
 ## Run locally
 
 Serve the folder over HTTP rather than opening the HTML as a file URL.
