@@ -8,6 +8,12 @@ on:
       - "styles.css"
       - "creator-assistant.js"
       - "editor-tools.js"
+      - "ai-creator-tools.js"
+      - "ai-creator-tools.js"
+      - "transcribe-worker.js"
+      - "transcribe-worker.js"
+      - "subtitle-tools.js"
+      - "subtitle-tools.js"
       - "tests/**"
       - ".github/workflows/clip-smoke.yml"
   pull_request:
