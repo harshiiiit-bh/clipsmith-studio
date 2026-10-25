@@ -97,7 +97,7 @@ assert.equal(app.split("}\\nfunction ").length - 1, 0, "app.js must not contain 
 assert.match(app, /titleControlMap=\{[^}]*titleBold:"bold"[^}]*titleItalic:"italic"[^}]*titleSpacing:"spacing"[^}]*titleShadow:"shadow"/, "new typography controls persist through the existing style handler");
 assert.ok(subtitleTools.includes("${titleBold},${titleItalic}"), "MP4/ASS title style exports bold and italic settings");
 assert.ok(subtitleTools.includes("${titleSpacing}"), "MP4/ASS title style exports letter spacing");
-assert.ok(subtitleTools.includes("${(titleShadow/3).toFixed(1)}"), "MP4/ASS title style exports shadow depth");
+assert.ok(subtitleTools.includes("${titleShadow.toFixed(1)}"), "MP4/ASS title style exports output-scaled shadow depth");
 assert.ok(workspaceControls.includes("const actions = ["), "quick actions palette has command definitions");
 assert.ok(workspaceControls.includes('event.key === "ArrowDown"'), "quick actions supports keyboard navigation");
 assert.ok(css.includes(".command-palette-scrim") && css.includes(".text-style-toggles"), "new typography and command palette styles exist");
