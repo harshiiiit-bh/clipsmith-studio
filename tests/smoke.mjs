@@ -31,7 +31,7 @@ assert.match(app,/hasAdvancedEdits/,"the original-stream strategy cannot silentl
 for(const id of ["exportPreviewStage","exportPreviewVideo","exportPreviewClipSelect","exportPreviewPlayToggle","exportPreviewSeek","exportPreviewMute","exportPreviewVolume","exportSelectionCount","selectAllExportClipsBtn","clearExportClipSelectionBtn","cancelExportBtn"])assert.match(html,new RegExp(`id="${id}"`),`export workbench control ${id} exists`);
 assert.match(app,/getSelectedExportClips\(\)/,"export iterates only selected clips");
 assert.match(app,/cancelExportRequested/,"export supports cancelling the active task");
-assert.match(app,/active\.terminate\(\)/,"cancel terminates the active FFmpeg worker");
+assert.match(app,/Cancel requested · the current render will finish/,"cancel stops the remaining export queue after the current render");
 assert.match(app,/function renderExportPreview\(\)/,"final-output preview has a dedicated renderer");
 assert.match(app,/video\.style\.objectFit=settings\.fitMode/,"preview reflects aspect-fit settings");
 assert.match(studio2,/\.export-preview-panel/,"export center contains the final-output preview");
