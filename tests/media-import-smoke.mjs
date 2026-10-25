@@ -53,6 +53,10 @@ assert.match(app, /requestAnimationFrame\(\(\)=>scrollClipCardIntoView\(id\)\)/,
   "selecting a clip should bring that card into view");
 
 assert.match(app, /chooseVideoFromZip/);
+assert.match(app,/async function readBlobWithLimit\(response,maxBytes\)/,"direct URL imports use a bounded streaming reader");
+assert.match(app,/if\(bytesRead>maxBytes\)/,"the streaming reader cancels responses as soon as they exceed the 300 MB cap");
+assert.match(app,/advertisedBytes>maxUrlBytes/,"declared Content-Length is rejected before download");
+assert.ok(app.indexOf("if(mime.includes('text/html'))")<app.indexOf("readBlobWithLimit(r,maxUrlBytes)"),"HTML webpages are rejected before any response body is buffered");
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app, /libx264/);
 assert.match(app, /original source retained for export/i);
