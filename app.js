@@ -1,6 +1,7 @@
 import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
 import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges, getClipDisplayTitle } from "./editor-tools.js?v=20261025-titleexport1";
 import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-proexport1";
+import { createExportOverlayPng } from "./export-overlay.js?v=20261025-exportparity1";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
 import { getImportKind, getVideoMimeType, chooseVideoFromZip } from "./media-import.js?v=20261025-zipimport2";
@@ -709,65 +710,91 @@ async function renderClip(c,i,mode){
   const watermarkText=settings.watermark?String(settings.watermarkText||"").trim().slice(0,80):"";
   const includeTitle=settings.includeTitle!==false,includeManualCaption=settings.includeManualCaption!==false,includeTimedSubtitles=settings.includeTimedSubtitles!==false;
   const exportTitle=includeTitle?getClipDisplayTitle(c,state.clips,state.seriesTitle):"";
-  const cuesForClip=includeTimedSubtitles?state.subtitleCues.filter(q=>q.end>c.start&&q.start<c.end).map(q=>({start:Math.max(0,Number(q.start)-c.start),end:Math.min(c.end,Number(q.end))-c.start,text:q.text})).filter(q=>q.end>q.start&&String(q.text||"").trim()):[];
-  const needsOverlay=state.burnOverlays!==false&&Boolean(exportTitle||(includeManualCaption&&c.caption)||cuesForClip.length||watermarkText);
+  const manualCaption=includeManualCaption?String(c.caption||""):"";
+  const cuesForClip=includeTimedSubtitles?state.subtitleCues.filter(q=>q.end>c.start&&q.start<c.end).map(q=>({start:Math.max(0,Number(q.start)-c.start)/speed,end:(Math.min(c.end,Number(q.end))-c.start)/speed,text:q.text})).filter(q=>q.end>q.start&&String(q.text||"").trim()):[];
+  const overlayEnabled=state.burnOverlays!==false;
+  const needsStaticOverlay=overlayEnabled&&Boolean(exportTitle||manualCaption||watermarkText);
+  const needsTimedOverlay=overlayEnabled&&cuesForClip.length>0;
+  const needsOverlay=needsStaticOverlay||needsTimedOverlay;
   const needsAudioFilter=settings.normalizeAudio||audioFadeIn>0||audioFadeOut>0||fx.speed!==1||fx.volume!==1||fx.normalize;
   const needsVisualFilter=fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||needsAspect||needsResolution||needsFrameRate||videoFadeIn>0||videoFadeOut>0||needsOverlay;
   const customEncoding=Number(settings.crf)!==23||settings.encoderPreset!=="veryfast"||settings.audioBitrate!=="128k";
   const requiresEncoding=needsVisualFilter||needsAudioFilter||fx.mute||settings.includeAudio===false||customEncoding;
   if(mode==="copy"&&requiresEncoding)throw Error("Original stream cannot apply advanced video/audio settings, resize, fade or burn text. Choose Smart / High quality export, or reset advanced settings to source defaults.");
-  const ff=await getFFmpeg(),input=`source-${uid()}`,output=`clip-${uid()}.mp4`,assFile=`clip-overlay-${uid()}.ass`;
-  let assWritten=false;
+
+  const ff=await getFFmpeg(),input="source-"+uid(),output="clip-"+uid()+".mp4",assFile="clip-timed-subtitles-"+uid()+".ass",overlayFile="clip-static-overlay-"+uid()+".png";
+  let assWritten=false,staticOverlayWritten=false;
   try{
     if(cancelExportRequested)throw new DOMException("Export cancelled","AbortError");
     await ff.writeFile(input,await ff.__fetchFile(state.sourceFile));
     const sourceWidth=Number($("previewVideo").videoWidth)||1280,sourceHeight=Number($("previewVideo").videoHeight)||720;
     const fallbackSizes={"9:16":[720,1280],"1:1":[1080,1080],"4:5":[864,1080],"16:9":[1280,720]};
     const customSize=exportDimensions(state.exportAspect,settings.resolution,sourceWidth,sourceHeight);
-    const desiredSize=customSize||(needsAspect?fallbackSizes[state.exportAspect]:null);
+    const even=n=>Math.max(2,Math.round(Number(n)/2)*2);
+    const mobileOutputSize=mode==="mobile"&&!needsAspect&&!needsResolution?[even(Math.min(1280,sourceWidth)),even(sourceHeight*Math.min(1280,sourceWidth)/Math.max(1,sourceWidth))]:null;
+    const desiredSize=customSize||(needsAspect?fallbackSizes[state.exportAspect]:mobileOutputSize);
     const width=Number(desiredSize?.[0]||sourceWidth),height=Number(desiredSize?.[1]||sourceHeight);
-    if(needsOverlay){
-      const ass=createAssDocument({
-        title:exportTitle,
-        caption:includeManualCaption?(c.caption||""):"",
-        duration:outputDuration,width,height,cues:cuesForClip,
-        titleStyle:c.titleStyle||state.titleStyle,
-        subtitleStyle:state.subtitleSettings,
-        captionStyle:c.captionStyle||state.captionStyle,
+
+    if(needsStaticOverlay){
+      const overlayBlob=await createExportOverlayPng({
+        width,height,title:exportTitle,titleStyle:c.titleStyle||state.titleStyle,
+        caption:manualCaption,captionStyle:c.captionStyle||state.captionStyle,
         watermark:watermarkText?{text:watermarkText,position:settings.watermarkPosition,color:settings.watermarkColor,size:settings.watermarkSize,opacity:Number(settings.watermarkOpacity)/100}:null
+      });
+      if(cancelExportRequested)throw new DOMException("Export cancelled","AbortError");
+      await ff.writeFile(overlayFile,new Uint8Array(await overlayBlob.arrayBuffer()));
+      staticOverlayWritten=true;
+    }
+    if(needsTimedOverlay){
+      const ass=createAssDocument({
+        title:"",caption:"",duration:outputDuration,width,height,cues:cuesForClip,
+        titleStyle:c.titleStyle||state.titleStyle,subtitleStyle:state.subtitleSettings,
+        captionStyle:c.captionStyle||state.captionStyle,watermark:null
       });
       await ff.writeFile(assFile,new TextEncoder().encode(ass));assWritten=true;
     }
+
     const buildArgs=copy=>{
-      const args=["-ss",String(c.start),"-i",input,"-t",String(outputDuration),"-map","0:v:0?","-map","0:a:0?"];
-      if(copy)args.push("-c","copy","-avoid_negative_ts","make_zero");
-      else{
-        const vf=[];
-        if(fx.brightness||fx.contrast!==1||fx.saturation!==1)vf.push(`eq=brightness=${fx.brightness}:contrast=${fx.contrast}:saturation=${fx.saturation}`);
-        if(fx.blur>0)vf.push(`boxblur=${fx.blur}:1`);
-        vf.push(`trim=duration=${duration}`);
-        if(fx.speed!==1)vf.push(`setpts=(PTS-STARTPTS)/${speed}`);
-        else vf.push("setpts=PTS-STARTPTS");
+      const args=["-ss",String(c.start),"-i",input];
+      if(copy){
+        args.push("-t",String(outputDuration),"-map","0:v:0?","-map","0:a:0?","-c","copy","-avoid_negative_ts","make_zero");
+      }else{
+        if(staticOverlayWritten)args.push("-loop","1","-framerate",String(settings.frameRate==="source"?30:(Number(settings.frameRate)||30)),"-i",overlayFile);
+        args.push("-t",String(outputDuration));
+        const baseFilters=[];
+        if(fx.brightness||fx.contrast!==1||fx.saturation!==1)baseFilters.push("eq=brightness="+fx.brightness+":contrast="+fx.contrast+":saturation="+fx.saturation);
+        if(fx.blur>0)baseFilters.push("boxblur="+fx.blur+":1");
+        baseFilters.push("trim=duration="+duration);
+        if(fx.speed!==1)baseFilters.push("setpts=(PTS-STARTPTS)/"+speed);else baseFilters.push("setpts=PTS-STARTPTS");
         if(needsAspect||needsResolution){
-          const size=desiredSize||fallbackSizes[state.exportAspect]||[1280,720],[w,h]=size;
-          if(settings.fitMode==="stretch")vf.push(`scale=${w}:${h}`);
-          else if(settings.fitMode==="cover")vf.push(`scale=${w}:${h}:force_original_aspect_ratio=increase`,`crop=${w}:${h}`);
-          else vf.push(`scale=${w}:${h}:force_original_aspect_ratio=decrease`,`pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2`);
-        }else if(mode==="mobile")vf.push("scale='min(1280,iw)':-2");
-        if(needsOverlay)vf.push(`subtitles=${assFile}`);
-        if(videoFadeIn>0)vf.push(`fade=t=in:st=0:d=${videoFadeIn}:color=black`);
-        if(videoFadeOut>0)vf.push(`fade=t=out:st=${Math.max(0,outputDuration-videoFadeOut)}:d=${videoFadeOut}:color=black`);
-        if(vf.length)args.push("-vf",vf.join(","));
+          const size=desiredSize||fallbackSizes[state.exportAspect]||[1280,720],w=size[0],h=size[1];
+          if(settings.fitMode==="stretch")baseFilters.push("scale="+w+":"+h);
+          else if(settings.fitMode==="cover")baseFilters.push("scale="+w+":"+h+":force_original_aspect_ratio=increase","crop="+w+":"+h);
+          else baseFilters.push("scale="+w+":"+h+":force_original_aspect_ratio=decrease","pad="+w+":"+h+":(ow-iw)/2:(oh-ih)/2");
+        }else if(mode==="mobile"&&desiredSize)baseFilters.push("scale="+desiredSize[0]+":"+desiredSize[1]);
+
+        const postFilters=[];
+        if(needsTimedOverlay)postFilters.push("ass="+assFile);
+        if(videoFadeIn>0)postFilters.push("fade=t=in:st=0:d="+videoFadeIn+":color=black");
+        if(videoFadeOut>0)postFilters.push("fade=t=out:st="+Math.max(0,outputDuration-videoFadeOut)+":d="+videoFadeOut+":color=black");
+        if(staticOverlayWritten){
+          const graph="[0:v]"+(baseFilters.length?baseFilters.join(","):"null")+"[base];[1:v]format=rgba[overlay];[base][overlay]overlay=0:0:shortest=1:format=auto"+(postFilters.length?","+postFilters.join(","):"")+"[vout]";
+          args.push("-filter_complex",graph,"-map","[vout]","-map","0:a:0?");
+        }else{
+          const videoFilters=baseFilters.concat(postFilters);
+          args.push("-map","0:v:0?","-map","0:a:0?");
+          if(videoFilters.length)args.push("-vf",videoFilters.join(","));
+        }
+
         if(needsFrameRate)args.push("-r",String(settings.frameRate));
         if(!settings.includeAudio||fx.mute)args.push("-an");
         else{
-          const af=[];
-          af.push(`atrim=duration=${duration}`,"asetpts=PTS-STARTPTS");
-          if(fx.speed!==1){let tempo=speed;while(tempo<.5){af.push("atempo=0.5");tempo/=.5}while(tempo>2){af.push("atempo=2");tempo/=2}if(Math.abs(tempo-1)>.0001)af.push(`atempo=${tempo}`)}
-          if(fx.volume!==1)af.push(`volume=${fx.volume}`);
+          const af=["atrim=duration="+duration,"asetpts=PTS-STARTPTS"];
+          if(fx.speed!==1){let tempo=speed;while(tempo<.5){af.push("atempo=0.5");tempo/=.5}while(tempo>2){af.push("atempo=2");tempo/=2}if(Math.abs(tempo-1)>.0001)af.push("atempo="+tempo)}
+          if(fx.volume!==1)af.push("volume="+fx.volume);
           if(fx.normalize||settings.normalizeAudio)af.push("loudnorm=I=-16:TP=-1.5:LRA=11");
-          if(audioFadeIn>0)af.push(`afade=t=in:st=0:d=${audioFadeIn}`);
-          if(audioFadeOut>0)af.push(`afade=t=out:st=${Math.max(0,outputDuration-audioFadeOut)}:d=${audioFadeOut}`);
+          if(audioFadeIn>0)af.push("afade=t=in:st=0:d="+audioFadeIn);
+          if(audioFadeOut>0)af.push("afade=t=out:st="+Math.max(0,outputDuration-audioFadeOut)+":d="+audioFadeOut);
           if(af.length)args.push("-af",af.join(","));
         }
         const crf=mode==="mobile"?Math.max(Number(settings.crf)||23,29):mode==="high"?Math.min(Number(settings.crf)||23,20):clamp(Number(settings.crf)||23,16,32);
@@ -776,17 +803,44 @@ async function renderClip(c,i,mode){
         if(!settings.includeAudio||fx.mute){}else args.push("-c:a","aac","-b:a",mode==="mobile"?"96k":settings.audioBitrate||"128k");
       }
       const metadataTitle=String(settings.metadataTitle||state.projectName||"ClipSmith").replace(/[\r\n\u0000-\u001f]+/g," ").trim().slice(0,160);
-      if(settings.writeMetadata!==false&&metadataTitle)args.push("-metadata",`title=${metadataTitle}`);
-      args.push("-movflags","+faststart",output);return args;
+      if(settings.writeMetadata!==false&&metadataTitle)args.push("-metadata","title="+metadataTitle);
+      args.push("-movflags","+faststart",output);
+      return args;
     };
-    const execute=async(copy)=>{const onProgress=({progress})=>qstatus(c.id,copy?"copying":"rendering",Math.round(progress*100));ff.on("progress",onProgress);try{await ff.exec(buildArgs(copy));const data=await ff.readFile(output);return new Blob([data],{type:"video/mp4"})}finally{if(ff.off)ff.off("progress",onProgress)}};
+
+    const execute=async(copy)=>{
+      const onProgress=({progress})=>qstatus(c.id,copy?"copying":"rendering",Math.round(progress*100));
+      ff.on("progress",onProgress);
+      try{
+        const exitCode=await ff.exec(buildArgs(copy));
+        if(Number(exitCode)!==0)throw new Error("FFmpeg could not finish this clip (exit code "+exitCode+"). No incomplete file was downloaded.");
+        const data=await ff.readFile(output);
+        if(!data||data.byteLength<128)throw new Error("The encoder produced an empty or incomplete MP4. Please retry using Smart or Mobile safe export.");
+        const actualSize=readMp4VideoDimensions(data);
+        if(!copy&&!actualSize)throw new Error("ClipSmith could not verify the dimensions of the rendered MP4, so it blocked the download. Retry with Smart export or Mobile safe.");
+        if(!copy&&(needsAspect||needsResolution)&&actualSize&&(actualSize[0]!==width||actualSize[1]!==height)){
+          throw new Error("Export size mismatch: expected "+width+" × "+height+", but the rendered MP4 is "+actualSize[0]+" × "+actualSize[1]+". The incorrect file was blocked.");
+        }
+        return new Blob([data],{type:"video/mp4"});
+      }finally{if(ff.off)ff.off("progress",onProgress)}
+    };
     const shouldCopy=mode==="copy"||(mode==="smart"&&!requiresEncoding);
     return await execute(shouldCopy);
   }catch(error){
     if(cancelExportRequested||error?.name==="AbortError")throw new DOMException("Export cancelled","AbortError");
-    if(mode==="smart"&&!requiresEncoding){qstatus(c.id,"Smart retry: re-encoding",0);try{await ff.deleteFile(output)}catch{}return await ff.exec(["-ss",String(c.start),"-i",input,"-t",String(outputDuration),"-map","0:v:0?","-map","0:a:0?","-c:v","libx264","-preset",settings.encoderPreset||"veryfast","-crf",String(clamp(Number(settings.crf)||23,16,32)),"-pix_fmt","yuv420p","-c:a","aac","-b:a",settings.audioBitrate||"128k","-movflags","+faststart",output]).then(async()=>new Blob([await ff.readFile(output)],{type:"video/mp4"}))}
+    if(mode==="smart"&&!requiresEncoding){
+      qstatus(c.id,"Smart retry: re-encoding",0);try{await ff.deleteFile(output)}catch{}
+      const retryCode=await ff.exec(["-ss",String(c.start),"-i",input,"-t",String(outputDuration),"-map","0:v:0?","-map","0:a:0?","-c:v","libx264","-preset",settings.encoderPreset||"veryfast","-crf",String(clamp(Number(settings.crf)||23,16,32)),"-pix_fmt","yuv420p","-c:a","aac","-b:a",settings.audioBitrate||"128k","-movflags","+faststart",output]);
+      if(Number(retryCode)!==0)throw new Error("The Smart retry also failed (exit code "+retryCode+"). Try Mobile safe export.");
+      const retryData=await ff.readFile(output);if(!retryData||retryData.byteLength<128)throw new Error("The Smart retry did not create a complete MP4.");
+      return new Blob([retryData],{type:"video/mp4"});
+    }
     throw error;
-  }finally{try{await ff.deleteFile(input)}catch{}try{await ff.deleteFile(output)}catch{}if(assWritten){try{await ff.deleteFile(assFile)}catch{}}}
+  }finally{
+    try{await ff.deleteFile(input)}catch{}try{await ff.deleteFile(output)}catch{}
+    if(assWritten){try{await ff.deleteFile(assFile)}catch{}}
+    if(staticOverlayWritten){try{await ff.deleteFile(overlayFile)}catch{}}
+  }
 }
 function displayClipTitle(c){return getClipDisplayTitle(c,state.clips,state.seriesTitle)}
 function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
@@ -933,6 +987,25 @@ function renderExportPreview(){
   const heading=$("exportPreviewHeading");if(heading)heading.textContent=c?displayClipTitle(c):"No clip selected";
   const meta=$("exportPreviewMeta");if(meta)meta.textContent=c?`${fmt(c.end-c.start)} clip · ${outputSize[0]} × ${outputSize[1]} · ${settings.frameRate==="source"?"source FPS":settings.frameRate+" FPS"} · CRF ${settings.crf}`:"Select a clip to preview";
 }
+function formatFileSize(bytes){
+  const value=Math.max(0,Number(bytes)||0);if(value<1024)return Math.round(value)+" B";
+  const units=["KB","MB","GB","TB"];let size=value/1024,index=0;
+  while(size>=1024&&index<units.length-1){size/=1024;index++}
+  return size.toFixed(size>=100?0:size>=10?1:2)+" "+units[index];
+}
+function readMp4VideoDimensions(data){
+  const bytes=data instanceof Uint8Array?data:new Uint8Array(data||0),limit=Math.min(bytes.length-36,8*1024*1024);
+  const markers=[[97,118,99,49],[97,118,99,51],[104,118,99,49],[104,101,118,49],[97,118,48,49],[118,112,48,57]];
+  for(let i=4;i<limit;i++){
+    let found=false;for(const mark of markers)if(bytes[i]===mark[0]&&bytes[i+1]===mark[1]&&bytes[i+2]===mark[2]&&bytes[i+3]===mark[3]){found=true;break}
+    if(!found)continue;
+    const start=i-4,size=((bytes[start]*0x1000000)+(bytes[start+1]<<16)+(bytes[start+2]<<8)+bytes[start+3])>>>0;
+    if(size<36||size>bytes.length-start)continue;
+    const width=(bytes[i+28]<<8)|bytes[i+29],height=(bytes[i+30]<<8)|bytes[i+31];
+    if(width>=2&&height>=2&&width<=16384&&height<=16384)return [width,height];
+  }
+  return null;
+}
 function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 function outputName(c,i){const prefix=String($("powerExportPrefix")?.value||"").trim().replace(/[^\\w\\u00C0-\\uFFFF-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48);const title=(c.title||`clip-${i+1}`).replace(/[^\\w\\u00C0-\\uFFFF]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70)||`clip-${i+1}`;const mode=getExportSettings().filenameMode;const stem=mode==="title-only"?title:mode==="part-title"?`Part-${String(i+1).padStart(2,'0')}-${title}`:`${String(i+1).padStart(2,'0')}-${title}`;return `${prefix?prefix+"-":""}${stem}.mp4`}
@@ -947,7 +1020,7 @@ async function startExport(){
   $("cancelExportBtn").classList.remove("hidden");$("cancelExportBtn").disabled=false;$("cancelExportBtn").textContent="Cancel export";
   $("exportRecoveryActions").classList.add("hidden");
   renderQueue(state.clips);updateExportSelectionSummary();
-  let exported=0;
+  let exported=0,exportedBytes=0;
   try{
     for(let n=0;n<chosen.length;n++){
       if(cancelExportRequested)break;
@@ -955,7 +1028,9 @@ async function startExport(){
       try{
         const blob=await renderClip(c,i,exportMode);
         if(cancelExportRequested){qstatus(c.id,"cancelled",0);break}
-        downloadBlob(blob,outputName(c,i));qstatus(c.id,"done",100);exported++;
+        if(!blob||blob.size<128)throw new Error("Export produced an empty file; no download was started.");
+        downloadBlob(blob,outputName(c,i));exportedBytes+=blob.size;qstatus(c.id,"saved · "+formatFileSize(blob.size),100);exported++;
+        $("memoryHint").textContent="Exporting "+exported+"/"+chosen.length+" · "+formatFileSize(exportedBytes)+" saved";
         $("startExportBtn").textContent=`Exporting ${exported}/${chosen.length}…`;
         await new Promise(resolve=>setTimeout(resolve,40));
       }catch(error){
@@ -966,10 +1041,10 @@ async function startExport(){
     if(cancelExportRequested){
       for(const {clip} of chosen){const node=$("queue-"+clip.id),status=node?.querySelector(".queue-status");if(status&&status.textContent!=="done"&&status.textContent!=="failed")qstatus(clip.id,"cancelled",0)}
       toast(`Export cancelled · ${exported} clip${exported===1?"":"s"} completed.`);
-      $("memoryHint").textContent=`Export cancelled · ${exported} of ${chosen.length} clips completed`;
+      $("memoryHint").textContent="Export cancelled · "+exported+" clip(s) saved · "+formatFileSize(exportedBytes)+" output";
     }else if(exported===chosen.length){
       toast(`Export completed · ${exported} clip${exported===1?"":"s"} saved.`);
-      $("memoryHint").textContent=`Completed · ${exported} selected clips exported serially`;
+      $("memoryHint").textContent="Completed · "+exported+" selected clips · "+formatFileSize(exportedBytes)+" total output";
     }
   }finally{
     exportBusy=false;
