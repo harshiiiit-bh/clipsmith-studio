@@ -115,8 +115,8 @@ try {
     "a draft without its original source should be offered, not silently loaded");
   assert.equal(await page.locator("#timeline .timeline-block").count(), 0,
     "clips from a disconnected draft must not appear until recovery is chosen");
-  assert.equal(await page.locator("#clip-strip .clip-card").count(), 0,
-    "the clip strip stays empty until the user restores the old draft");
+  assert.equal(await page.locator(".clip-strip-section").count(), 0,
+    "duplicate Browse clips panel is removed; the timeline is the only clip navigator");
   await page.locator("#startFreshBtn").click();
   await page.waitForFunction(() => {
     const actions = document.querySelector("#draftRecoveryActions");
@@ -233,70 +233,58 @@ try {
   await page.locator("#aspectSelect").selectOption("16:9");
   await page.waitForFunction(() => document.querySelector("#preview-canvas")?.dataset.aspect === "16:9");
 
-  // Exercise the real clip carousel without importing a large media file.
+  // Unified sequence: one scrollable, draggable clip track replaces the two old navigators.
   await page.evaluate(() => {
-    const strip = document.querySelector("#clip-strip");
+    const timeline = document.querySelector("#timeline");
     for (let i = 0; i < 12; i++) {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "clip-card";
-      card.dataset.clipId = "carousel-fixture-" + i;
-      card.innerHTML = '<div class="clip-thumb"><span>' + String(i + 1).padStart(2, "0") +
-        '</span><span class="drag-hint">drag</span></div><div><div class="clip-meta">PART ' +
-        (i + 1) + '</div><div class="clip-title">Fixture clip ' + (i + 1) +
-        '</div><div class="clip-time">00:00 → 00:30</div></div>';
-      strip.appendChild(card);
+      const block = document.createElement("button");
+      block.type = "button";
+      block.draggable = true;
+      block.dataset.clipId = "sequence-fixture-" + i;
+      block.dataset.baseWidth = "120";
+      block.style.width = "120px";
+      block.className = "timeline-block";
+      block.innerHTML = '<span class="timeline-clip-index">' + String(i + 1).padStart(2, "0") +
+        '</span><span class="timeline-clip-copy"><b>Fixture clip ' + (i + 1) +
+        '</b><small>00:00 → 00:30</small></span><span class="timeline-drag-hint" aria-hidden="true">⠿</span>';
+      timeline.appendChild(block);
     }
   });
   await page.waitForFunction(() => {
-    const slider = document.querySelector("#clipStripSlider");
-    return slider && !slider.disabled;
-  }, null, { timeout: 5000 });
-  const clipLayout = await page.evaluate(() => {
-    const timeline = document.querySelector("#timeline").getBoundingClientRect();
-    const section = document.querySelector(".clip-strip-section").getBoundingClientRect();
-    const strip = document.querySelector("#clip-strip");
-    const stripRect = strip.getBoundingClientRect();
-    const cards = [...strip.querySelectorAll(".clip-card")];
-    const first = cards[0].getBoundingClientRect();
-    const second = cards[1].getBoundingClientRect();
+    const timeline = document.querySelector("#timeline");
+    return timeline && timeline.scrollWidth > timeline.clientWidth;
+  }, null, { timeout: 3000 });
+  const sequenceLayout = await page.evaluate(() => {
+    const timeline = document.querySelector("#timeline");
+    const panel = document.querySelector(".timeline-panel");
+    const blocks = [...timeline.querySelectorAll(".timeline-block")];
+    const first = blocks[0].getBoundingClientRect();
+    const second = blocks[1].getBoundingClientRect();
     return {
-      sectionGap: section.top - timeline.bottom,
-      stripTop: stripRect.top,
-      stripBottom: stripRect.bottom,
-      firstTop: first.top,
-      firstBottom: first.bottom,
-      cardGap: second.left - first.right,
-      scrollWidth: strip.scrollWidth,
-      clientWidth: strip.clientWidth
+      panelHasOneNavigator: !document.querySelector(".clip-strip-section"),
+      timelineWithinPanel: timeline.getBoundingClientRect().left >= panel.getBoundingClientRect().left &&
+        timeline.getBoundingClientRect().right <= panel.getBoundingClientRect().right + 1,
+      scrollWidth: timeline.scrollWidth,
+      clientWidth: timeline.clientWidth,
+      blockGap: second.left - first.right,
+      draggableCount: blocks.filter(block => block.draggable).length,
+      blockCount: blocks.length
     };
   });
-  assert.ok(clipLayout.sectionGap >= 4, "clip cards must occupy a row below the source timeline, not overlap it");
-  assert.ok(clipLayout.firstTop >= clipLayout.stripTop && clipLayout.firstBottom <= clipLayout.stripBottom + 1,
-    "each clip card must stay inside the clip-strip viewport");
-  assert.ok(clipLayout.cardGap >= 8, "each clip card must have a visible gap from its neighbour");
-  assert.ok(clipLayout.scrollWidth > clipLayout.clientWidth, "many clips must create a horizontally scrollable rail");
-
-  await page.locator("#clipStripSlider").evaluate((el) => {
-    el.value = "1000";
-    el.dispatchEvent(new Event("input", { bubbles: true }));
+  assert.equal(sequenceLayout.panelHasOneNavigator, true, "there is only one clip navigation component");
+  assert.equal(sequenceLayout.timelineWithinPanel, true, "the unified sequence stays inside its panel");
+  assert.ok(sequenceLayout.scrollWidth > sequenceLayout.clientWidth, "long sequences scroll horizontally in one place");
+  assert.ok(sequenceLayout.blockGap >= 2, "sequence segments keep a visible gap");
+  assert.equal(sequenceLayout.draggableCount, 12, "sequence segments preserve drag-to-reorder affordance");
+  await page.locator("#timeline").evaluate(element => {
+    element.scrollLeft = element.scrollWidth - element.clientWidth;
+    element.dispatchEvent(new Event("scroll"));
   });
   await page.waitForFunction(() => {
-    const strip = document.querySelector("#clip-strip");
-    return strip.scrollLeft >= strip.scrollWidth - strip.clientWidth - 2;
+    const timeline = document.querySelector("#timeline");
+    return timeline.scrollLeft > 0;
   }, null, { timeout: 3000 });
-  await page.locator("#clipStripSlider").evaluate((el) => {
-    el.value = "0";
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-  await page.locator("#clipStripNextBtn").click();
-  await page.waitForFunction(() => document.querySelector("#clip-strip").scrollLeft > 0, null, { timeout: 3000 });
-  await page.evaluate(() => {
-    const strip = document.querySelector("#clip-strip");
-    strip.innerHTML = "";
-    strip.scrollLeft = 0;
-  });
-  await page.waitForFunction(() => document.querySelector("#clipStripSlider").disabled, null, { timeout: 3000 });
+  await page.locator("#timeline").evaluate(element => { element.scrollLeft = 0; });
 
   assert.equal(pageErrors.length, 0, "no browser runtime exceptions on startup: " + pageErrors.join(" | ") + " | console: " + localConsoleErrors.join(" | "));
   assert.equal(localConsoleErrors.length, 0, "no local JavaScript errors on startup: " + localConsoleErrors.join(" | "));
