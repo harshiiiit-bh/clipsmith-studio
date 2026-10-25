@@ -34,24 +34,18 @@ assert.match(html, /app\.js\?v=[^"]+"/);
 assert.match(app, /aspectTargets\.forEach\(el=>\{if\(el\)el\.dataset\.aspect=aspect\}\)/,
   "the selected aspect ratio should drive the editor workspace layout as well as the canvas");
 
-assert.match(html, /id="clipStripSlider"[^>]*aria-label="Slide through clips"/,
-  "the clip browser needs a visible range slider");
-assert.match(html, /id="clipStripPrevBtn"/);
-assert.match(html, /id="clipStripNextBtn"/);
+assert.match(html, /id="timeline"/, "the unified clip sequence exists");
+assert.doesNotMatch(html, /id="clipStripSlider"/, "the duplicate clip browser slider is removed");
+assert.doesNotMatch(html, /class="clip-strip-section"/, "there is only one clip navigation panel");
 assert.match(html, /class="scene-scan-stack"/);
-assert.match(html, /class="clip-strip-section"/);
-assert.match(css, /grid-template-rows: auto minmax\(0, auto\) 56px minmax\(82px, 1fr\) !important;/,
-  "scene scan, source timeline and clip cards need explicit non-overlapping grid rows");
-assert.match(css, /gap: 12px !important;/, "clip cards should have real spacing");
-assert.match(css, /flex: 0 0 160px !important;/, "each clip should have its own fixed-width card");
-assert.match(app, /function syncClipStripSlider\(\)/);
-assert.match(app, /strip\.scrollBy\(\{left:direction\*step,behavior:/,
-  "prev/next controls should slide the clip strip horizontally");
-assert.match(app, /strip\.scrollLeft=\(Number\(slider\.value\)\/1000\)\*maxScroll/,
-  "the range slider should move through the horizontal clip strip");
-assert.match(app, /requestAnimationFrame\(\(\)=>scrollClipCardIntoView\(id\)\)/,
-  "selecting a clip should bring that card into view");
-
+assert.match(css, /grid-template-rows: auto minmax\(0,auto\) minmax\(64px,1fr\) !important;/,
+  "the unified timeline uses one non-overlapping sequence row");
+assert.match(app, /function renderTimeline\(\)[\s\S]*?e\.draggable=true/,
+  "each timeline clip remains selectable and draggable");
+assert.match(app, /reorderClip\(state\.clips,from,c\.id/,
+  "drag-and-drop reorders clips in the single sequence");
+assert.match(app, /timeline\.scrollTo\(\{left:/,
+  "moving selection into view works with the unified timeline");
 assert.match(app, /chooseVideoFromZip/);
 assert.match(app,/async function readBlobWithLimit\(response,maxBytes\)/,"direct URL imports use a bounded streaming reader");
 assert.match(app,/if\(bytesRead>maxBytes\)/,"the streaming reader cancels responses as soon as they exceed the 300 MB cap");
