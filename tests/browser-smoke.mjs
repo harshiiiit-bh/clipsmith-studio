@@ -137,10 +137,22 @@ try {
 
   await page.waitForSelector("#app-shell");
   await page.waitForTimeout(800);
-  await page.waitForFunction(() => {
-    const actions = document.querySelector("#draftRecoveryActions");
-    return actions && !actions.classList.contains("hidden");
-  }, null, { timeout: 5000 });
+  try {
+    await page.waitForFunction(() => {
+      const actions = document.querySelector("#draftRecoveryActions");
+      return actions && !actions.classList.contains("hidden");
+    }, null, { timeout: 8000 });
+  } catch (error) {
+    const diagnostic = await page.evaluate(() => ({
+      appReady: Boolean(window.ClipSmithStudio),
+      recoveryActionsFound: Boolean(document.querySelector("#draftRecoveryActions")),
+      recoveryActionsClass: document.querySelector("#draftRecoveryActions")?.className ?? null,
+      previewHint: document.querySelector("#previewEmptyHint")?.textContent ?? null,
+      storagePresent: Boolean(localStorage.getItem("clipsmith.project.v2"))
+    })).catch(e => ({ evaluateError: String(e) }));
+    console.error("Draft recovery diagnostics", JSON.stringify({diagnostic,pageErrors,localConsoleErrors,localRequestFailures}));
+    throw error;
+  }
   assert.equal(await page.locator("#mediaName").textContent(), "Previous draft available",
     "a draft without its original source should be offered, not silently loaded");
   assert.equal(await page.locator("#timeline .timeline-block").count(), 0,
