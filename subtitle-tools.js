@@ -71,7 +71,7 @@ const assTime = value => { const cs=Math.max(0,Math.round((Number(value)||0)*100
 export function createAssDocument({ title = '', duration = 0, width = 1280, height = 720, cues = [], titleStyle = {}, subtitleStyle = {} } = {}) {
   const w=Math.max(2,Math.round(Number(width)||1280)),h=Math.max(2,Math.round(Number(height)||720));
   const titleSize=Math.max(14,Math.min(108,Number(titleStyle.size)||32)),captionSize=Math.max(14,Math.min(64,Number(subtitleStyle.size)||Math.min(42,h*.035)));
-  const titleFont=String(titleStyle.font||'Inter').replace(/[^\\w -]/g,'').slice(0,48)||'Arial',captionFont=String(subtitleStyle.font||'Inter').replace(/[^\\w -]/g,'').slice(0,48)||'Arial';
+  const titleFont=String(titleStyle.font||'Inter').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48)||'Arial',captionFont=String(subtitleStyle.font||'Inter').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48)||'Arial';
   const titleColor=assColor(titleStyle.color||'#ffffff'),titleOutline=assColor(titleStyle.outline||'#000000'),captionColor=assColor(subtitleStyle.highlight||'#9e83ff');
   const titleWeight=Math.max(100,Math.min(900,Number(titleStyle.weight??(titleStyle.bold===false?500:800))));
   const titleBold=titleWeight>=700?-1:0,titleItalic=titleStyle.italic?-1:0;
@@ -82,7 +82,7 @@ export function createAssDocument({ title = '', duration = 0, width = 1280, heig
   const titleRotation=Math.max(-180,Math.min(180,Number(titleStyle.rotation)||0));
   const titleAlignment=({left:7,center:8,right:9})[titleStyle.align]||8;
   const titleText=String(title??'');
-  const transformedTitle=titleStyle.transform==='uppercase'?titleText.toLocaleUpperCase():titleStyle.transform==='lowercase'?titleText.toLocaleLowerCase():titleStyle.transform==='capitalize'?titleText.toLocaleLowerCase().replace(/(^|[\\s\\-])\\p{L}/gu,part=>part.toLocaleUpperCase()):titleText;
+  const transformedTitle=titleStyle.transform==='uppercase'?titleText.toLocaleUpperCase():titleStyle.transform==='lowercase'?titleText.toLocaleLowerCase():titleStyle.transform==='capitalize'?titleText.toLocaleLowerCase().replace(/(^|[ -])([a-z])/g,(_,prefix,letter)=>prefix+letter.toLocaleUpperCase()):titleText
   const titleLine=assSafeText(transformedTitle),total=Math.max(.5,Number(duration)||.5);
   const marginL=Math.round(w*.055),marginV=Math.round(h*clampAssPosition(titleStyle.positionY,17)/100);
   const captionMargin=Math.round(h*(100-clampAssPosition(subtitleStyle.positionY,82))/100);
@@ -90,10 +90,10 @@ export function createAssDocument({ title = '', duration = 0, width = 1280, heig
   const bgAlpha=Math.round((1-bgOpacity)*255).toString(16).padStart(2,'0').toUpperCase();
   const titleBackColour=titleStyle.bgEnabled?assColor(titleStyle.bgColor||'#111827').replace(/^&H00/, `&H${bgAlpha}`):'&H88000000';
   const titleBorderStyle=titleStyle.bgEnabled?3:1;
-  const header=`[Script Info]\\nScriptType: v4.00+\\nPlayResX: ${w}\\nPlayResY: ${h}\\nScaledBorderAndShadow: yes\\nWrapStyle: 2\\n[V4+ Styles]\\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${(titleShadow/3).toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},&H00000000,&HAA000000,-1,0,0,0,100,100,0,0,1,2,1,2,${marginL},${marginL},${captionMargin},1\\n[Events]\\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+  const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${(titleShadow/3).toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},&H00000000,&HAA000000,-1,0,0,0,100,100,0,0,1,2,1,2,${marginL},${marginL},${captionMargin},1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
   const events=[];
   if(titleLine)events.push(`Dialogue: 0,${assTime(0)},${assTime(total)},Heading,,0,0,0,,${titleLine}`);
   for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),text=assSafeText(cue?.text);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 1,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${text}`)}
-  return `${header}\\n${events.join('\\n')}\\n`;
+  return `${header}\n${events.join('\n')}\n`;
 }
 function clampAssPosition(value,fallback){const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):fallback}
