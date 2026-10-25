@@ -2436,3 +2436,22 @@ select.field option,select.field optgroup { color:#f4f5ff; background-color:#111
 }
 .export-preview-stage video { width: 100%; height: 100%; }
 .export-preview-title, .export-preview-caption, .export-preview-timed-subtitle { box-sizing: border-box; overflow-wrap: anywhere; }
+
+
+/* Export preview overlay editing: a real edit mode, with separate text and drag handles. */
+.export-preview-edit-toggle { justify-self:start; align-self:start; min-height:28px; padding:0 9px; font-size:9px; }
+.export-preview-layer-text { display:block; min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.export-preview-grip { display:none; position:absolute; top:-11px; right:-11px; z-index:12; width:23px; height:23px; padding:0; place-items:center; border:1px solid #c2b0ff; border-radius:7px; background:#191329; color:#e6deff; box-shadow:0 4px 14px #0009; font-size:13px; line-height:1; touch-action:none; cursor:grab; }
+.export-preview-grip:active { cursor:grabbing; }
+.export-preview-grip:disabled { display:none !important; }
+#exportPreviewStage[data-editing="true"] .export-preview-title,
+#exportPreviewStage[data-editing="true"] .export-preview-caption,
+#exportPreviewStage[data-editing="true"] .export-preview-timed-subtitle,
+#exportPreviewStage[data-editing="true"] .export-preview-watermark { pointer-events:auto; outline:1px dashed #bca8ffb0; outline-offset:3px; cursor:move; }
+#exportPreviewStage[data-editing="true"] .export-preview-layer-text { pointer-events:auto; user-select:text; -webkit-user-select:text; cursor:text; touch-action:auto; }
+#exportPreviewStage[data-editing="true"] .export-preview-layer-text[contenteditable="true"] { min-width:1em; caret-color:#d9cbff; }
+#exportPreviewStage[data-editing="true"] .export-preview-layer-text[contenteditable="true"]:focus { outline:2px solid #b49bff; outline-offset:3px; border-radius:3px; background:#08090dbb; }
+#exportPreviewStage[data-editing="true"] .export-preview-grip { display:grid; }
+#exportPreviewStage[data-editing="true"] [data-export-layer].hidden { display:none !important; }
+#exportPreviewNote { display:flex; align-items:flex-start; gap:7px; }
+#exportPreviewNoteText { min-width:0; }
