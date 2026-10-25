@@ -1055,7 +1055,7 @@ function finishExportPreviewLayerEdit(event){
   const text=event.target.closest?.(".export-preview-layer-text");if(!text||!exportPreviewEditing)return;
   const layer=text.closest("[data-export-layer]"),kind=layer?.dataset.exportLayer,c=state.clips.find(clip=>clip.id===exportPreviewClipId)||selected()||state.clips[0];
   if(kind==="heading"&&c){c.title=String(text.textContent||"").trim()||displayClipTitle(c);c.autoTitle=false}
-  commit();renderAll();renderQueue(state.clips);
+  commit();syncInspector();renderTimeline();renderClips();
 }
 function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
