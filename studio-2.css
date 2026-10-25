@@ -2422,3 +2422,17 @@ select.field option,select.field optgroup { color:#f4f5ff; background-color:#111
   .editor-center { grid-template-rows: minmax(0,1fr) 164px !important; }
   #timeline { min-height: 82px !important; }
 }
+
+
+/* Fit the final-output preview to its own output ratio, not the panel's width. */
+.export-preview-stage {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+  margin-inline: auto;
+  flex: 0 0 auto;
+}
+.export-preview-stage video { width: 100%; height: 100%; }
+.export-preview-title, .export-preview-caption, .export-preview-timed-subtitle { box-sizing: border-box; overflow-wrap: anywhere; }
