@@ -26,6 +26,8 @@ assert.match(app,/captionStyle:c\.captionStyle\|\|state\.captionStyle/,"manual c
 for(const id of ["exportResolution","exportFrameRate","exportCrf","exportEncoderPreset","exportAudioBitrate","exportFitMode","exportVideoFadeIn","exportVideoFadeOut","exportAudioFadeIn","exportAudioFadeOut","exportIncludeTitle","exportIncludeManualCaption","exportIncludeTimedSubtitles","exportIncludeAudio","exportNormalizeAudio","exportWatermark","exportWatermarkText","exportWatermarkPosition","exportWatermarkColor","exportWatermarkSize","exportWatermarkOpacity","exportFilenameMode","exportMetadataTitle","exportMetadataToggle"])assert.match(html,new RegExp(`id="${id}"`),`advanced export setting ${id} exists`);
 assert.match(app,/syncManualCaptionStyleFromControls/,"manual caption styling updates live from its controls");
 assert.match(app,/exportDimensions\(state\.exportAspect,settings\.resolution/,"export resolution is applied to the render dimensions");
+assert.match(app,/settings\.audioBitrate!=="128k"/,"custom audio bitrates trigger a new encode");
+assert.match(app,/hasAdvancedEdits/,"the original-stream strategy cannot silently discard advanced export edits");
 assert.match(app,/fade=t=in/,"video fade-in is applied by the encoder");
 assert.match(app,/afade=t=in/,"audio fade-in is applied by the encoder");
 assert.match(app,/watermark:watermarkText\?/,"export watermark styling is passed to the subtitle renderer");
