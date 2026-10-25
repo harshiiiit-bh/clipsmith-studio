@@ -1113,7 +1113,7 @@ function finishExportPreviewLayerEdit(event){
   commit();syncInspector();renderTimeline();renderClips();
 }
 
-function formatFileSize(bytes){function formatFileSize(bytes){
+function formatFileSize(bytes){
   const value=Math.max(0,Number(bytes)||0);if(value<1024)return Math.round(value)+" B";
   const units=["KB","MB","GB","TB"];let size=value/1024,index=0;
   while(size>=1024&&index<units.length-1){size/=1024;index++}
