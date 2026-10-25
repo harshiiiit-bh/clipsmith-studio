@@ -341,7 +341,7 @@ function setTrimEndpoint(which){const clip=selected();if(!clip)return toast("Sel
 function nudgeTrim(which,delta){const clip=selected();if(!clip)return toast("Select a clip first");if(which==="start")clip.start=Number(clamp(clip.start+delta,0,clip.end-.5).toFixed(3));else clip.end=Number(clamp(clip.end+delta,clip.start+.5,state.duration).toFixed(3));commit();renderAll()}
 function bumpTitleSize(delta){const clip=selected(),current=clip?.titleStyle||state.titleStyle;state.titleStyle={...state.titleStyle,...current,size:clamp(Number(current.size||30)+delta,14,108)};if(clip)clip.titleStyle={...state.titleStyle};if($("titleSize"))$("titleSize").value=state.titleStyle.size;updatePreview();commit()}
 function applyTitlePreset(name){
-  const make=(font,size,color,outline,extra={})=>({font,size,color,outline,opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17,...extra});
+  const make=(font,size,color,outline,extra={})=>({font,size,color,outline,opacity:1,bold:Number(extra.weight??800)>=700,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17,...extra});
   const presets={
     cinema:make("Bebas Neue",42,"#ffffff","#101018",{outlineWidth:3,shadow:9,positionY:14}),
     meme:make("Bangers",48,"#ffe66d","#121212",{outlineWidth:4,shadow:8,rotation:-2,positionY:14}),
