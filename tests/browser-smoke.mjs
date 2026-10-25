@@ -309,6 +309,7 @@ try {
   const weight = await page.locator("#titleOverlayText").evaluate((element) => getComputedStyle(element).fontWeight);
   assert.equal(weight, "500", "typography controls should change the visible title text");
   await page.locator("#titleFont").selectOption("Bangers");
+  await page.locator(".advanced-style-details summary").click();
   await page.locator("#titleWeight").selectOption("700");
   await page.locator("#titleColor").evaluate((element) => {
     element.value = "#ff3344";
