@@ -532,6 +532,37 @@ try {
   assert.match(await page.locator(".queue-size").first().textContent(), /Estimated size · /, "every queued clip shows a pre-render size estimate");
   assert.match(await page.locator("#exportSummary").textContent(), /Est\./, "selected-clips summary includes aggregate estimated output size");
 
+  // The audio meter must track real playback rather than using a decorative fixed percentage.
+  assert.equal(await page.locator("#previewAudioMeter").getAttribute("aria-valuenow"), "0", "live audio meter starts at zero while paused");
+  const audioFixtureUrl = await page.evaluate(() => {
+    const sampleRate = 44100, sampleCount = sampleRate * 3, dataBytes = sampleCount * 2;
+    const buffer = new ArrayBuffer(44 + dataBytes), view = new DataView(buffer);
+    const writeAscii = (offset, value) => [...value].forEach((char, index) => view.setUint8(offset + index, char.charCodeAt(0)));
+    writeAscii(0, "RIFF"); view.setUint32(4, 36 + dataBytes, true); writeAscii(8, "WAVE");
+    writeAscii(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true); view.setUint16(34, 16, true); writeAscii(36, "data"); view.setUint32(40, dataBytes, true);
+    for (let i = 0; i < sampleCount; i++) view.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 440 * i / sampleRate) * 16000), true);
+    const url = URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+    const video = document.querySelector("#previewVideo"); video.src = url; video.load();
+    window.__audioMeterFixtureUrl = url;
+    return url;
+  });
+  await page.waitForFunction(() => Number.isFinite(document.querySelector("#previewVideo")?.duration) &&
+    document.querySelector("#previewVideo").duration > 1, null, { timeout: 4000 });
+  await page.locator("#playBtn").click();
+  await page.waitForFunction(() => Number(document.querySelector("#previewAudioMeter")?.getAttribute("aria-valuenow")) > 5,
+    null, { timeout: 4000 });
+  const liveAudioLevel = Number(await page.locator("#previewAudioMeter").getAttribute("aria-valuenow"));
+  assert.ok(liveAudioLevel > 5, "live audio meter reports the level of an actual played audio fixture");
+  await page.locator("#previewVideo").evaluate(video => video.pause());
+  await page.waitForFunction(() => document.querySelector("#previewAudioMeter")?.getAttribute("aria-valuenow") === "0",
+    null, { timeout: 3000 });
+  await page.evaluate(() => {
+    const video = document.querySelector("#previewVideo"); video.removeAttribute("src"); video.load();
+    if (window.__audioMeterFixtureUrl) URL.revokeObjectURL(window.__audioMeterFixtureUrl);
+  });
+
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
   console.log("ClipSmith browser runtime smoke checks passed: startup, assets, text styling, focus mode, Quick Actions, Power Tools presets, export filename preview, and mobile navigation.");
