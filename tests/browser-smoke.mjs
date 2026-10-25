@@ -268,7 +268,9 @@ try {
       clientWidth: timeline.clientWidth,
       blockGap: second.left - first.right,
       draggableCount: blocks.filter(block => block.draggable).length,
-      blockCount: blocks.length
+      blockCount: blocks.length,
+      timelineHeight: timeline.getBoundingClientRect().height,
+      blockHeight: first.height
     };
   });
   assert.equal(sequenceLayout.panelHasOneNavigator, true, "there is only one clip navigation component");
@@ -276,6 +278,8 @@ try {
   assert.ok(sequenceLayout.scrollWidth > sequenceLayout.clientWidth, "long sequences scroll horizontally in one place");
   assert.ok(sequenceLayout.blockGap >= 2, "sequence segments keep a visible gap");
   assert.equal(sequenceLayout.draggableCount, 12, "sequence segments preserve drag-to-reorder affordance");
+  assert.ok(sequenceLayout.timelineHeight >= 94, "the unified timeline expands vertically to use the panel's available space");
+  assert.ok(sequenceLayout.blockHeight >= sequenceLayout.timelineHeight - 18, "clip blocks fill the expanded timeline instead of forming a thin strip");
   await page.locator("#timeline").evaluate(element => {
     element.scrollLeft = element.scrollWidth - element.clientWidth;
     element.dispatchEvent(new Event("scroll"));
