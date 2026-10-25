@@ -49,6 +49,10 @@ assert.equal(getClipDisplayTitle({id:"part-2",title:"Custom heading"},[{id:"part
 const fallbackAss=createAssDocument({title:getClipDisplayTitle({id:"part-2",title:""},[{id:"part-1"},{id:"part-2",title:""}],"Shinchan"),duration:60,width:1280,height:720,titleStyle:{font:"Inter",size:30,color:"#ffffff"}});
 assert.match(fallbackAss,/Dialogue: 0,0:00:00\.00,0:01:00\.00,Heading,,0,0,0,,Shinchan · Part 2/,"fallback headings are written as a full-clip export dialogue");
 assert.match(app,/const exportTitle=includeTitle\?getClipDisplayTitle\(c,state\.clips,state\.seriesTitle\):""/,"export uses the exact heading generated for the preview");
+assert.match(app,/burnOverlaysExplicitlySet/,"older projects can recover text burn-in that was disabled implicitly by Original Stream");
+assert.match(app,/state\.burnOverlaysExplicitlySet=true/,"only a user change records a deliberate text burn-in preference");
+assert.match(app,/Original stream cannot burn headings\/captions/,"Original Stream is refused when it would silently discard visible text");
+assert.doesNotMatch(app,/if\(state\.burnOverlays\)\{state\.burnOverlays=false/,"choosing Original Stream must not silently save text burn-in as off");
 const ass=createAssDocument({title:"Series · Part 1",duration:10,width:720,height:1280,cues:[{start:1,end:2,text:"Hello world"}],titleStyle:{font:"Anton",size:42,color:"#ffffff",outline:"#000000"},subtitleStyle:{highlight:"#9e83ff",positionY:82}});assert.match(ass,/Dialogue: 0,0:00:00\.00,0:00:10\.00,Heading/);assert.match(ass,/Dialogue: 2,0:00:01\.00,0:00:02\.00,Captions/);
 const assManual=createAssDocument({title:"Series · Part 1",caption:"Custom overlay",duration:10,width:720,height:1280,cues:[{start:1,end:2,text:"spoken line"}],titleStyle:{font:"Anton",size:42,color:"#ffffff"},subtitleStyle:{style:"Classic",highlight:"#9e83ff",positionY:82},captionStyle:{style:"Pop",highlight:"#ffcc00",positionY:78}});
 assert.match(assManual,/Style: ManualCaption,/,"manual caption has its own style so it can differ from timed subtitles");
