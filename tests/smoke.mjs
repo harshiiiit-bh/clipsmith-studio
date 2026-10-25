@@ -36,6 +36,10 @@ assert.match(app,/const currentExportIds=new Set\(state\.clips\.map\(c=>c\.id\)\
 assert.match(app,/cancelExportRequested/,"export supports cancelling the active task");
 assert.match(app,/Cancel requested · the current render will finish/,"cancel stops the remaining export queue after the current render");
 assert.match(app,/function renderExportPreview\(\)/,"final-output preview has a dedicated renderer");
+assert.match(app,/frameWidth=Math\.floor\(Math\.min\(availableWidth,maxHeight\*aspectRatio\)\)/,"output preview is constrained by width and aspect ratio");
+assert.match(app,/const scaleY=stage\.clientHeight\/Math\.max\(1,outputSize\[1\]\)/,"preview captions scale to actual output height");
+assert.match(app,/outputSize\[0\] × \$\{outputSize\[1\]\}/,"preview metadata shows the actual output dimensions");
+assert.match(app,/window\.addEventListener\("resize",renderExportPreview/,"preview recalculates when the window changes size");
 assert.match(app,/video\.style\.objectFit=settings\.fitMode/,"preview reflects aspect-fit settings");
 assert.match(studio2,/\.export-preview-panel/,"export center contains the final-output preview");
 assert.match(studio2,/\.export-selection-panel/,"clip selection queue uses a dedicated responsive panel");
