@@ -306,8 +306,40 @@ try {
   await page.locator('.tool[data-tool="text"]').click();
   assert.equal(await page.locator("#pane-text").isVisible(), true, "Text tool click should open its inspector pane");
   await page.locator("#titleBold").uncheck();
-  const weight = await page.locator("#titleOverlay").evaluate((element) => getComputedStyle(element).fontWeight);
-  assert.equal(weight, "500", "typography controls should change the actual preview");
+  const weight = await page.locator("#titleOverlayText").evaluate((element) => getComputedStyle(element).fontWeight);
+  assert.equal(weight, "500", "typography controls should change the visible title text");
+  await page.locator("#titleFont").selectOption("Bangers");
+  await page.locator("#titleWeight").selectOption("700");
+  await page.locator("#titleColor").evaluate((element) => {
+    element.value = "#ff3344";
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#titleSpacing").evaluate((element) => {
+    element.value = "2.5";
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const checkTypography = async (ratio) => {
+    await page.locator("#aspectSelect").selectOption(ratio);
+    const result = await page.locator("#titleOverlayText").evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        fontFamily: style.fontFamily,
+        fontWeight: style.fontWeight,
+        color: style.color,
+        letterSpacing: style.letterSpacing,
+        fontSize: style.fontSize,
+        fits: element.scrollWidth <= element.clientWidth + 3
+      };
+    });
+    assert.match(result.fontFamily, /Bangers/, ratio + " preserves the selected font");
+    assert.equal(result.fontWeight, "700", ratio + " preserves the selected font weight");
+    assert.equal(result.color, "rgb(255, 51, 68)", ratio + " preserves the selected colour");
+    assert.equal(result.letterSpacing, "2.5px", ratio + " preserves letter spacing");
+    assert.ok(parseFloat(result.fontSize) > 0, ratio + " keeps visible text sizing");
+    assert.ok(result.fits, ratio + " wraps the styled title inside the canvas");
+  };
+  for (const ratio of ["16:9", "9:16", "1:1", "4:5"]) await checkTypography(ratio);
+  await page.locator("#aspectSelect").selectOption("16:9");
 
   // Confirm preview focus is interactive, not just a styled button.
   await page.locator("#focusPreviewBtn").click();
