@@ -46,6 +46,14 @@ assert.match(studio2,/\.export-selection-panel/,"clip selection queue uses a ded
 assert.match(app,/fade=t=in/,"video fade-in is applied by the encoder");
 assert.match(app,/afade=t=in/,"audio fade-in is applied by the encoder");
 assert.match(app,/watermark:watermarkText\?/,"export watermark styling is passed to the subtitle renderer");
+for(const id of ["exportPreviewEditToggle","exportPreviewNoteText"])assert.match(html,new RegExp(`id="${id}"`),`export preview editing control ${id} exists`);
+for(const layer of ["heading","caption","subtitle","watermark"])assert.match(html,new RegExp(`data-export-layer="${layer}"`),`export preview ${layer} layer supports editing`);
+assert.match(app,/function setExportPreviewEditing\(/,"export preview has an explicit edit mode");
+assert.match(app,/function startExportPreviewLayerDrag\(/,"export preview has wired drag handles");
+assert.match(app,/function handleExportPreviewLayerInput\(/,"export preview edits persist to the underlying project objects");
+assert.match(app,/watermarkPositionX/,"custom watermark position is stored in export settings");
+assert.match(studio2,/#exportPreviewStage\[data-editing="true"\].*pointer-events:auto/s,"edit mode enables pointer interaction on overlay layers");
+
 assert.match(subtitleTools,/Style: Watermark/,"watermark has its own ASS style");
 assert.match(subtitleTools,/Dialogue: 3,/,"watermark is rendered above captions");
 assert.match(studio2,/select\.field option/,"native dropdown options retain readable contrast");
@@ -68,6 +76,11 @@ assert.match(app,/burnOverlaysExplicitlySet/,"older projects can recover text bu
 assert.match(app,/state\.burnOverlaysExplicitlySet=true/,"only a user change records a deliberate text burn-in preference");
 assert.match(app,/Original stream cannot burn headings\/captions/,"Original Stream is refused when it would silently discard visible text");
 assert.doesNotMatch(app,/if\(state\.burnOverlays\)\{state\.burnOverlays=false/,"choosing Original Stream must not silently save text burn-in as off");
+const assMovable=createAssDocument({title:"Moved title",caption:"Moved caption",duration:5,width:1000,height:500,cues:[{start:1,end:2,text:"Moved timed subtitle"}],titleStyle:{font:"Inter",size:30,positionX:25,positionY:31},subtitleStyle:{positionX:42,positionY:82},captionStyle:{positionX:67,positionY:78},watermark:{text:"Brand",position:"bottom-right",x:80,y:20,color:"#ffffff",size:28,opacity:.7}});
+assert.ok(assMovable.includes("{\\pos(250,155)}Moved title"),"heading drag position is preserved in the actual encoded subtitle script");
+assert.ok(assMovable.includes("{\\pos(420,410)}Moved timed subtitle"),"timed subtitle drag position is preserved in the export");
+assert.ok(assMovable.includes("{\\pos(670,390)}Moved caption"),"manual caption drag position is preserved in the export");
+assert.ok(assMovable.includes("{\\an5\\pos(800,100)}Brand"),"watermark drag position is preserved in the export");
 const ass=createAssDocument({title:"Series · Part 1",duration:10,width:720,height:1280,cues:[{start:1,end:2,text:"Hello world"}],titleStyle:{font:"Anton",size:42,color:"#ffffff",outline:"#000000"},subtitleStyle:{highlight:"#9e83ff",positionY:82}});assert.match(ass,/Dialogue: 0,0:00:00\.00,0:00:10\.00,Heading/);assert.match(ass,/Dialogue: 2,0:00:01\.00,0:00:02\.00,Captions/);
 const assManual=createAssDocument({title:"Series · Part 1",caption:"Custom overlay",duration:10,width:720,height:1280,cues:[{start:1,end:2,text:"spoken line"}],titleStyle:{font:"Anton",size:42,color:"#ffffff"},subtitleStyle:{style:"Classic",highlight:"#9e83ff",positionY:82},captionStyle:{style:"Pop",highlight:"#ffcc00",positionY:78}});
 assert.match(assManual,/Style: ManualCaption,/,"manual caption has its own style so it can differ from timed subtitles");
