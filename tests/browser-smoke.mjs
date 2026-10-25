@@ -315,6 +315,7 @@ try {
     element.value = "#ff3344";
     element.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  assert.equal(await page.locator("#canvasTitleColor").inputValue(), "#ff3344", "inspector colour updates the canvas toolbar picker");
   await page.locator("#titleSpacing").evaluate((element) => {
     element.value = "2.5";
     element.dispatchEvent(new Event("input", { bubbles: true }));
@@ -351,6 +352,12 @@ try {
   };
   for (const ratio of ["16:9", "9:16", "1:1", "4:5"]) await checkTypography(ratio);
   await page.locator("#aspectSelect").selectOption("16:9");
+  await page.locator("#canvasTitleColor").evaluate((element) => {
+    element.value = "#22aa44";
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  assert.equal(await page.locator("#titleColor").inputValue(), "#22aa44", "canvas toolbar colour updates the inspector picker");
+  assert.equal(await page.locator("#titleOverlayText").evaluate((element) => getComputedStyle(element).color), "rgb(34, 170, 68)", "the two colour pickers share the visible title colour");
 
   // Confirm preview focus is interactive, not just a styled button.
   await page.locator("#focusPreviewBtn").click();
