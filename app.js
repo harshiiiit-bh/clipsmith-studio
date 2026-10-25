@@ -407,19 +407,26 @@ async function exportCurrentThumbnail(){
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   const clip=selected(),style=clip?.titleStyle||state.titleStyle;
   const title=transformTitleText(clip?.title||state.seriesTitle,style.transform||"none");
-  const size=clamp(Number(style.size)||30,14,108)*scale,weight=clamp(Number(style.weight??(style.bold===false?500:800)),100,900);
+  const typographyScale=canvas.width/420;
+  const size=clamp(Number(style.size)||30,14,108)*typographyScale,weight=clamp(Number(style.weight??(style.bold===false?500:800)),100,900);
+  const titleOpacity=clamp(Number(style.opacity??1),0,1);
   ctx.save();ctx.translate(canvas.width/2,canvas.height*clamp(Number(style.positionY??17),4,90)/100);ctx.rotate(clamp(Number(style.rotation)||0,-180,180)*Math.PI/180);
   ctx.font=`${style.italic?"italic ":""}${weight} ${size}px "${String(style.font||"Inter").replace(/["\\\\]/g,"")}"`;
-  if("letterSpacing" in ctx)ctx.letterSpacing=String((Number(style.spacing)||0)*scale)+"px";
+  if("letterSpacing" in ctx)ctx.letterSpacing=String((Number(style.spacing)||0)*typographyScale)+"px";
   ctx.textAlign=style.align||"center";ctx.textBaseline="top";ctx.lineJoin="round";
-  ctx.lineWidth=clamp(Number(style.outlineWidth??2),0,12)*scale;ctx.strokeStyle=style.outline||"#000000";ctx.fillStyle=style.color||"#ffffff";
-  ctx.shadowBlur=clamp(Number(style.glow)||0,0,24)*scale;ctx.shadowColor=style.glowColor||"#8b5cf6";
+  ctx.lineWidth=clamp(Number(style.outlineWidth??2),0,12)*typographyScale;ctx.strokeStyle=style.outline||"#000000";ctx.fillStyle=style.color||"#ffffff";
+  ctx.shadowBlur=clamp(Number(style.shadow??6),0,16)*typographyScale;ctx.shadowColor=style.shadowColor||"#000000";
   const maxWidth=canvas.width*.9,words=title.split(/\s+/),lines=[];let line="";
   for(const word of words){const next=line?line+" "+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word}else line=next}if(line)lines.push(line);
   const lineHeight=size*clamp(Number(style.lineHeight??1.08),.8,1.5),drawLines=lines.slice(0,4);
   drawLines.forEach((value,index)=>{const y=index*lineHeight,metrics=ctx.measureText(value),width=Math.min(maxWidth,metrics.width);const tx=ctx.textAlign==="center"?0:ctx.textAlign==="right"?canvas.width*.45:-canvas.width*.45;const x=ctx.textAlign==="center"?-width/2:ctx.textAlign==="right"?tx-width:tx;
-    if(style.bgEnabled){const pad=clamp(Number(style.bgPadding??10),0,30)*scale;ctx.save();ctx.shadowBlur=0;ctx.fillStyle=hexToRgba(style.bgColor,style.bgOpacity??.72);const bx=x-pad,by=y-pad,bw=width+pad*2,bh=lineHeight+pad*2,rad=clamp(Number(style.bgRadius??10),0,24)*scale;ctx.beginPath();ctx.roundRect?ctx.roundRect(bx,by,bw,bh,rad):(ctx.rect(bx,by,bw,bh));ctx.fill();ctx.restore()}
-    ctx.fillStyle=style.color||"#ffffff";ctx.strokeStyle=style.outline||"#000000";ctx.lineWidth=clamp(Number(style.outlineWidth??2),0,12)*scale;ctx.shadowBlur=clamp(Number(style.glow)||0,0,24)*scale;ctx.shadowColor=style.glowColor||"#8b5cf6";if(ctx.lineWidth>0)ctx.strokeText(value,tx,y,maxWidth);ctx.fillText(value,tx,y,maxWidth);
+    if(style.bgEnabled){const pad=clamp(Number(style.bgPadding??10),0,30)*typographyScale;ctx.save();ctx.shadowBlur=0;ctx.fillStyle=hexToRgba(style.bgColor,style.bgOpacity??.72);const bx=x-pad,by=y-pad,bw=width+pad*2,bh=lineHeight+pad*2,rad=clamp(Number(style.bgRadius??10),0,24)*typographyScale;ctx.beginPath();ctx.roundRect?ctx.roundRect(bx,by,bw,bh,rad):(ctx.rect(bx,by,bw,bh));ctx.fill();ctx.restore()}
+    ctx.globalAlpha=titleOpacity;
+    ctx.fillStyle=style.color||"#ffffff";ctx.strokeStyle=style.outline||"#000000";ctx.lineWidth=clamp(Number(style.outlineWidth??2),0,12)*typographyScale;
+    const glow=clamp(Number(style.glow)||0,0,24)*typographyScale,shadow=clamp(Number(style.shadow??6),0,16)*typographyScale;
+    if(glow>0){ctx.save();ctx.shadowBlur=glow;ctx.shadowColor=style.glowColor||"#8b5cf6";ctx.strokeText(value,tx,y,maxWidth);ctx.fillText(value,tx,y,maxWidth);ctx.restore()}
+    ctx.shadowBlur=shadow;ctx.shadowColor=style.shadowColor||"#000000";if(ctx.lineWidth>0)ctx.strokeText(value,tx,y,maxWidth);ctx.fillText(value,tx,y,maxWidth);
+    ctx.globalAlpha=1;
   });
   ctx.restore();
   canvas.toBlob(blob=>{if(!blob)return toast("Thumbnail export failed","error");downloadBlob(blob,`${(state.projectName||"clipsmith").replace(/[^a-zA-Z0-9_-]+/g,"-")}-thumbnail.png`);toast("Thumbnail PNG saved")},"image/png")
@@ -461,7 +468,7 @@ function fitCanvasOverlayText(){
   // Use one ratio-aware scale for text, tracking, stroke, glow and backing
   // spacing. This keeps presets visually consistent on landscape, square,
   // portrait, and 4:5 canvases without making narrow text illegible.
-  const scale=Math.min(1,Math.max(.28,width/420));
+  const scale=Math.max(.28,width/420);
   const titleFontSize=Math.max(12,(Number(style?.size)||30)*scale);
   const title=$("titleOverlay"),titleText=$("titleOverlayText");
   const font=String(style?.font||"Inter").replace(/["\\\\]/g,"").trim()||"Inter";
