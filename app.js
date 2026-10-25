@@ -20,7 +20,7 @@ function setTimeInputs(prefix,value){const ids=['Hours','Minutes','Seconds'];if(
 const DEFAULT_FX={preset:"Original",brightness:0,contrast:1,saturation:1,blur:0,speed:1,volume:1,mute:false,normalize:false};
 const DEFAULT_EXPORT_SETTINGS=Object.freeze({resolution:"source",frameRate:"source",crf:23,encoderPreset:"veryfast",audioBitrate:"128k",fitMode:"contain",videoFadeIn:0,videoFadeOut:0,audioFadeIn:0,audioFadeOut:0,includeTitle:true,includeManualCaption:true,includeTimedSubtitles:true,includeAudio:true,normalizeAudio:false,watermark:false,watermarkText:"ClipSmith",watermarkPosition:"bottom-right",watermarkColor:"#ffffff",watermarkSize:28,watermarkOpacity:72,filenameMode:"number-title",metadataTitle:"",writeMetadata:true});
 const state={projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},exportAspect:"source",burnOverlays:true,burnOverlaysExplicitlySet:false,exportSettings:{...DEFAULT_EXPORT_SETTINGS},aspect:"16:9",showSafe:false,seriesTitle:"Your series title",autoParts:true,titleStyle:{font:"Inter",size:30,color:"#ffffff",outline:"#000000",opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17},captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},clips:[],fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null};
-const MAX_CONCURRENT_EXPORTS=1; let lastCommitted=null, visionModelPromise=null, ffmpegInstance=null, ffmpegLoading=null, exportMode="smart", exportBusy=false, exportAspect="source";
+const MAX_CONCURRENT_EXPORTS=1; let lastCommitted=null, visionModelPromise=null, ffmpegInstance=null, ffmpegLoading=null, ffmpegSourceFile=null, ffmpegSourcePath=null, ffmpegSourceInstance=null, exportMode="smart", exportBusy=false, exportAspect="source";
 let exportSelectedClipIds=new Set(), exportKnownClipIds=new Set(), exportPreviewClipId=null, cancelExportRequested=false, exportSelectionInitialized=false;
 let exportPreviewEditing=false;
 let aiHighlights=[],aiAudit=null,aiCleanup=null,aiChapters=[],aiReadability=null,aiReadiness=null,lastCreatorIdeas=null;
@@ -219,7 +219,7 @@ function releaseTemporaryMemory({silent=false}={}){
     if(!silent)toast("The video engine is still loading. Try again in a moment.");
     return false;
   }
-  if(ffmpegInstance){try{ffmpegInstance.terminate()}catch{}ffmpegInstance=null;ffmpegLoading=null;released.push("video engine")}
+  if(ffmpegInstance){try{ffmpegInstance.terminate()}catch{}ffmpegInstance=null;ffmpegLoading=null;ffmpegSourceFile=null;ffmpegSourcePath=null;ffmpegSourceInstance=null;released.push("video engine")}
   if(subtitleWorker){try{subtitleWorker.terminate()}catch{}subtitleWorker=null;subtitleWorkerReady=null;subtitleWorkerResolve=null;subtitleWorkerReject=null;subtitlePending.clear();released.push("speech model")}
   if(visionModelPromise){const modelPromise=visionModelPromise;visionModelPromise=null;modelPromise.then(model=>model?.dispose?.()).catch(()=>{});released.push("vision model")}
   setMemoryStatus(released.length?("Temporary "+released.join(", ")+" released. Your autosaved draft and selected source file are kept."):"No temporary AI/video engines are currently loaded.");
@@ -718,6 +718,25 @@ Object.keys(exportSettingsControlMap).forEach(id=>{const control=$(id);if(!contr
 $("exportBtn").onclick=()=>openExport();$("closeExportBtn").onclick=()=>{if(exportPreviewEditing)setExportPreviewEditing(false);$("export-queue").classList.add("hidden")};$$('.export-mode').forEach(b=>b.onclick=()=>{$$('.export-mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');exportMode=b.dataset.mode;if(exportMode==='copy'){const settings=getExportSettings(),textMustBeBurned=state.burnOverlays&&(settings.includeTitle!==false||settings.includeManualCaption!==false||settings.includeTimedSubtitles!==false||settings.watermark),hasAdvancedEdits=state.exportAspect!=="source"||textMustBeBurned||settings.resolution!=="source"||settings.frameRate!=="source"||Number(settings.crf)!==23||settings.encoderPreset!=="veryfast"||settings.audioBitrate!=="128k"||Number(settings.videoFadeIn)>0||Number(settings.videoFadeOut)>0||Number(settings.audioFadeIn)>0||Number(settings.audioFadeOut)>0||settings.normalizeAudio||settings.includeAudio===false||state.clips.some(c=>{const fx={...DEFAULT_FX,...(c.fx||state.fx)};return fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||fx.volume!==1||fx.mute||fx.normalize});if(hasAdvancedEdits){exportMode="smart";$$('.export-mode').forEach(x=>x.classList.toggle('active',x.dataset.mode==='smart'));toast("Original stream cannot burn headings/captions or apply current edits. Use Smart / High quality, or turn off burn-in first.");return}toast("Original stream selected · headings and visual edits stay off by design")}});$("burnOverlaysToggle").onchange=e=>{state.burnOverlays=e.target.checked;state.burnOverlaysExplicitlySet=true;if(state.burnOverlays&&exportMode==='copy'){exportMode='smart';$$('.export-mode').forEach(x=>x.classList.toggle('active',x.dataset.mode==='smart'))}commit();renderExportPreview();toast(state.burnOverlays?'Heading and timed subtitles will be burned into the MP4':'Export will keep text as editable preview-only overlays')};
 function openExport(){if(!state.clips.length)return toast("Create clips first");if(!state.sourceFile)return toast("Re-import the source video before exporting","error");if(!state.burnOverlays&&state.burnOverlaysExplicitlySet!==true){state.burnOverlays=true;commit();toast("Restored heading burn-in for this saved project.")}if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:state.sourceFile.size,duration:state.duration});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nExporting processes one clip at a time, but large sources still need RAM. Continue?"))return}state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})};const currentExportIds=new Set(state.clips.map(c=>c.id));if(!exportSelectionInitialized){exportSelectedClipIds=new Set(currentExportIds);exportSelectionInitialized=true}else{state.clips.forEach(c=>{if(!exportKnownClipIds.has(c.id))exportSelectedClipIds.add(c.id)});for(const id of exportKnownClipIds)if(!currentExportIds.has(id))exportSelectedClipIds.delete(id)}exportKnownClipIds=currentExportIds;if(!exportPreviewClipId&&selected())exportPreviewClipId=selected().id;$("export-queue").classList.remove("hidden");$("exportAspectSelect").value=state.exportAspect||"source";$("burnOverlaysToggle").checked=state.burnOverlays!==false;syncExportSettingsControls();$("exportSummary").textContent=`${state.clips.length} clips · ${fmt(state.clips.reduce((a,c)=>a+c.end-c.start,0))} total`;$("memoryHint").textContent=`Serial export · ${navigator.deviceMemory?`${navigator.deviceMemory} GB device`:"device memory unknown"}`;renderQueue(state.clips)}
 function exportDimensions(aspect,resolution,sourceWidth,sourceHeight){if(!resolution||resolution==="source")return null;const edge=Math.max(240,Math.min(2160,Number(resolution)||720));const ratios={"9:16":9/16,"1:1":1,"4:5":4/5,"16:9":16/9};const ratio=aspect==="source"?(Number(sourceWidth)>0&&Number(sourceHeight)>0?Number(sourceWidth)/Number(sourceHeight):16/9):(ratios[aspect]||16/9);const even=n=>Math.max(2,Math.round(Number(n)/2)*2);return ratio>=1?[even(edge*ratio),even(edge)]:[even(edge),even(edge/ratio)]}
+async function ensureExportSourceFile(ff,clipId){
+  const file=state.sourceFile;
+  if(!file)throw new Error("Re-import the source video before exporting.");
+  if(ffmpegSourceInstance===ff&&ffmpegSourceFile===file&&ffmpegSourcePath)return ffmpegSourcePath;
+  if(ffmpegSourceInstance===ff&&ffmpegSourcePath){try{await ff.deleteFile(ffmpegSourcePath)}catch{}}
+  ffmpegSourceFile=null;ffmpegSourcePath=null;ffmpegSourceInstance=null;
+  const extension=String(file.name||"video.mp4").match(/\\.([a-z0-9]{1,8})$/i)?.[1]?.toLowerCase()||"mp4";
+  const input="source-"+uid()+"."+extension;
+  qstatus(clipId,"reading source once",0);
+  try{
+    const bytes=await ff.__fetchFile(file);
+    if(cancelExportRequested)throw new DOMException("Export cancelled","AbortError");
+    await ff.writeFile(input,bytes);
+  }catch(error){try{await ff.deleteFile(input)}catch{}throw error}
+  ffmpegSourceFile=file;ffmpegSourcePath=input;ffmpegSourceInstance=ff;
+  qstatus(clipId,"source cached · rendering",0);
+  if(cancelExportRequested)throw new DOMException("Export cancelled","AbortError");
+  return input;
+}
 async function renderClip(c,i,mode){
   const fx={...DEFAULT_FX,...(c.fx||{})},settings={...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})};
   const duration=Math.max(.5,c.end-c.start),speed=clamp(Number(fx.speed)||1,.25,4),outputDuration=duration/speed;
@@ -739,11 +758,10 @@ async function renderClip(c,i,mode){
   const requiresEncoding=needsVisualFilter||needsAudioFilter||fx.mute||settings.includeAudio===false||customEncoding;
   if(mode==="copy"&&requiresEncoding)throw Error("Original stream cannot apply advanced video/audio settings, resize, fade or burn text. Choose Smart / High quality export, or reset advanced settings to source defaults.");
 
-  const ff=await getFFmpeg(),input="source-"+uid(),output="clip-"+uid()+".mp4",assFile="clip-timed-subtitles-"+uid()+".ass",overlayFile="clip-static-overlay-"+uid()+".png";
+  const ff=await getFFmpeg(),input=await ensureExportSourceFile(ff,c.id),output="clip-"+uid()+".mp4",assFile="clip-timed-subtitles-"+uid()+".ass",overlayFile="clip-static-overlay-"+uid()+".png";
   let assWritten=false,staticOverlayWritten=false;
   try{
     if(cancelExportRequested)throw new DOMException("Export cancelled","AbortError");
-    await ff.writeFile(input,await ff.__fetchFile(state.sourceFile));
     const sourceWidth=Number($("previewVideo").videoWidth)||1280,sourceHeight=Number($("previewVideo").videoHeight)||720;
     const fallbackSizes={"9:16":[720,1280],"1:1":[1080,1080],"4:5":[864,1080],"16:9":[1280,720]};
     const customSize=exportDimensions(state.exportAspect,settings.resolution,sourceWidth,sourceHeight);
@@ -854,7 +872,7 @@ async function renderClip(c,i,mode){
     }
     throw error;
   }finally{
-    try{await ff.deleteFile(input)}catch{}try{await ff.deleteFile(output)}catch{}
+    try{await ff.deleteFile(output)}catch{}
     if(assWritten){try{await ff.deleteFile(assFile)}catch{}}
     if(staticOverlayWritten){try{await ff.deleteFile(overlayFile)}catch{}}
   }
@@ -1150,7 +1168,7 @@ async function startExport(){
   try{
     for(let n=0;n<chosen.length;n++){
       if(cancelExportRequested)break;
-      const {clip:c,index:i}=chosen[n];qstatus(c.id,`starting · ${n+1}/${chosen.length}`,0);
+      const {clip:c,index:i}=chosen[n];qstatus(c.id,`loading video engine · ${n+1}/${chosen.length}`,0);
       try{
         const blob=await renderClip(c,i,exportMode);
         if(cancelExportRequested){qstatus(c.id,"cancelled",0);break}
