@@ -930,7 +930,7 @@ function syncExportPreviewEditability(){
   if(button){button.setAttribute("aria-pressed",String(exportPreviewEditing));button.textContent=exportPreviewEditing?"✓ Done editing":"✎ Edit text & position"}
   const note=$("exportPreviewNoteText");
   if(note)note.textContent=exportPreviewEditing
-    ?"Edit text directly · drag the ⠿ handles to move it · changes are saved to this clip and the exported MP4."
+    ?"Edit text directly · drag the ⠿ handles to move it · changes are saved to the project and exported MP4."
     :"Live preview · headings, captions, watermark, framing, fades and image adjustments reflect the current settings. Final encode may vary slightly.";
 }
 function setExportPreviewEditing(enabled){
