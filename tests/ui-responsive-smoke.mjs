@@ -70,7 +70,9 @@ assert.doesNotMatch(html, /class="clip-strip-section"/, "duplicate Browse clips 
 assert.match(app, /function renderTimeline\(\)[\s\S]*?e\.draggable=true/, "the single clip sequence supports drag-to-reorder");
 assert.match(app, /reorderClip\(state\.clips,from,c\.id/, "dragging sequence blocks uses the existing safe reorder helper");
 assert.match(css, /\.timeline-clip-copy/, "the unified clip sequence shows clip labels and time ranges");
-assert.match(css, /grid-template-rows: auto minmax\(0,auto\) minmax\(64px,1fr\) !important/, "the timeline is laid out as one clip navigator");
+assert.match(css, /\.timeline-panel\s*\{\s*display:\s*flex !important;\s*flex-direction:\s*column !important;/, "the single timeline uses a vertical flex layout so the sequence can fill unused panel space");
+assert.match(css, /#timeline\s*\{\s*display:\s*flex !important;\s*flex:\s*1 1 auto !important;/, "the unified clip sequence grows to fill the timeline panel");
+assert.match(css, /\.timeline-block\s*\{\s*height:\s*100% !important;/, "clip blocks fill the available sequence height");
 
 assert.ok(workspaceControls.includes('event.key.toLowerCase() === "f"'), "F toggles preview focus mode");
 assert.ok(workspaceControls.includes('event.key === "Escape"'), "Escape exits preview focus mode");
