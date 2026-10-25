@@ -134,7 +134,7 @@ const lowMemory=getMemoryProfile({deviceMemory:2,userAgent:"Mozilla/5.0 (Linux; 
 assert.match(html,/id="queueTodoTab"/,"export queue has a To export view");
 assert.match(html,/id="queueExportedTab"/,"export queue has an Exported view");
 assert.match(html,/id="markExportedSelectedBtn"/,"users can register earlier downloads without exporting again");
-assert.match(app,/state\.exportHistory\[c\.id\]/,"successful exports persist a per-clip record");
+assert.match(app,/fileName,size:blob\.size,manual:false/,"successful exports persist a per-clip record");
 assert.match(app,/function markSelectedClipsExported\(/,"bulk migration action is wired");
 assert.match(app,/async function reExportClip\(/,"exported clips can be re-exported individually");
 assert.match(studio2,/\.queue-exported-check/,"exported clips have an explicit completion check");
