@@ -721,6 +721,7 @@ function exportDimensions(aspect,resolution,sourceWidth,sourceHeight){if(!resolu
 async function ensureExportSourceFile(ff,clipId){
   const file=state.sourceFile;
   if(!file)throw new Error("Re-import the source video before exporting.");
+  if(cancelExportRequested)throw new DOMException("Export cancelled","AbortError");
   if(ffmpegSourceInstance===ff&&ffmpegSourceFile===file&&ffmpegSourcePath)return ffmpegSourcePath;
   if(ffmpegSourceInstance===ff&&ffmpegSourcePath){try{await ff.deleteFile(ffmpegSourcePath)}catch{}}
   ffmpegSourceFile=null;ffmpegSourcePath=null;ffmpegSourceInstance=null;
@@ -1168,7 +1169,7 @@ async function startExport(){
   try{
     for(let n=0;n<chosen.length;n++){
       if(cancelExportRequested)break;
-      const {clip:c,index:i}=chosen[n];qstatus(c.id,`loading video engine · ${n+1}/${chosen.length}`,0);
+      const {clip:c,index:i}=chosen[n];const sourceIsCached=Boolean(ffmpegInstance&&ffmpegSourceInstance===ffmpegInstance&&ffmpegSourceFile===state.sourceFile&&ffmpegSourcePath);qstatus(c.id,sourceIsCached?`starting render · ${n+1}/${chosen.length}`:`loading video engine · ${n+1}/${chosen.length}`,0);
       try{
         const blob=await renderClip(c,i,exportMode);
         if(cancelExportRequested){qstatus(c.id,"cancelled",0);break}
