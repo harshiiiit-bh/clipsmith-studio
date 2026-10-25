@@ -39,7 +39,7 @@ The creator caption generator is a lightweight in-browser template/rules engine,
 
 ## Export and phone-memory safeguards
 
-- Individual export is the recommended path for large videos and series. Each clip is delivered as its own download and its in-memory output is released before the next clip is processed.
+- Individual export is the recommended path for large videos and series. Each clip is delivered as its own download, and its output is released before the next clip is processed. During a batch, the original source is loaded into the FFmpeg worker only once and reused across selected clips; the cached source is cleared when the worker is released.
 - ZIP is optional and limited to **8 clips per batch** and source files under **350 MB**.
 - Source files above the app's conservative **1.75 GB** safety ceiling are rejected; even smaller files can run out of memory on low-RAM phones.
 - Original stream mode is the fastest and avoids video re-encoding, but cuts can align to nearby keyframes. Precise cuts, aspect conversion, FX and burned-in text require re-encoding and may take much longer.
