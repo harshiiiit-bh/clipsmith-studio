@@ -300,7 +300,7 @@ export function getClipDisplayTitle(clip, clips = [], seriesTitle = "Your series
 function safeFilenamePart(value, maxLength) {
   return String(value ?? "")
     .normalize("NFC")
-    .replace(/[^\\p{L}\\p{N}_-]+/gu, "-")
+    .replace(/[^\p{L}\p{N}_-]+/gu, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, maxLength)
