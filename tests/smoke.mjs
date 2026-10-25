@@ -33,7 +33,11 @@ const words=[{start:0,end:.3,text:"Hello"},{start:.31,end:.6,text:"there."},{sta
 const assManual=createAssDocument({title:"Series · Part 1",caption:"Custom overlay",duration:10,width:720,height:1280,cues:[{start:1,end:2,text:"spoken line"}],titleStyle:{font:"Anton",size:42,color:"#ffffff"},subtitleStyle:{style:"Classic",highlight:"#9e83ff",positionY:82},captionStyle:{style:"Pop",highlight:"#ffcc00",positionY:78}});
 assert.match(assManual,/Style: ManualCaption,/,"manual caption has its own style so it can differ from timed subtitles");
 assert.match(assManual,/Dialogue: 1,0:00:00\.00,0:00:10\.00,ManualCaption,,0,0,0,,Custom overlay/,"manual captions persist for the duration of the exported clip");
-assert.match(assManual,/Style: ManualCaption,[^\\n]*&H[^,]+,&H[^,]+,&H[^,]+,&H[0-9A-F]{8}[^\\n]*,3,/,"manual Pop captions export the boxed background and saved style");
+const manualStyleLine=assManual.split(String.fromCharCode(10)).find(line=>line.startsWith("Style: ManualCaption,"));
+assert.ok(manualStyleLine,"manual caption style is present");
+const manualStyleFields=manualStyleLine.split(",");
+assert.equal(manualStyleFields[15],"3","manual Pop captions export the boxed background style");
+assert.match(manualStyleFields[6],/^&H[0-9A-F]{8}$/,"manual Pop captions export a valid background alpha colour");
 assert.match(assManual,/Dialogue: 2,0:00:01\.00,0:00:02\.00,Captions/,"timed subtitles remain above manual captions in the exported video");
 const assScaled=createAssDocument({title:"Scaled",duration:4,width:840,height:1280,titleStyle:{font:"Anton",size:42,color:"#ff0000",outline:"#000000",outlineWidth:2,opacity:.5,spacing:2,shadow:6},subtitleStyle:{highlight:"#9e83ff",positionY:82}});
 const assHeading=assScaled.split(String.fromCharCode(10)).find(line=>line.startsWith("Style: Heading,"));
