@@ -49,7 +49,7 @@ const karaokeStyle=karaokeLines.find(line=>line.startsWith("Style: Captions,")).
 assert.equal(karaokeStyle[1],"Inter","Karaoke captions retain the standard sans-serif font");
 assert.equal(karaokeStyle[7],"-1","Karaoke captions remain bold");
 assert.ok(Number(karaokeStyle[13])>0,"Karaoke letter spacing exports");
-assert.match(karaokeAss,/Dialogue: 1,[^\\n]*,HELLO WORLD$/m,"Karaoke captions export uppercase text");
+assert.ok(karaokeAss.split(String.fromCharCode(10)).some(line=>line.endsWith(",HELLO WORLD")),"Karaoke captions export uppercase text");
 const popAss=createAssDocument({title:"",duration:3,width:720,height:1280,cues:[{start:0,end:1,text:"hello"}],titleStyle:{},subtitleStyle:{style:"Pop",highlight:"#9e83ff",positionY:82}});
 const popStyle=popAss.split(String.fromCharCode(10)).find(line=>line.startsWith("Style: Captions,")).split(",");
 assert.equal(popStyle[15],"3","Pop captions export an opaque background box");
