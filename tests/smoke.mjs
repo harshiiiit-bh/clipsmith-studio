@@ -34,7 +34,8 @@ assert.ok(app.includes('$("startExportBtn").addEventListener("click",()=>{void h
 assert.match(app,/function handleStartExportClick\(\)/,"export startup errors are surfaced and the button is restored");
 assert.match(app,/const currentExportIds=new Set\(state\.clips\.map\(c=>c\.id\)\)/,"new clips are selected when the export queue is opened again");
 assert.match(app,/cancelExportRequested/,"export supports cancelling the active task");
-assert.match(app,/Cancel requested · the current render will finish/,"cancel stops the remaining export queue after the current render");
+assert.match(app,/activeEngine\.terminate\(\)/,"cancel immediately terminates the active FFmpeg render");assert.match(app,/Stopping the current render and cancelling the remaining queue/,"cancel explains that the active render is being stopped");
+assert.match(app,/function getClipSizeEstimate\(c\)/,"export queue estimates output size before rendering");assert.match(app,/Final file size · /,"successful renders expose exact encoded file size");assert.match(app,/Estimated size · /,"queue rows distinguish an estimate from a final file size");assert.match(app,/totalExportedBytes/,"completion summary totals exact exported bytes");
 assert.match(app,/function renderExportPreview\(\)/,"final-output preview has a dedicated renderer");
 assert.match(app,/frameWidth=Math\.floor\(Math\.min\(availableWidth,maxHeight\*aspectRatio\)\)/,"output preview is constrained by width and aspect ratio");
 assert.match(app,/const scaleY=stage\.clientHeight\/Math\.max\(1,outputSize\[1\]\)/,"preview captions scale to actual output height");
