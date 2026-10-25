@@ -1059,6 +1059,60 @@ $("generateIdeasBtn").onclick=()=>{const ideas=generateCreatorIdeas({title:selec
 async function analyzeCurrentFrame(){const v=$("previewVideo"),status=$("visualAnalysisStatus"),btn=$("analyzeFrameBtn");if(!state.sourceFile||v.readyState<2)return toast('Load a video first');btn.disabled=true;status.textContent='Loading local object detection…';try{if(!visionModelPromise){visionModelPromise=(async()=>{await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';document.head.appendChild(s);await new Promise((res,rej)=>{s.onload=res;s.onerror=rej});return window.cocoSsd.load({base:'lite_mobilenet_v2'})})()}const model=await visionModelPromise;const p=await model.detect(v,10,.35);state.visualTags=[...new Set(p.map(x=>x.class))].slice(0,8);status.textContent=state.visualTags.length?`Detected: ${state.visualTags.join(', ')}`:'No clear objects detected';commit();toast('Frame analyzed')}catch(e){visionModelPromise=null;status.textContent='Local analysis unavailable; add a transcript or description instead.';toast('Frame analysis unavailable','error')}finally{btn.disabled=false;if(memorySafeMode)releaseTemporaryMemory({silent:true})}}
 $("analyzeFrameBtn")?.addEventListener('click',analyzeCurrentFrame);
 $("normalizeAudioBtn")?.addEventListener('click',()=>{const c=selected();if(!c)return toast('Select a clip first');c.fx={...DEFAULT_FX,...c.fx,normalize:true};commit();syncInspector();toast('Audio normalization enabled')});$("normalizeAudioFxBtn")?.addEventListener('click',()=>$("normalizeAudioBtn").click());
+let previewAudioMeterContext=null,previewAudioMeterAnalyser=null,previewAudioMeterSource=null,previewAudioMeterFrame=0;
+function setPreviewAudioMeter(level,label){
+  const meter=$("previewAudioMeter"),fill=meter?.querySelector("span"),readout=$("audioMeterValue"),safeLevel=clamp(Math.round(Number(level)||0),0,100);
+  if(fill)fill.style.width=safeLevel+"%";
+  if(meter){meter.setAttribute("aria-valuenow",String(safeLevel));meter.setAttribute("aria-valuetext",label+" · "+safeLevel+"%");meter.dataset.state=label.toLowerCase().replace(/[^a-z0-9]+/g,"-")}
+  if(readout)readout.textContent=label+" · "+safeLevel+"%";
+}
+function stopPreviewAudioMeter(label="Paused"){
+  if(previewAudioMeterFrame)cancelAnimationFrame(previewAudioMeterFrame);
+  previewAudioMeterFrame=0;
+  setPreviewAudioMeter(0,label);
+}
+function renderPreviewAudioMeter(){
+  const video=$("previewVideo");
+  if(!video||video.paused||video.ended){stopPreviewAudioMeter("Paused");return}
+  if(video.muted||video.volume<=0){stopPreviewAudioMeter("Muted");return}
+  if(!previewAudioMeterAnalyser){stopPreviewAudioMeter("Unavailable");return}
+  const samples=new Uint8Array(previewAudioMeterAnalyser.fftSize);
+  previewAudioMeterAnalyser.getByteTimeDomainData(samples);
+  let energy=0;
+  for(let i=0;i<samples.length;i++){const sample=(samples[i]-128)/128;energy+=sample*sample}
+  const rms=Math.sqrt(energy/Math.max(1,samples.length));
+  const level=clamp(Math.round(Math.max(0,rms-.008)*420),0,100);
+  setPreviewAudioMeter(level,"Playing");
+  previewAudioMeterFrame=requestAnimationFrame(renderPreviewAudioMeter);
+}
+function startPreviewAudioMeter(){
+  const video=$("previewVideo"),meter=$("previewAudioMeter");
+  if(!video||!meter)return;
+  const AudioContextType=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextType){meter.dataset.state="unsupported";setPreviewAudioMeter(0,"Unsupported");return}
+  try{
+    if(!previewAudioMeterContext){
+      const context=new AudioContextType(),analyser=context.createAnalyser();
+      analyser.fftSize=512;analyser.smoothingTimeConstant=.72;
+      const source=context.createMediaElementSource(video);
+      source.connect(analyser);analyser.connect(context.destination);
+      previewAudioMeterContext=context;previewAudioMeterAnalyser=analyser;previewAudioMeterSource=source;
+    }
+    previewAudioMeterContext.resume().catch(()=>{});
+    if(!previewAudioMeterFrame)renderPreviewAudioMeter();
+  }catch(error){
+    meter.dataset.state="unavailable";
+    meter.title="Live audio level is unavailable in this browser session.";
+    stopPreviewAudioMeter("Unavailable");
+    console.warn("ClipSmith live audio meter unavailable",error);
+  }
+}
+$("previewVideo")?.addEventListener("play",startPreviewAudioMeter);
+$("previewVideo")?.addEventListener("pause",()=>stopPreviewAudioMeter("Paused"));
+$("previewVideo")?.addEventListener("ended",()=>stopPreviewAudioMeter("Paused"));
+$("previewVideo")?.addEventListener("volumechange",()=>{const video=$("previewVideo");if(video?.muted||video?.volume===0)stopPreviewAudioMeter("Muted");else if(video&&!video.paused)startPreviewAudioMeter()});
+$("playBtn")?.addEventListener("pointerdown",startPreviewAudioMeter,{passive:true});
+
 $("titleOverlay").addEventListener("pointerdown",dragOverlay);$("captionOverlay").addEventListener("pointerdown",dragOverlay);function dragOverlay(e){const el=e.currentTarget;if(el.id==="titleOverlay"&&!e.target.closest("[data-overlay-drag-handle]"))return;e.preventDefault();const stage=$("preview-canvas")||$("preview-stage"),r=stage.getBoundingClientRect(),start=e.clientY,elRect=el.getBoundingClientRect(),top0=elRect.top-r.top;el.setPointerCapture(e.pointerId);const move=ev=>{const nextY=clamp((top0+ev.clientY-start)/r.height*100,4,90);el.style.top=`${nextY}%`;el.style.bottom="auto";if(el.id==="titleOverlay"){state.titleStyle={...state.titleStyle,positionY:Number(nextY.toFixed(1))};const clip=selected();if(clip)clip.titleStyle={...state.titleStyle};if($("titlePositionY"))$("titlePositionY").value=nextY}};const up=()=>{el.removeEventListener("pointermove",move);el.removeEventListener("pointerup",up);commit()};el.addEventListener("pointermove",move);el.addEventListener("pointerup",up)}
 window.addEventListener("keydown",e=>{const active=document.activeElement,typing=!!active?.isContentEditable||/input|textarea|select/i.test(active?.tagName||"");if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?redo():undo();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){e.preventDefault();redo();return}if(typing)return;if(e.code==="Space"){e.preventDefault();$("playBtn").click();return}if(e.key.toLowerCase()==="s"){e.preventDefault();splitSelected();return}if(e.key==="Delete"||e.key==="Backspace"){e.preventDefault();deleteSelected();return}if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();$("previewVideo").currentTime=clamp($("previewVideo").currentTime+(e.key==="ArrowLeft"?-1:1),0,state.duration);return}if(e.key==="?")$("keyboardHelpModal").classList.remove("hidden");if(e.key==="Escape"){$("export-queue")?.classList.add("hidden");$("keyboardHelpModal")?.classList.add("hidden");$("inspector")?.classList.remove("open")}});
 function aiTranscriptRequired(){if(!state.subtitleCues.length){toast('Generate auto subtitles first in the Captions tab, then try Copilot.','error');return false}return true}
