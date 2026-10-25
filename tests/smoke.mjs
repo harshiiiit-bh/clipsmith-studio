@@ -30,6 +30,8 @@ assert.match(app,/settings\.audioBitrate!=="128k"/,"custom audio bitrates trigge
 assert.match(app,/hasAdvancedEdits/,"the original-stream strategy cannot silently discard advanced export edits");
 for(const id of ["exportPreviewStage","exportPreviewVideo","exportPreviewClipSelect","exportPreviewPlayToggle","exportPreviewSeek","exportPreviewMute","exportPreviewVolume","exportSelectionCount","selectAllExportClipsBtn","clearExportClipSelectionBtn","cancelExportBtn"])assert.match(html,new RegExp(`id="${id}"`),`export workbench control ${id} exists`);
 assert.match(app,/getSelectedExportClips\(\)/,"export iterates only selected clips");
+assert.ok(app.includes('$("startExportBtn").addEventListener("click",()=>{void handleStartExportClick()})'),"Export selected is wired to start the export queue");
+assert.match(app,/function handleStartExportClick\(\)/,"export startup errors are surfaced and the button is restored");
 assert.match(app,/const currentExportIds=new Set\(state\.clips\.map\(c=>c\.id\)\)/,"new clips are selected when the export queue is opened again");
 assert.match(app,/cancelExportRequested/,"export supports cancelling the active task");
 assert.match(app,/Cancel requested · the current render will finish/,"cancel stops the remaining export queue after the current render");
