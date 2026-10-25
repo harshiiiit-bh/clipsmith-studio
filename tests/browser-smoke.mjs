@@ -529,6 +529,8 @@ try {
   assert.equal(await page.locator("#exportSelectionCount").textContent(), "0 of 1 selected", "Clear selection works");
   await page.locator("#selectAllExportClipsBtn").click();
   assert.equal(await page.locator("#exportSelectionCount").textContent(), "1 of 1 selected", "Select all works");
+  assert.match(await page.locator(".queue-size").first().textContent(), /Estimated size · /, "every queued clip shows a pre-render size estimate");
+  assert.match(await page.locator("#exportSummary").textContent(), /Est\./, "selected-clips summary includes aggregate estimated output size");
 
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
