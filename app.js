@@ -948,6 +948,21 @@ async function startExport(){
     if(memorySafeMode)releaseTemporaryMemory({silent:true});
   }
 }
+async function handleStartExportClick(){
+  try{
+    await startExport();
+  }catch(error){
+    console.error("ClipSmith export failed to start",error);
+    exportBusy=false;
+    const button=$("startExportBtn");
+    if(button)button.disabled=false;
+    const cancel=$("cancelExportBtn");
+    if(cancel){cancel.classList.add("hidden");cancel.disabled=true}
+    try{updateExportSelectionSummary()}catch{}
+    toast(error?.message||"Export failed to start. Please try again.","error");
+  }
+}
+$("startExportBtn").addEventListener("click",()=>{void handleStartExportClick()});
 $("cancelExportBtn").onclick=cancelExport;
 $("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds=new Set(state.clips.map(c=>c.id));renderQueue(state.clips)};
 $("clearExportClipSelectionBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds.clear();renderQueue(state.clips)};
