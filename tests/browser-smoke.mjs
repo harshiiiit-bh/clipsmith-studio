@@ -437,6 +437,67 @@ try {
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("#powerToolsModal").isVisible(), false, "Escape closes Power Tools on mobile");
 
+  // Regression: manual caption text and style controls must update the actual preview live.
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.evaluate(() => localStorage.setItem("clipsmith.project.v2", JSON.stringify({
+    projectName: "Caption Styling Regression", duration: 12, durationPreset: 30, aspect: "16:9",
+    seriesTitle: "Caption test", autoParts: false, selectedId: "caption-regression",
+    sourceMeta: { fileName: "caption-fixture.mp4", fileSize: 4096, duration: 12 },
+    titleStyle: { font: "Inter", size: 30, color: "#ffffff", outline: "#000000", opacity: 1, bold: true, italic: false, spacing: 0, shadow: 6, weight: 800, transform: "none", align: "center", decoration: "none", outlineWidth: 2, shadowColor: "#000000", glow: 0, glowColor: "#8b5cf6", bgEnabled: false, bgColor: "#111827", bgOpacity: .72, bgPadding: 10, bgRadius: 10, rotation: 0, lineHeight: 1.08, positionY: 17 },
+    captionStyle: { style: "Classic", text: "", highlight: "#9e83ff", positionY: 78 },
+    subtitleSettings: { style: "Classic", highlight: "#9e83ff", positionY: 82 }, exportAspect: "source", burnOverlays: true,
+    clips: [{ id: "caption-regression", start: 0, end: 12, title: "Regression heading", autoTitle: false, caption: "Initial live caption", titleStyle: { font: "Inter", size: 30, color: "#ffffff", outline: "#000000", opacity: 1, bold: true, italic: false, spacing: 0, shadow: 6, weight: 800, transform: "none", align: "center", decoration: "none", outlineWidth: 2, shadowColor: "#000000", glow: 0, glowColor: "#8b5cf6", bgEnabled: false, bgColor: "#111827", bgOpacity: .72, bgPadding: 10, bgRadius: 10, rotation: 0, lineHeight: 1.08, positionY: 17 }, captionStyle: { style: "Classic", highlight: "#9e83ff", positionY: 78 }, fx: { preset: "Original", brightness: 0, contrast: 1, saturation: 1, blur: 0, speed: 1, volume: 1, mute: false, normalize: false } }],
+    skipRanges: [], subtitleCues: [], exportSettings: {}
+  })));
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const actions = document.querySelector("#draftRecoveryActions");
+    return actions && !actions.classList.contains("hidden");
+  }, null, { timeout: 5000 });
+  await page.locator("#restoreDraftBtn").click();
+  await page.waitForFunction(() => document.querySelector("#captionOverlay")?.textContent === "Initial live caption", null, { timeout: 3000 });
+  await page.locator('.tool[data-tool="captions"]').click();
+  await page.locator("#captionStyle").selectOption("Pop");
+  await page.waitForFunction(() => {
+    const element = document.querySelector("#captionOverlay");
+    const background = getComputedStyle(element).backgroundColor;
+    return element?.dataset.style === "Pop" && background !== "rgba(0, 0, 0, 0)";
+  }, null, { timeout: 3000 });
+  const popStyle = await page.locator("#captionOverlay").evaluate(element => ({
+    style: element.dataset.style, background: getComputedStyle(element).backgroundColor,
+    transform: getComputedStyle(element).transform
+  }));
+  assert.equal(popStyle.style, "Pop", "caption preset changes on selection without pressing Apply");
+  assert.notEqual(popStyle.background, "rgba(0, 0, 0, 0)", "Pop caption receives its visible background immediately");
+  assert.notEqual(popStyle.transform, "none", "Pop caption recentres itself immediately");
+  await page.locator("#captionHighlightColor").evaluate(element => {
+    element.value = "#00ff88"; element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  assert.equal(await page.locator("#captionOverlay").evaluate(element => getComputedStyle(element).color), "rgb(0, 255, 136)",
+    "caption highlight picker updates visible text immediately");
+  await page.locator("#captionPositionY").evaluate(element => {
+    element.value = "90"; element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  assert.ok(Math.abs(parseFloat(await page.locator("#captionOverlay").evaluate(element => getComputedStyle(element).bottom)) - 10) < 0.1,
+    "caption position slider updates the preview immediately");
+  await page.locator("#captionText").fill("Updated live caption");
+  await page.waitForFunction(() => document.querySelector("#captionOverlay")?.textContent === "Updated live caption", null, { timeout: 3000 });
+
+  // Advanced export preferences must autosave and rehydrate with the project.
+  await page.locator("#export-queue").evaluate(element => element.classList.remove("hidden"));
+  await page.locator("#exportResolution").selectOption("1080");
+  await page.locator("#exportFrameRate").selectOption("30");
+  await page.locator("#exportCrf").evaluate(element => {
+    element.value = "18"; element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#exportWatermark").check();
+  await page.locator("#exportWatermarkText").fill("My Channel");
+  const savedExportSettings = await page.evaluate(() => JSON.parse(localStorage.getItem("clipsmith.project.v2")).exportSettings);
+  assert.equal(savedExportSettings.resolution, "1080", "output resolution is autosaved");
+  assert.equal(savedExportSettings.frameRate, "30", "output frame rate is autosaved");
+  assert.equal(savedExportSettings.crf, 18, "output quality is autosaved as a number");
+  assert.equal(savedExportSettings.watermark, true, "watermark setting is autosaved");
+  assert.equal(savedExportSettings.watermarkText, "My Channel", "watermark text is autosaved");
 
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
