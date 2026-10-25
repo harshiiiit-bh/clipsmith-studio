@@ -1,6 +1,6 @@
 import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
 import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-power3";
-import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-stylefinder2";
+import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-deepaudit4";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
 import { getImportKind, chooseVideoFromZip } from "./media-import.js?v=20261024-zipimport1";
