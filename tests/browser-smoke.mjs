@@ -329,13 +329,15 @@ try {
         color: style.color,
         letterSpacing: style.letterSpacing,
         fontSize: style.fontSize,
+        canvasWidth: document.querySelector("#preview-canvas").clientWidth,
         fits: element.scrollWidth <= element.clientWidth + 3
       };
     });
     assert.match(result.fontFamily, /Bangers/, ratio + " preserves the selected font");
     assert.equal(result.fontWeight, "700", ratio + " preserves the selected font weight");
     assert.equal(result.color, "rgb(255, 51, 68)", ratio + " preserves the selected colour");
-    assert.equal(result.letterSpacing, "2.5px", ratio + " preserves letter spacing");
+    const expectedSpacing = 2.5 * Math.max(.28, result.canvasWidth / 420);
+    assert.ok(Math.abs(parseFloat(result.letterSpacing) - expectedSpacing) < .1, ratio + " scales letter spacing with the preview canvas");
     assert.ok(parseFloat(result.fontSize) > 0, ratio + " keeps visible text sizing");
     assert.ok(result.fits, ratio + " wraps the styled title inside the canvas");
   };
