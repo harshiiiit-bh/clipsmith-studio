@@ -641,14 +641,32 @@ try {
     return source?.readyState >= 2 && source.videoWidth > 0 &&
       output?.readyState >= 2 && output.videoWidth > 0 && output.videoHeight > 0;
   }, null, { timeout: 12000 });
-  const decodedPreview = await page.evaluate(() => {
+  const decodedPreview = await page.evaluate(async () => {
     const video = document.querySelector("#exportPreviewVideo");
+    // Frame zero can be the recorder's initial black frame before its first canvas paint.
+    // Seek into the colored portion and wait until the browser presents that decoded frame.
+    const targetTime = Math.min(0.4, Math.max(0, Number(video.duration) - 0.1));
+    if (targetTime > 0.05) {
+      await new Promise(resolve => {
+        let done = false;
+        const finish = () => { if (done) return; done = true; clearTimeout(timeout); resolve(); };
+        const timeout = setTimeout(finish, 1500);
+        video.addEventListener("seeked", finish, { once: true });
+        video.currentTime = targetTime;
+      });
+    }
+    if (typeof video.requestVideoFrameCallback === "function") {
+      await new Promise(resolve => video.requestVideoFrameCallback(() => resolve()));
+    } else {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const pixels = ctx.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
-    return { width: video.videoWidth, height: video.videoHeight, maxChannel: Math.max(pixels[0], pixels[1], pixels[2]) };
+    return { width: video.videoWidth, height: video.videoHeight, currentTime: video.currentTime,
+      maxChannel: Math.max(pixels[0], pixels[1], pixels[2]) };
   });
   assert.ok(decodedPreview.width > 0 && decodedPreview.height > 0, "final-output preview has decoded video dimensions");
   assert.ok(decodedPreview.maxChannel > 80, "final-output preview displays a decoded frame rather than remaining black");
