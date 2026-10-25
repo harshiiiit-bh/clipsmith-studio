@@ -131,4 +131,11 @@ const excluding=buildClipSegmentsExcludingRanges(130,60,[{start:50,end:70}]);ass
 const manifest=createProjectManifest({projectName:"Series",sourceFileName:"movie.mp4",sourceFileSize:100,sourceDuration:20,clips},"2026-10-24T00:00:00Z");assert.equal(manifest.version,1);assert.equal(validateProjectManifest(manifest).clips.length,2);assert.equal(validateProjectManifest({...manifest,version:999}),null);
 for(const file of ["app.js","export-overlay.js","creator-assistant.js","editor-tools.js","subtitle-tools.js","transcribe-worker.js","ai-creator-tools.js","mobile-memory.js"]){const src=readFileSync(new URL(file,root),"utf8");const out=join(tmpdir(),file);await import("node:fs/promises").then(fs=>fs.writeFile(out,src));execFileSync(process.execPath,["--check",out],{stdio:"inherit"})}
 const lowMemory=getMemoryProfile({deviceMemory:2,userAgent:"Mozilla/5.0 (Linux; Android 15)"});assert.equal(lowMemory.tier,"low");assert.ok(lowMemory.recommendedSourceBytes<getMemoryProfile({deviceMemory:8,userAgent:"Android"}).recommendedSourceBytes);assert.match(getMediaMemoryWarning({fileSize:220*1024*1024,duration:2700,profile:lowMemory}),/memory/i);assert.equal(getMediaMemoryWarning({fileSize:10*1024*1024,duration:60,profile:lowMemory}),"");
+assert.match(html,/id="queueTodoTab"/,"export queue has a To export view");
+assert.match(html,/id="queueExportedTab"/,"export queue has an Exported view");
+assert.match(html,/id="markExportedSelectedBtn"/,"users can register earlier downloads without exporting again");
+assert.match(app,/state\.exportHistory\[c\.id\]/,"successful exports persist a per-clip record");
+assert.match(app,/function markSelectedClipsExported\(/,"bulk migration action is wired");
+assert.match(app,/async function reExportClip\(/,"exported clips can be re-exported individually");
+assert.match(studio2,/\.queue-exported-check/,"exported clips have an explicit completion check");
 console.log("ClipSmith smoke checks passed.");

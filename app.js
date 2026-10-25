@@ -19,9 +19,9 @@ function timeFromInputs(prefix){const read=part=>{const el=$(prefix+part);return
 function setTimeInputs(prefix,value){const ids=['Hours','Minutes','Seconds'];if(value===null||value===undefined){ids.forEach(part=>{const el=$(prefix+part);if(el)el.value=''});return}const total=Math.max(0,Number(value)||0),h=Math.floor(total/3600),m=Math.floor(total%3600/60),s=Number((total%60).toFixed(2));const vals=[h,m,s];ids.forEach((part,i)=>{const el=$(prefix+part);if(el)el.value=String(vals[i])})}
 const DEFAULT_FX={preset:"Original",brightness:0,contrast:1,saturation:1,blur:0,speed:1,volume:1,mute:false,normalize:false};
 const DEFAULT_EXPORT_SETTINGS=Object.freeze({resolution:"source",frameRate:"source",crf:23,encoderPreset:"veryfast",audioBitrate:"128k",fitMode:"contain",videoFadeIn:0,videoFadeOut:0,audioFadeIn:0,audioFadeOut:0,includeTitle:true,includeManualCaption:true,includeTimedSubtitles:true,includeAudio:true,normalizeAudio:false,watermark:false,watermarkText:"ClipSmith",watermarkPosition:"bottom-right",watermarkColor:"#ffffff",watermarkSize:28,watermarkOpacity:72,filenameMode:"number-title",metadataTitle:"",writeMetadata:true});
-const state={projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},exportAspect:"source",burnOverlays:true,burnOverlaysExplicitlySet:false,exportSettings:{...DEFAULT_EXPORT_SETTINGS},aspect:"16:9",showSafe:false,seriesTitle:"Your series title",autoParts:true,titleStyle:{font:"Inter",size:30,color:"#ffffff",outline:"#000000",opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17},captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},clips:[],fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null};
+const state={projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},exportAspect:"source",burnOverlays:true,burnOverlaysExplicitlySet:false,exportSettings:{...DEFAULT_EXPORT_SETTINGS},aspect:"16:9",showSafe:false,seriesTitle:"Your series title",autoParts:true,titleStyle:{font:"Inter",size:30,color:"#ffffff",outline:"#000000",opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17},captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},clips:[],exportHistory:{},fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null};
 const MAX_CONCURRENT_EXPORTS=1; let lastCommitted=null, visionModelPromise=null, ffmpegInstance=null, ffmpegLoading=null, ffmpegSourceFile=null, ffmpegSourcePath=null, ffmpegSourceInstance=null, exportMode="smart", exportBusy=false, exportAspect="source";
-let exportSelectedClipIds=new Set(), exportKnownClipIds=new Set(), exportPreviewClipId=null, cancelExportRequested=false, exportSelectionInitialized=false;
+let exportSelectedClipIds=new Set(), exportKnownClipIds=new Set(), exportPreviewClipId=null, cancelExportRequested=false, exportSelectionInitialized=false, exportQueueView="todo";
 let exportPreviewEditing=false;
 let aiHighlights=[],aiAudit=null,aiCleanup=null,aiChapters=[],aiReadability=null,aiReadiness=null,lastCreatorIdeas=null;
 let previewSourceVersion=0,previewCompatibilityBusy=false,queuedPreviewRecoveryFile=null;
@@ -31,7 +31,7 @@ let memorySafeMode=true;
 try{memorySafeMode=localStorage.getItem(MEMORY_SAFE_MODE_KEY)!=="false"}catch{}
 let restoreExistingClipsOnLoad=false, mediaSaveGeneration=0, memoryClearInProgress=false; let pendingRecoverySnapshot=null;
 let subtitleWorker=null, subtitleWorkerReady=null, subtitleWorkerResolve=null, subtitleWorkerReject=null, subtitlePending=new Map(), subtitleRequestCounter=0, transcriptionCancelled=false, transcribing=false, subtitleCueLimit=80, sceneScanning=false;
-const snap=()=>JSON.parse(JSON.stringify({projectName:state.projectName,durationPreset:state.durationPreset,aspect:state.aspect,showSafe:state.showSafe,seriesTitle:state.seriesTitle,autoParts:state.autoParts,titleStyle:state.titleStyle,captionStyle:state.captionStyle,clips:state.clips,fx:state.fx,selectedId:state.selectedId,sourceMeta:state.sourceMeta,visualTags:state.visualTags,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays,burnOverlaysExplicitlySet:state.burnOverlaysExplicitlySet,exportSettings:state.exportSettings}));
+const snap=()=>JSON.parse(JSON.stringify({projectName:state.projectName,durationPreset:state.durationPreset,aspect:state.aspect,showSafe:state.showSafe,seriesTitle:state.seriesTitle,autoParts:state.autoParts,titleStyle:state.titleStyle,captionStyle:state.captionStyle,clips:state.clips,exportHistory:state.exportHistory,fx:state.fx,selectedId:state.selectedId,sourceMeta:state.sourceMeta,visualTags:state.visualTags,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays,burnOverlaysExplicitlySet:state.burnOverlaysExplicitlySet,exportSettings:state.exportSettings}));
 function refreshMemoryPanel(){
   const profile=getMemoryProfile();
   const label=$("memoryProfileLabel"),advice=$("memoryAdvice"),toggle=$("memorySafeModeToggle"),status=$("memorySystemStatus");
@@ -58,7 +58,7 @@ function toast(msg,type="info"){let t=document.querySelector(".toast");if(!t){t=
 function selected(){return state.clips.find(c=>c.id===state.selectedId)||null}
 function undo(){const p=state.history.pop();if(!p)return toast("Nothing to undo");state.future.push(snap());restore(p);setSave("● Undo")}
 function redo(){const n=state.future.pop();if(!n)return toast("Nothing to redo");state.history.push(snap());restore(n);setSave("● Redo")}
-function restore(s){Object.assign(state,JSON.parse(JSON.stringify(s)));state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.burnOverlaysExplicitlySet=s.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(s.exportSettings||{})};state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
+function restore(s){const durableExportHistory=state.exportHistory&&typeof state.exportHistory==="object"&&!Array.isArray(state.exportHistory)?state.exportHistory:{};Object.assign(state,JSON.parse(JSON.stringify(s)));state.exportHistory={...(s.exportHistory&&typeof s.exportHistory==="object"&&!Array.isArray(s.exportHistory)?s.exportHistory:{}),...durableExportHistory};state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.burnOverlaysExplicitlySet=s.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(s.exportSettings||{})};state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
 function hasRecoverableDraft(snapshot){
   return Boolean(snapshot&&(
     (Array.isArray(snapshot.clips)&&snapshot.clips.length)||
@@ -87,6 +87,7 @@ function applyRecoveredDraft(s){
   if(!s||typeof s!=="object")return false;
   Object.assign(state,s);
   state.clips=Array.isArray(s.clips)?s.clips:[];
+  state.exportHistory=s.exportHistory&&typeof s.exportHistory==="object"&&!Array.isArray(s.exportHistory)?s.exportHistory:{};
   state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];
   state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];
   state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};
@@ -143,8 +144,9 @@ async function startFreshProject(){
       seriesTitle:"Your series title",autoParts:true,
       titleStyle:{font:"Inter",size:30,color:"#ffffff",outline:"#000000",opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17},
       captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},
-      clips:[],fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null
+      clips:[],exportHistory:{},fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null
     });
+    exportSelectionInitialized=false;exportKnownClipIds=new Set();exportSelectedClipIds.clear();exportQueueView="todo";
     pendingRecoverySnapshot=null;
     hideDraftRecoveryPrompt();
     if($("projectName"))$("projectName").value=state.projectName;
@@ -716,7 +718,7 @@ function syncExportSettingsControls(){const settings={...DEFAULT_EXPORT_SETTINGS
 function updateExportSettingsFromControl(event){const control=event.currentTarget,key=exportSettingsControlMap[control.id];if(!key)return;const raw=control.type==="checkbox"?control.checked:control.value;const value=exportSettingsNumberKeys.has(key)?Number(raw):raw;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{}),[key]:value};if(key==="watermarkPosition"){delete state.exportSettings.watermarkPositionX;delete state.exportSettings.watermarkPositionY}if(control.id==="exportCrf"&&$("exportCrfValue"))$("exportCrfValue").textContent=`${value} · ${value<=19?"high quality":value>=28?"small file":"balanced"}`;if(control.id==="exportWatermarkOpacity"&&$("exportWatermarkOpacityValue"))$("exportWatermarkOpacityValue").textContent=`${value}%`;if(exportMode==="copy"&&!["filenameMode","metadataTitle","writeMetadata"].includes(key)){exportMode="smart";$$(".export-mode").forEach(button=>button.classList.toggle("active",button.dataset.mode==="smart"));toast("Advanced options need Smart or High quality export.")}persist();renderExportPreview();updateExportSelectionSummary();}
 Object.keys(exportSettingsControlMap).forEach(id=>{const control=$(id);if(!control)return;control.addEventListener("input",updateExportSettingsFromControl);control.addEventListener("change",updateExportSettingsFromControl)});
 $("exportBtn").onclick=()=>openExport();$("closeExportBtn").onclick=()=>{if(exportPreviewEditing)setExportPreviewEditing(false);$("export-queue").classList.add("hidden")};$$('.export-mode').forEach(b=>b.onclick=()=>{$$('.export-mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');exportMode=b.dataset.mode;if(exportMode==='copy'){const settings=getExportSettings(),textMustBeBurned=state.burnOverlays&&(settings.includeTitle!==false||settings.includeManualCaption!==false||settings.includeTimedSubtitles!==false||settings.watermark),hasAdvancedEdits=state.exportAspect!=="source"||textMustBeBurned||settings.resolution!=="source"||settings.frameRate!=="source"||Number(settings.crf)!==23||settings.encoderPreset!=="veryfast"||settings.audioBitrate!=="128k"||Number(settings.videoFadeIn)>0||Number(settings.videoFadeOut)>0||Number(settings.audioFadeIn)>0||Number(settings.audioFadeOut)>0||settings.normalizeAudio||settings.includeAudio===false||state.clips.some(c=>{const fx={...DEFAULT_FX,...(c.fx||state.fx)};return fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||fx.volume!==1||fx.mute||fx.normalize});if(hasAdvancedEdits){exportMode="smart";$$('.export-mode').forEach(x=>x.classList.toggle('active',x.dataset.mode==='smart'));toast("Original stream cannot burn headings/captions or apply current edits. Use Smart / High quality, or turn off burn-in first.");return}toast("Original stream selected · headings and visual edits stay off by design")}});$("burnOverlaysToggle").onchange=e=>{state.burnOverlays=e.target.checked;state.burnOverlaysExplicitlySet=true;if(state.burnOverlays&&exportMode==='copy'){exportMode='smart';$$('.export-mode').forEach(x=>x.classList.toggle('active',x.dataset.mode==='smart'))}commit();renderExportPreview();toast(state.burnOverlays?'Heading and timed subtitles will be burned into the MP4':'Export will keep text as editable preview-only overlays')};
-function openExport(){if(!state.clips.length)return toast("Create clips first");if(!state.sourceFile)return toast("Re-import the source video before exporting","error");if(!state.burnOverlays&&state.burnOverlaysExplicitlySet!==true){state.burnOverlays=true;commit();toast("Restored heading burn-in for this saved project.")}if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:state.sourceFile.size,duration:state.duration});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nExporting processes one clip at a time, but large sources still need RAM. Continue?"))return}state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})};const currentExportIds=new Set(state.clips.map(c=>c.id));if(!exportSelectionInitialized){exportSelectedClipIds=new Set(currentExportIds);exportSelectionInitialized=true}else{state.clips.forEach(c=>{if(!exportKnownClipIds.has(c.id))exportSelectedClipIds.add(c.id)});for(const id of exportKnownClipIds)if(!currentExportIds.has(id))exportSelectedClipIds.delete(id)}exportKnownClipIds=currentExportIds;if(!exportPreviewClipId&&selected())exportPreviewClipId=selected().id;$("export-queue").classList.remove("hidden");$("exportAspectSelect").value=state.exportAspect||"source";$("burnOverlaysToggle").checked=state.burnOverlays!==false;syncExportSettingsControls();$("exportSummary").textContent=`${state.clips.length} clips · ${fmt(state.clips.reduce((a,c)=>a+c.end-c.start,0))} total`;$("memoryHint").textContent=`Serial export · ${navigator.deviceMemory?`${navigator.deviceMemory} GB device`:"device memory unknown"}`;renderQueue(state.clips)}
+function openExport(){if(!state.clips.length)return toast("Create clips first");if(!state.sourceFile)return toast("Re-import the source video before exporting","error");if(!state.burnOverlays&&state.burnOverlaysExplicitlySet!==true){state.burnOverlays=true;commit();toast("Restored heading burn-in for this saved project.")}if(memorySafeMode){const warning=getMediaMemoryWarning({fileSize:state.sourceFile.size,duration:state.duration});if(warning&&!confirm("ClipSmith memory-safety check:\n\n"+warning+"\n\nExporting processes one clip at a time, but large sources still need RAM. Continue?"))return}state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})};const currentExportIds=new Set(state.clips.map(c=>c.id));if(!exportSelectionInitialized){exportSelectedClipIds=new Set(state.clips.filter(c=>!state.exportHistory?.[c.id]).map(c=>c.id));exportSelectionInitialized=true}else{state.clips.forEach(c=>{if(!exportKnownClipIds.has(c.id)&&!state.exportHistory?.[c.id])exportSelectedClipIds.add(c.id)});for(const id of exportKnownClipIds)if(!currentExportIds.has(id))exportSelectedClipIds.delete(id)}exportKnownClipIds=currentExportIds;if(!exportPreviewClipId&&selected())exportPreviewClipId=selected().id;$("export-queue").classList.remove("hidden");$("exportAspectSelect").value=state.exportAspect||"source";$("burnOverlaysToggle").checked=state.burnOverlays!==false;syncExportSettingsControls();$("exportSummary").textContent=`${state.clips.length} clips · ${fmt(state.clips.reduce((a,c)=>a+c.end-c.start,0))} total`;$("memoryHint").textContent=`Serial export · ${navigator.deviceMemory?`${navigator.deviceMemory} GB device`:"device memory unknown"}`;renderQueue(state.clips)}
 function exportDimensions(aspect,resolution,sourceWidth,sourceHeight){if(!resolution||resolution==="source")return null;const edge=Math.max(240,Math.min(2160,Number(resolution)||720));const ratios={"9:16":9/16,"1:1":1,"4:5":4/5,"16:9":16/9};const ratio=aspect==="source"?(Number(sourceWidth)>0&&Number(sourceHeight)>0?Number(sourceWidth)/Number(sourceHeight):16/9):(ratios[aspect]||16/9);const even=n=>Math.max(2,Math.round(Number(n)/2)*2);return ratio>=1?[even(edge*ratio),even(edge)]:[even(edge),even(edge/ratio)]}
 async function ensureExportSourceFile(ff,clipId){
   const file=state.sourceFile;
@@ -880,34 +882,72 @@ async function renderClip(c,i,mode){
 }
 function displayClipTitle(c){return getClipDisplayTitle(c,state.clips,state.seriesTitle)}
 function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
+function getExportRecord(clip){const record=clip&&state.exportHistory&&state.exportHistory[clip.id];return record&&typeof record==="object"&&!Array.isArray(record)?record:null}
+function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
 function updateExportSelectionSummary(){
-  const chosen=getSelectedExportClips(),total=state.clips.length;
-  const count=$("exportSelectionCount");if(count)count.textContent=`${chosen.length} of ${total} selected`;
+  const chosen=getSelectedExportClips(),todo=state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id)),done=state.clips.filter(c=>getExportRecord(c)&&!exportSelectedClipIds.has(c.id));
+  const count=$("exportSelectionCount");if(count)count.textContent=`${todo.length} to export · ${done.length} exported`;
   const summary=$("exportSummary");if(summary)summary.textContent=`${chosen.length} selected · ${fmt(chosen.reduce((n,item)=>n+item.clip.end-item.clip.start,0))} total`;
   const button=$("startExportBtn");if(button&&!exportBusy){button.textContent=`Export selected (${chosen.length})`;button.disabled=chosen.length===0}
+  const todoTab=$("queueTodoTab"),doneTab=$("queueExportedTab");
+  if(todoTab){todoTab.textContent=`To export (${todo.length})`;todoTab.disabled=exportBusy;todoTab.classList.toggle("active",exportQueueView==="todo");todoTab.setAttribute("aria-selected",String(exportQueueView==="todo"))}
+  if(doneTab){doneTab.textContent=`Exported (${done.length})`;doneTab.disabled=exportBusy;doneTab.classList.toggle("active",exportQueueView==="exported");doneTab.setAttribute("aria-selected",String(exportQueueView==="exported"))}
+  const actions=$("exportSelectionActions");if(actions)actions.classList.toggle("hidden",exportQueueView==="exported");
+  const selectAll=$("selectAllExportClipsBtn");if(selectAll)selectAll.disabled=exportBusy||todo.length===0;
+  const clear=$("clearExportClipSelectionBtn");if(clear)clear.disabled=exportBusy||chosen.length===0;
+  const mark=$("markExportedSelectedBtn");if(mark)mark.disabled=exportBusy||chosen.length===0;
 }
+function setExportQueueView(view){if(exportBusy)return;exportQueueView=view==="exported"?"exported":"todo";renderQueue(state.clips)}
 function renderQueue(clips){
   const list=$("queueList");if(!list)return;
-  list.innerHTML=clips.map((c,i)=>{
-    const checked=exportSelectedClipIds.has(c.id);
-    return `<div class="queue-item ${checked?"is-export-selected":"is-export-unselected"}" id="queue-${esc(c.id)}">
+  const current=Array.isArray(clips)?clips:[];
+  const todo=current.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id));
+  const done=current.filter(c=>getExportRecord(c)&&!exportSelectedClipIds.has(c.id));
+  if(exportQueueView==="exported"){
+    list.innerHTML=done.map(c=>{
+      const record=getExportRecord(c);
+      const when=record?.at&&Number.isFinite(Date.parse(record.at))?new Date(record.at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
+      const detail=record?.manual?"Previously exported · marked by you":`Exported ${when||"previously"}${Number(record?.size)>0?" · "+formatFileSize(record.size):""}`;
+      return `<div class="queue-item queue-item-exported" id="queue-${esc(c.id)}"><span class="queue-exported-check" role="img" aria-label="Exported">✓</span><div class="queue-item-main"><strong>Part ${current.indexOf(c)+1} · ${esc(displayClipTitle(c))}</strong><small>${fmt(c.start)} → ${fmt(c.end)} · ${fmt(c.end-c.start)} · ${esc(detail)}</small></div><button class="soft-btn reexport-clip" type="button" data-clip-id="${esc(c.id)}" ${exportBusy?"disabled":""}>↻ Re-export</button></div>`;
+    }).join("")||`<div class="queue-empty">${current.length?"No exported clips yet. Use “Mark selected exported” for clips you already downloaded earlier.":"Create clips first to build an export queue."}</div>`;
+  }else{
+    list.innerHTML=todo.map(c=>{
+      const i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id),record=getExportRecord(c);
+      return `<div class="queue-item ${checked?"is-export-selected":"is-export-unselected"}" id="queue-${esc(c.id)}">
       <label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="${esc(c.id)}" ${checked?"checked":""} ${exportBusy?"disabled":""} aria-label="Export Part ${i+1}"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>
       <div class="queue-item-main"><strong>Part ${i+1} · ${esc(displayClipTitle(c))}</strong><small>${fmt(c.start)} → ${fmt(c.end)} · ${fmt(c.end-c.start)}</small><div class="queue-progress"><span></span></div></div>
-      <small class="queue-status">${checked?"waiting":"not selected"}</small>
+      <small class="queue-status">${record&&checked?"re-export queued":checked?"waiting":"not selected"}</small>
     </div>`;
-  }).join("")||'<div class="queue-empty">Create clips first to build an export queue.</div>';
+    }).join("")||(current.length?'<div class="queue-empty">All clips have been exported. Open Exported to re-export any clip, or add new clips.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>');
+  }
   const previewSelect=$("exportPreviewClipSelect");
   if(previewSelect){
     const previous=exportPreviewClipId;
-    previewSelect.innerHTML=clips.map((c,i)=>`<option value="${esc(c.id)}">Part ${i+1} · ${esc(displayClipTitle(c))}</option>`).join("");
-    if(clips.some(c=>c.id===previous))previewSelect.value=previous;
+    previewSelect.innerHTML=current.map((c,i)=>`<option value="${esc(c.id)}">Part ${i+1} · ${esc(displayClipTitle(c))}</option>`).join("");
+    if(current.some(c=>c.id===previous))previewSelect.value=previous;
     else{
       const candidate=selected();
-      exportPreviewClipId=(candidate&&clips.some(c=>c.id===candidate.id)?candidate:clips[0])?.id||null;
+      exportPreviewClipId=(candidate&&current.some(c=>c.id===candidate.id)?candidate:current[0])?.id||null;
       if(exportPreviewClipId)previewSelect.value=exportPreviewClipId;
     }
   }
   updateExportSelectionSummary();renderExportPreview();
+}
+function markSelectedClipsExported(){
+  if(exportBusy)return;
+  const chosen=getSelectedExportClips();if(!chosen.length)return toast("Select the clips you already exported first.");
+  const at=new Date().toISOString();
+  state.exportHistory={...(state.exportHistory&&typeof state.exportHistory==="object"?state.exportHistory:{})};
+  chosen.forEach(({clip})=>{state.exportHistory[clip.id]={at,fileName:"",size:0,manual:true};exportSelectedClipIds.delete(clip.id)});
+  lastCommitted=snap();persist();exportQueueView="exported";renderQueue(state.clips);
+  toast(`Marked ${chosen.length} clip${chosen.length===1?"":"s"} as already exported.`);
+}
+async function reExportClip(id){
+  if(exportBusy)return;
+  const clip=state.clips.find(c=>c.id===id);if(!clip)return;
+  if(!state.sourceFile)return toast("Re-import the original source video to re-export this clip.","error");
+  exportSelectedClipIds=new Set([id]);exportQueueView="todo";renderQueue(state.clips);
+  await handleStartExportClick();
 }
 function setExportClipSelection(id,checked){
   if(exportBusy)return;
@@ -1151,7 +1191,7 @@ function readMp4VideoDimensions(data){
   }
   return null;
 }
-function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
+function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;const status=e.querySelector(".queue-status"),progress=e.querySelector(".queue-progress span");if(status)status.textContent=s;if(progress)progress.style.width=p+"%"}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 function outputName(c,i){return buildExportFilename(c,i,{prefix:$("powerExportPrefix")?.value||"",mode:getExportSettings().filenameMode})}
 function getExportSettings(){return {...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})}}
@@ -1174,7 +1214,7 @@ async function startExport(){
         const blob=await renderClip(c,i,exportMode);
         if(cancelExportRequested){qstatus(c.id,"cancelled",0);break}
         if(!blob||blob.size<128)throw new Error("Export produced an empty file; no download was started.");
-        downloadBlob(blob,outputName(c,i));exportedBytes+=blob.size;qstatus(c.id,"saved · "+formatFileSize(blob.size),100);exported++;
+        const fileName=outputName(c,i);downloadBlob(blob,fileName);state.exportHistory={...(state.exportHistory||{}),[c.id]:{at:new Date().toISOString(),fileName,size:blob.size,manual:false}};exportSelectedClipIds.delete(c.id);lastCommitted=snap();persist();exportedBytes+=blob.size;qstatus(c.id,"saved · "+formatFileSize(blob.size),100);exported++;
         $("memoryHint").textContent="Exporting "+exported+"/"+chosen.length+" · "+formatFileSize(exportedBytes)+" saved";
         $("startExportBtn").textContent=`Exporting ${exported}/${chosen.length}…`;
         await new Promise(resolve=>setTimeout(resolve,40));
@@ -1194,8 +1234,8 @@ async function startExport(){
   }finally{
     exportBusy=false;
     $("cancelExportBtn").classList.add("hidden");$("cancelExportBtn").disabled=true;
-    $$ (".export-clip-check").forEach(input=>input.disabled=false);
-    updateExportSelectionSummary();renderExportPreview();
+    if(state.clips.length&&state.clips.every(c=>getExportRecord(c)&&!exportSelectedClipIds.has(c.id)))exportQueueView="exported";
+    renderQueue(state.clips);updateExportSelectionSummary();renderExportPreview();
     if(memorySafeMode)releaseTemporaryMemory({silent:true});
   }
 }
@@ -1215,8 +1255,12 @@ async function handleStartExportClick(){
 }
 $("startExportBtn").addEventListener("click",()=>{void handleStartExportClick()});
 $("cancelExportBtn").onclick=cancelExport;
-$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds=new Set(state.clips.map(c=>c.id));renderQueue(state.clips)};
+$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds=new Set(state.clips.filter(c=>!getExportRecord(c)).map(c=>c.id));renderQueue(state.clips)};
 $("clearExportClipSelectionBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds.clear();renderQueue(state.clips)};
+$("queueTodoTab").onclick=()=>setExportQueueView("todo");
+$("queueExportedTab").onclick=()=>setExportQueueView("exported");
+$("markExportedSelectedBtn").onclick=markSelectedClipsExported;
+$("queueList").addEventListener("click",event=>{const button=event.target.closest(".reexport-clip");if(button)void reExportClip(button.dataset.clipId)});
 $("queueList").addEventListener("change",event=>{const input=event.target.closest(".export-clip-check");if(input)setExportClipSelection(input.dataset.clipId,input.checked)});
 $("exportPreviewClipSelect").addEventListener("change",event=>{exportPreviewClipId=event.target.value;const c=state.clips.find(clip=>clip.id===exportPreviewClipId),video=$("exportPreviewVideo");if(c&&video.readyState>=1){video.currentTime=c.start}renderExportPreview()});
 $("exportPreviewPlayToggle").onclick=async()=>{const video=$("exportPreviewVideo"),c=state.clips.find(clip=>clip.id===exportPreviewClipId);if(!video||!state.sourceFile||!c)return;if(!video.paused){video.pause();renderExportPreview();return}if(video.currentTime<c.start||video.currentTime>=c.end)video.currentTime=c.start;try{await video.play()}catch{toast("The browser could not play the preview. Check the source video.","error")}renderExportPreview()};
@@ -1236,7 +1280,7 @@ exportEditStage?.addEventListener("keydown",event=>{
   if(event.key==="Escape"){event.preventDefault();event.target.blur();setExportPreviewEditing(false)}
 });
 exportEditStage?.querySelectorAll(".export-preview-grip").forEach(grip=>grip.addEventListener("pointerdown",startExportPreviewLayerDrag));
-$("saveProjectBtn").onclick=()=>{const m=createProjectManifest({projectName:state.projectName,sourceFileName:state.sourceFile?.name||state.sourceMeta?.fileName||'',sourceFileSize:state.sourceFile?.size||state.sourceMeta?.fileSize||0,sourceDuration:state.duration,sourceUrl:state.sourceMeta?.sourceUrl||'',clips:state.clips,controls:{aspectSelect:state.aspect,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays,burnOverlaysExplicitlySet:state.burnOverlaysExplicitlySet,exportSettings:state.exportSettings}},new Date().toISOString());downloadBlob(new Blob([JSON.stringify(m,null,2)],{type:'application/json'}),`${state.projectName.replace(/\W+/g,'-')||'clipsmith-project'}.clipsmith.json`);toast('Project saved')};$("loadProjectBtn").onclick=()=>$("projectFileInput").click();$("projectFileInput").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const m=validateProjectManifest(JSON.parse(await f.text()));if(!m)throw Error('Invalid ClipSmith project file');if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}state.projectName=m.projectName;state.clips=m.clips;state.aspect=m.controls?.aspectSelect||'16:9';state.skipRanges=Array.isArray(m.controls?.skipRanges)?m.controls.skipRanges.filter(r=>Number.isFinite(Number(r?.start))&&Number.isFinite(Number(r?.end))&&Number(r.end)>Number(r.start)).slice(0,500).map(r=>({id:typeof r.id==='string'?r.id:uid(),start:Math.max(0,Number(r.start)),end:Math.max(0,Number(r.end)),label:'Promo / ad break'})):[];state.subtitleCues=Array.isArray(m.controls?.subtitleCues)?m.controls.subtitleCues.filter(q=>Number.isFinite(Number(q.start))&&Number.isFinite(Number(q.end))&&Number(q.end)>Number(q.start)&&String(q.text||'').trim()).slice(0,50000):[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(m.controls?.subtitleSettings||{})};state.exportAspect=m.controls?.exportAspect||"source";state.burnOverlays=m.controls?.burnOverlays!==false;state.burnOverlaysExplicitlySet=m.controls?.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(m.controls?.exportSettings||{})};state.duration=m.source.duration||0;state.sourceMeta={fileName:m.source.fileName,fileSize:m.source.fileSize,sourceUrl:m.source.url||'',duration:state.duration};state.sourceFile=null;state.selectedId=state.clips[0]?.id||null;$("projectName").value=state.projectName;$("mediaName").textContent=`Saved project · ${state.sourceMeta.fileName||'video'}`;$("previewEmptyTitle").textContent='Project opened';$("previewEmptyHint").textContent='Re-import the source video to preview and export.';$("previewEmpty").classList.remove('hidden');commit();renderAll();toast('Project opened')}catch(err){toast(err.message||'Could not open project','error')}finally{e.target.value=''}};
+$("saveProjectBtn").onclick=()=>{const m=createProjectManifest({projectName:state.projectName,sourceFileName:state.sourceFile?.name||state.sourceMeta?.fileName||'',sourceFileSize:state.sourceFile?.size||state.sourceMeta?.fileSize||0,sourceDuration:state.duration,sourceUrl:state.sourceMeta?.sourceUrl||'',clips:state.clips,controls:{aspectSelect:state.aspect,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays,burnOverlaysExplicitlySet:state.burnOverlaysExplicitlySet,exportSettings:state.exportSettings,exportHistory:state.exportHistory}},new Date().toISOString());downloadBlob(new Blob([JSON.stringify(m,null,2)],{type:'application/json'}),`${state.projectName.replace(/\W+/g,'-')||'clipsmith-project'}.clipsmith.json`);toast('Project saved')};$("loadProjectBtn").onclick=()=>$("projectFileInput").click();$("projectFileInput").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const m=validateProjectManifest(JSON.parse(await f.text()));if(!m)throw Error('Invalid ClipSmith project file');if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}state.projectName=m.projectName;state.clips=m.clips;state.exportHistory=m.controls?.exportHistory&&typeof m.controls.exportHistory==='object'&&!Array.isArray(m.controls.exportHistory)?m.controls.exportHistory:{};exportSelectionInitialized=false;exportKnownClipIds=new Set();exportSelectedClipIds.clear();exportQueueView='todo';state.aspect=m.controls?.aspectSelect||'16:9';state.skipRanges=Array.isArray(m.controls?.skipRanges)?m.controls.skipRanges.filter(r=>Number.isFinite(Number(r?.start))&&Number.isFinite(Number(r?.end))&&Number(r.end)>Number(r.start)).slice(0,500).map(r=>({id:typeof r.id==='string'?r.id:uid(),start:Math.max(0,Number(r.start)),end:Math.max(0,Number(r.end)),label:'Promo / ad break'})):[];state.subtitleCues=Array.isArray(m.controls?.subtitleCues)?m.controls.subtitleCues.filter(q=>Number.isFinite(Number(q.start))&&Number.isFinite(Number(q.end))&&Number(q.end)>Number(q.start)&&String(q.text||'').trim()).slice(0,50000):[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(m.controls?.subtitleSettings||{})};state.exportAspect=m.controls?.exportAspect||"source";state.burnOverlays=m.controls?.burnOverlays!==false;state.burnOverlaysExplicitlySet=m.controls?.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(m.controls?.exportSettings||{})};state.duration=m.source.duration||0;state.sourceMeta={fileName:m.source.fileName,fileSize:m.source.fileSize,sourceUrl:m.source.url||'',duration:state.duration};state.sourceFile=null;state.selectedId=state.clips[0]?.id||null;$("projectName").value=state.projectName;$("mediaName").textContent=`Saved project · ${state.sourceMeta.fileName||'video'}`;$("previewEmptyTitle").textContent='Project opened';$("previewEmptyHint").textContent='Re-import the source video to preview and export.';$("previewEmpty").classList.remove('hidden');commit();renderAll();toast('Project opened')}catch(err){toast(err.message||'Could not open project','error')}finally{e.target.value=''}};
 $("projectName").oninput=e=>{state.projectName=e.target.value;persist()};
 $("generateIdeasBtn").onclick=()=>{const ideas=generateCreatorIdeas({title:selected()?.title||state.seriesTitle,fileName:state.sourceFile?.name||'',transcript:$("ideasTranscript").value.trim()||state.subtitleCues.map(cue=>cue.text).join(" "),visualTags:state.visualTags,platform:$("creatorPlatform").value,tone:$("creatorTone").value,language:$("creatorLanguage").value});lastCreatorIdeas=ideas;$("creatorResults").innerHTML=`<div class="result-card"><span>Caption ideas</span>${ideas.captions.map(x=>`<div class="copy-line"><p>${esc(x)}</p><button data-copy="${esc(x)}">Copy</button></div>`).join('')}</div><div class="result-card"><span>Hashtags</span><div class="copy-line"><p>${esc(ideas.hashtags.join(' '))}</p><button data-copy="${esc(ideas.hashtags.join(' '))}">Copy</button></div></div><div class="result-card"><span>Hooks</span>${(ideas.hooks||ideas.captions||[]).slice(0,5).map(x=>`<div class="copy-line"><p>${esc(x)}</p><button data-copy="${esc(x)}">Copy</button></div>`).join("")}</div><div class="result-card"><span>Short titles</span>${(ideas.titles||[]).map(x=>`<div class="copy-line"><p>${esc(x)}</p><button data-copy="${esc(x)}">Copy</button></div>`).join("")}</div>`};$("creatorResults").onclick=e=>{const b=e.target.closest('[data-copy]');if(b)navigator.clipboard?.writeText(b.dataset.copy).then(()=>toast('Copied'))};
 async function analyzeCurrentFrame(){const v=$("previewVideo"),status=$("visualAnalysisStatus"),btn=$("analyzeFrameBtn");if(!state.sourceFile||v.readyState<2)return toast('Load a video first');btn.disabled=true;status.textContent='Loading local object detection…';try{if(!visionModelPromise){visionModelPromise=(async()=>{await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';document.head.appendChild(s);await new Promise((res,rej)=>{s.onload=res;s.onerror=rej});return window.cocoSsd.load({base:'lite_mobilenet_v2'})})()}const model=await visionModelPromise;const p=await model.detect(v,10,.35);state.visualTags=[...new Set(p.map(x=>x.class))].slice(0,8);status.textContent=state.visualTags.length?`Detected: ${state.visualTags.join(', ')}`:'No clear objects detected';commit();toast('Frame analyzed')}catch(e){visionModelPromise=null;status.textContent='Local analysis unavailable; add a transcript or description instead.';toast('Frame analysis unavailable','error')}finally{btn.disabled=false;if(memorySafeMode)releaseTemporaryMemory({silent:true})}}
