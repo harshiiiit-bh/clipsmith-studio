@@ -107,4 +107,6 @@ assert.match(workspaceControls, /Math\.max\(62, Math\.round\(baseWidth \* zoom\)
 
 
 
+assert.ok(app.includes("await loadFile(episode,{memoryCheckConfirmed:true})"), "a ZIP entry accepted at preflight should not prompt twice");
+assert.ok(app.includes("if(memorySafeMode&&!memoryCheckConfirmed)"), "ordinary local files must still receive memory safety warnings");
 console.log("Media import smoke checks passed.");
