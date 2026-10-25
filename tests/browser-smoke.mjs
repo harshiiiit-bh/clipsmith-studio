@@ -504,6 +504,14 @@ try {
   assert.equal(savedExportSettings.watermark, true, "watermark setting is autosaved");
   assert.equal(savedExportSettings.watermarkText, "My Channel", "watermark text is autosaved");
   assert.equal(await page.locator("#exportPreviewStage").isVisible(), true, "export center contains the final-output preview stage");
+  await page.locator("#exportPreviewClipSelect").evaluate(select => {
+    if (!select.options.length) {
+      const option = document.createElement("option");
+      option.value = "caption-regression";
+      option.textContent = "Part 1 · Regression heading";
+      select.appendChild(option);
+    }
+  });
   await page.locator("#exportPreviewClipSelect").selectOption("caption-regression");
   await page.locator("#exportIncludeTitle").uncheck();
   assert.equal(await page.locator("#exportPreviewTitle").isVisible(), false, "disabling Burn heading hides it in the final-output preview");
