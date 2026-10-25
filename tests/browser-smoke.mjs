@@ -655,8 +655,17 @@ try {
         video.currentTime = targetTime;
       });
     }
+    // Playback makes Chromium present the sought frame even when the element was paused at frame zero.
+    try {
+      await video.play();
+      await new Promise(resolve => setTimeout(resolve, 220));
+      video.pause();
+    } catch {}
     if (typeof video.requestVideoFrameCallback === "function") {
-      await new Promise(resolve => video.requestVideoFrameCallback(() => resolve()));
+      await new Promise(resolve => {
+        const timeout = setTimeout(resolve, 700);
+        video.requestVideoFrameCallback(() => { clearTimeout(timeout); resolve(); });
+      });
     } else {
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }
