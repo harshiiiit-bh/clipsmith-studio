@@ -88,7 +88,7 @@ assert.ok(app.includes("letterSpacing:"), "on-canvas heading reflects letter spa
 assert.ok(app.includes("function ensureTitleFont(style)"), "selected fonts are requested from the document font set");
 assert.ok(app.includes('Object.assign(titleText.style,{'), "font and style controls apply directly to the visible text node");
 for (const property of ["fontFamily:", "fontWeight:weight", "fontStyle:style?.italic", "letterSpacing:", "color:style?.color", "textTransform:style?.transform", "textDecoration:style?.decoration", "textShadow:shadows"]) assert.ok(app.includes(property), `visible title styling handles ${property}`);
-assert.ok(app.includes("const scale=Math.min(1,Math.max(.28,width/420))"), "typography scales to all output ratios");
+assert.ok(app.includes("const scale=Math.max(.28,width/420)"), "typography scales to all output ratios");
 const titleGeometry = css.match(/\.preview-canvas > \.title-overlay\s*\{([^}]+)\}/);
 assert.ok(titleGeometry, "preview canvas has an explicit title layout rule");
 assert.doesNotMatch(titleGeometry[1], /!important/, "ratio CSS must not override interactive title geometry");
