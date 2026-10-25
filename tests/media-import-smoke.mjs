@@ -58,6 +58,7 @@ assert.match(app,/if\(bytesRead>maxBytes\)/,"the streaming reader cancels respon
 assert.match(app,/advertisedBytes>maxUrlBytes/,"declared Content-Length is rejected before download");
 assert.ok(app.indexOf("if(mime.includes('text/html'))")<app.indexOf("readBlobWithLimit(r,maxUrlBytes)"),"HTML webpages are rejected before any response body is buffered");
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
+assert.match(app,/getVideoMimeType\(name,blob\.type\|\|mime\)/,"direct video links infer a usable video MIME type from the filename when the server sends a generic type");
 assert.match(app, /libx264/);
 assert.match(app, /original source retained for export/i);
 
