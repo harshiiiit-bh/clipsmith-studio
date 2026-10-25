@@ -28,6 +28,14 @@ assert.match(app,/syncManualCaptionStyleFromControls/,"manual caption styling up
 assert.match(app,/exportDimensions\(state\.exportAspect,settings\.resolution/,"export resolution is applied to the render dimensions");
 assert.match(app,/settings\.audioBitrate!=="128k"/,"custom audio bitrates trigger a new encode");
 assert.match(app,/hasAdvancedEdits/,"the original-stream strategy cannot silently discard advanced export edits");
+for(const id of ["exportPreviewStage","exportPreviewVideo","exportPreviewClipSelect","exportPreviewPlayToggle","exportPreviewSeek","exportPreviewMute","exportPreviewVolume","exportSelectionCount","selectAllExportClipsBtn","clearExportClipSelectionBtn","cancelExportBtn"])assert.match(html,new RegExp(`id="${id}"`),`export workbench control ${id} exists`);
+assert.match(app,/getSelectedExportClips\(\)/,"export iterates only selected clips");
+assert.match(app,/cancelExportRequested/,"export supports cancelling the active task");
+assert.match(app,/active\.terminate\(\)/,"cancel terminates the active FFmpeg worker");
+assert.match(app,/function renderExportPreview\(\)/,"final-output preview has a dedicated renderer");
+assert.match(app,/video\.style\.objectFit=settings\.fitMode/,"preview reflects aspect-fit settings");
+assert.match(css2,/\.export-preview-panel/,"export center contains the final-output preview");
+assert.match(css2,/\.export-selection-panel/,"clip selection queue uses a dedicated responsive panel");
 assert.match(app,/fade=t=in/,"video fade-in is applied by the encoder");
 assert.match(app,/afade=t=in/,"audio fade-in is applied by the encoder");
 assert.match(app,/watermark:watermarkText\?/,"export watermark styling is passed to the subtitle renderer");
