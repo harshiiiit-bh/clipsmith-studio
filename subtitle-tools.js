@@ -81,7 +81,10 @@ export function createAssDocument({ title = '', duration = 0, width = 1280, heig
   const typographyScale=w/420;
   const titleSize=Math.max(12,Number(titleStyle.size)||32)*typographyScale;
   const captionSize=Math.max(14,Math.min(64,Number(subtitleStyle.size)||Math.min(42,h*.035)));
-  const titleFont=String(titleStyle.font||'Inter').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48)||'Arial',captionFont=String(subtitleStyle.font||'Inter').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48)||'Arial';
+  const captionVariant=String(subtitleStyle.style||'Classic');
+  const captionIsKaraoke=captionVariant==='Karaoke',captionIsPop=captionVariant==='Pop',captionIsCinematic=captionVariant==='Cinematic';
+  const titleFont=String(titleStyle.font||'Inter').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48)||'Arial';
+  const captionFont=String(subtitleStyle.font||(captionIsCinematic?'Georgia':'Inter')).replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48)||'Arial';
   const titleOpacity=Number.isFinite(Number(titleStyle.opacity))?Math.max(0,Math.min(1,Number(titleStyle.opacity))):1;
   const titleColor=assColor(titleStyle.color||'#ffffff',titleOpacity),titleOutline=assColor(titleStyle.outline||'#000000',titleOpacity),captionColor=assColor(subtitleStyle.highlight||'#9e83ff');
   const titleWeight=Math.max(100,Math.min(900,Number(titleStyle.weight??(titleStyle.bold===false?500:800))));
@@ -97,13 +100,20 @@ export function createAssDocument({ title = '', duration = 0, width = 1280, heig
   const titleLine=assSafeText(transformedTitle),total=Math.max(.5,Number(duration)||.5);
   const marginL=Math.round(w*.055),marginV=Math.round(h*clampAssPosition(titleStyle.positionY,17)/100);
   const captionMargin=Math.round(h*(100-clampAssPosition(subtitleStyle.positionY,82))/100);
+  const captionWeight=captionIsCinematic?0:-1;
+  const captionSpacing=captionIsKaraoke?captionSize*.01:captionIsCinematic?captionSize*.03:0;
+  const captionBorderStyle=captionIsPop?3:1;
+  const captionOutline=captionIsPop?Math.max(4,Math.min(20,captionSize*.28)):2;
+  const captionShadow=captionIsPop?0:1;
+  const captionOutlineColour=captionIsPop?assColor('#0a0b10'):'&H00000000';
+  const captionBackColour=captionIsPop?assColor('#0a0b10',.79):'&HAA000000';
   const bgOpacity=Math.max(0,Math.min(1,Number(titleStyle.bgOpacity??.72)));
   const titleBackColour=titleStyle.bgEnabled?assColor(titleStyle.bgColor||'#111827',bgOpacity):'&H88000000';
   const titleBorderStyle=titleStyle.bgEnabled?3:1;
-  const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${titleShadow.toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},&H00000000,&HAA000000,-1,0,0,0,100,100,0,0,1,2,1,2,${marginL},${marginL},${captionMargin},1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+  const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${titleShadow.toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},${captionOutlineColour},${captionBackColour},${captionWeight},0,0,0,100,100,${captionSpacing},0,${captionBorderStyle},${captionOutline.toFixed(1)},${captionShadow.toFixed(1)},2,${marginL},${marginL},${captionMargin},1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
   const events=[];
   if(titleLine)events.push(`Dialogue: 0,${assTime(0)},${assTime(total)},Heading,,0,0,0,,${titleLine}`);
-  for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),text=assSafeText(cue?.text);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 1,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${text}`)}
+  for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),rawText=String(cue?.text??''),styledText=captionIsKaraoke?rawText.toLocaleUpperCase():rawText,text=assSafeText(styledText);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 1,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${text}`)}
   return `${header}\n${events.join('\n')}\n`;
 }
 function clampAssPosition(value,fallback){const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):fallback}
