@@ -525,6 +525,30 @@ try {
   assert.equal(await page.locator("#exportPreviewTitle").textContent(), "Regression heading", "final-output preview uses the chosen clip heading");
   await page.locator("#exportWatermark").check();
   assert.equal(await page.locator("#exportPreviewWatermark").textContent(), "My Channel", "watermark settings update the preview");
+  await page.locator("#exportPreviewEditToggle").click();
+  const headingEditor = page.locator("#exportPreviewTitle .export-preview-layer-text");
+  assert.equal(await headingEditor.getAttribute("contenteditable"), "true", "the export preview becomes editable only after enabling edit mode");
+  await headingEditor.fill("Preview edit persisted");
+  const previewClipId = await page.locator("#exportPreviewClipSelect").inputValue();
+  const editedHeading = await page.evaluate(id => {
+    const draft = JSON.parse(localStorage.getItem("clipsmith.project.v2") || "{}");
+    return draft.clips?.find(clip => clip.id === id)?.title;
+  }, previewClipId);
+  assert.equal(editedHeading, "Preview edit persisted", "export preview text edits update the saved clip, not only the preview DOM");
+  const titleHandle = page.locator("#exportPreviewTitle .export-preview-grip");
+  const titleHandleBox = await titleHandle.boundingBox();
+  const stageBox = await page.locator("#exportPreviewStage").boundingBox();
+  await titleHandle.dragTo(page.locator("#exportPreviewStage"), {
+    targetPosition: { x: Math.round(stageBox.width * 0.66), y: Math.round(stageBox.height * 0.45) }
+  });
+  const movedTitle = await page.evaluate(id => {
+    const draft = JSON.parse(localStorage.getItem("clipsmith.project.v2") || "{}");
+    return draft.clips?.find(clip => clip.id === id)?.titleStyle;
+  }, previewClipId);
+  assert.ok(Number.isFinite(Number(movedTitle?.positionX)), "dragging a preview handle saves horizontal text position");
+  assert.ok(Number.isFinite(Number(movedTitle?.positionY)), "dragging a preview handle saves vertical text position");
+  await page.locator("#exportPreviewEditToggle").click();
+  assert.equal(await headingEditor.getAttribute("contenteditable"), "false", "edit mode can be exited without changing the shared text state");
   await page.locator("#clearExportClipSelectionBtn").click();
   assert.equal(await page.locator("#exportSelectionCount").textContent(), "0 of 1 selected", "Clear selection works");
   await page.locator("#selectAllExportClipsBtn").click();
