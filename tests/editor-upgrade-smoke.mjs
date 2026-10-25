@@ -14,5 +14,8 @@ assert.match(studioCss,/\.preview-canvas > #previewVideo/,"video should fit insi
 assert.match(html,/id="subtitleOverlay"[^]*id="canvasTitleTools"/,"heading tools should be after the preview canvas closing tag");
 assert.match(studioCss,/\.preview-stage > \.canvas-title-tools/,"editor controls should sit on the stage, not inside the ratio canvas");
 assert.match(app,/Math\.max\(12,\(Number\(style\?\.size\)\|\|30\)\*scale\)/,"heading size should scale down for narrow portrait canvases");
+assert.match(app,/function ensureTitleFont\(style\)/,"the selected font is requested before preview rendering");
+assert.match(app,/Object\.assign\(titleText\.style,\{/,"typography properties are applied to the editable text node");
+assert.match(app,/titleGeometry|textRendering|fontKerning/,"preview text uses a unified typography renderer");
 assert.match(app,/\$\("preview-canvas"\)\|\|\$\("preview-stage"\)/,"dragging an overlay should use canvas coordinates");
 assert.match(app,/navigator\.deviceMemory/);assert.match(html,/Original stream/i);assert.match(html,/Mobile safe/i);assert.match(html,/caption ideas/i);assert.match(html,/hashtags/i);assert.match(html,/Hinglish/);console.log('Editor upgrade smoke checks passed.');
