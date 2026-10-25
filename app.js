@@ -750,7 +750,7 @@ async function renderClip(c,i,mode){
         titleStyle:c.titleStyle||state.titleStyle,
         subtitleStyle:state.subtitleSettings,
         captionStyle:c.captionStyle||state.captionStyle,
-        watermark:watermarkText?{text:watermarkText,position:settings.watermarkPosition,color:settings.watermarkColor,size:settings.watermarkSize,opacity:Number(settings.watermarkOpacity)/100}:null
+        watermark:watermarkText?{text:watermarkText,position:settings.watermarkPosition,x:settings.watermarkPositionX,y:settings.watermarkPositionY,color:settings.watermarkColor,size:settings.watermarkSize,opacity:Number(settings.watermarkOpacity)/100}:null
       });
       await ff.writeFile(assFile,new TextEncoder().encode(ass));assWritten=true;
     }
@@ -961,14 +961,15 @@ function renderExportPreview(){
   timed.style.bottom=`${100-clamp(Number(subtitleStyle.positionY??82),0,100)}%`;
   if(hasNumericPosition(subtitleStyle.positionX)){timed.style.left=`${clamp(Number(subtitleStyle.positionX),3,97)}%`;timed.style.right="auto";timed.style.width="max-content";timed.style.maxWidth="90%";timed.style.transform="translateX(-50%)"}else{timed.style.left="";timed.style.right="";timed.style.width="";timed.style.maxWidth="";timed.style.transform=""}
   timed.classList.toggle("hidden",!cue?.text);
-  setExportPreviewLayerText("exportPreviewWatermark",visible&&settings.watermark?String(settings.watermarkText||"ClipSmith"):"");
+  const previewWatermarkText=visible&&settings.watermark?String(settings.watermarkText||"ClipSmith"):"";
+  setExportPreviewLayerText("exportPreviewWatermark",previewWatermarkText);
   watermark.style.color=settings.watermarkColor||"#fff";
   watermark.style.fontSize=`${Math.max(12,Number(settings.watermarkSize)||28)*stage.clientHeight/720}px`;
   watermark.style.opacity=String(clamp(Number(settings.watermarkOpacity??72)/100,0,1));
   const hasWatermarkPosition=hasNumericPosition(settings.watermarkPositionX)&&hasNumericPosition(settings.watermarkPositionY);
   watermark.dataset.position=hasWatermarkPosition?"custom":settings.watermarkPosition||"bottom-right";
   if(hasWatermarkPosition){watermark.style.left=`${clamp(Number(settings.watermarkPositionX),3,97)}%`;watermark.style.right="auto";watermark.style.top=`${clamp(Number(settings.watermarkPositionY),3,97)}%`;watermark.style.bottom="auto";watermark.style.transform="translate(-50%,-50%)";watermark.style.maxWidth="80%"}else{watermark.style.left="";watermark.style.right="";watermark.style.top="";watermark.style.bottom="";watermark.style.transform=""}
-  watermark.classList.toggle("hidden",!watermark.textContent);
+  watermark.classList.toggle("hidden",!previewWatermarkText);
   const fx={...DEFAULT_FX,...(c?.fx||state.fx)};
   video.style.filter=`brightness(${clamp(100*(1+Number(fx.brightness||0)),0,200)}%) contrast(${clamp(Number(fx.contrast??1),.1,3)*100}%) saturate(${clamp(Number(fx.saturation??1),0,3)*100}%) blur(${Math.max(0,Number(fx.blur)||0)}px)`;
   video.style.objectFit=settings.fitMode==="stretch"?"fill":settings.fitMode==="cover"?"cover":"contain";
