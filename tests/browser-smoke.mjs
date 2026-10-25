@@ -596,6 +596,63 @@ try {
   await page.locator("#selectAllExportClipsBtn").click();
   assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (1)", "Select all works");
 
+  // Exercise the final-output preview against a real, locally generated video frame.
+  // A CSS-only/metadata-only preview can look healthy while the actual frame stays black.
+  const fixtureBase64 = await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 320; canvas.height = 180;
+    const ctx = canvas.getContext("2d");
+    const stream = canvas.captureStream(8);
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8")
+      ? "video/webm;codecs=vp8" : "video/webm";
+    const recorder = new MediaRecorder(stream, { mimeType });
+    const chunks = [];
+    const finished = new Promise(resolve => {
+      recorder.addEventListener("dataavailable", event => { if (event.data.size) chunks.push(event.data); });
+      recorder.addEventListener("stop", resolve, { once: true });
+    });
+    recorder.start();
+    for (let frame = 0; frame < 12; frame += 1) {
+      ctx.fillStyle = frame % 2 ? "#00ff00" : "#ff00ff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(`fixture frame ${frame}`, 12, 28);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    recorder.stop();
+    await finished;
+    stream.getTracks().forEach(track => track.stop());
+    const bytes = new Uint8Array(await new Blob(chunks, { type: "video/webm" }).arrayBuffer());
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+    }
+    return btoa(binary);
+  });
+  await page.locator("#videoInput").setInputFiles({
+    name: "preview-frame-fixture.webm",
+    mimeType: "video/webm",
+    buffer: Buffer.from(fixtureBase64, "base64")
+  });
+  await page.waitForFunction(() => {
+    const source = document.querySelector("#previewVideo");
+    const output = document.querySelector("#exportPreviewVideo");
+    return source?.readyState >= 2 && source.videoWidth > 0 &&
+      output?.readyState >= 2 && output.videoWidth > 0 && output.videoHeight > 0;
+  }, null, { timeout: 12000 });
+  const decodedPreview = await page.evaluate(() => {
+    const video = document.querySelector("#exportPreviewVideo");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const pixels = ctx.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
+    return { width: video.videoWidth, height: video.videoHeight, maxChannel: Math.max(pixels[0], pixels[1], pixels[2]) };
+  });
+  assert.ok(decodedPreview.width > 0 && decodedPreview.height > 0, "final-output preview has decoded video dimensions");
+  assert.ok(decodedPreview.maxChannel > 80, "final-output preview displays a decoded frame rather than remaining black");
+
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
   console.log("ClipSmith browser runtime smoke checks passed: startup, assets, text styling, focus mode, Quick Actions, Power Tools presets, export filename preview, and mobile navigation.");
