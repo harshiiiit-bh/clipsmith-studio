@@ -2142,3 +2142,11 @@ select.field option,select.field optgroup { color:#f4f5ff; background-color:#111
 #titleOverlayText:focus-visible { outline:2px solid #ad9aff; outline-offset:3px; border-radius:3px; }
 @media(max-width:620px) { .export-settings-grid { grid-template-columns:minmax(0,1fr); gap:9px; } .export-setting-full { grid-column:auto; } }
 
+
+@media (min-width: 821px) {
+  .export-queue {
+    max-height: min(88dvh, 900px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
