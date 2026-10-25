@@ -1,0 +1,252 @@
+/* ClipSmith Brand Finish — premium surfaces, unified brand identity, and final UI polish. */
+:root {
+  color-scheme: dark;
+  --brand-ink: #080a12;
+  --brand-surface: #10131e;
+  --brand-surface-raised: #151928;
+  --brand-edge: #2c3044;
+  --brand-edge-bright: #454461;
+  --brand-text: #f3f2fc;
+  --brand-muted: #969db2;
+  --brand-violet: #a78bfa;
+  --brand-cyan: #69d8ef;
+  --brand-radius-sm: 10px;
+  --brand-radius-md: 15px;
+  --brand-radius-lg: 20px;
+}
+html { background: var(--brand-ink); }
+body {
+  background:
+    radial-gradient(ellipse at 12% -8%, #7050cb16 0, transparent 35%),
+    radial-gradient(ellipse at 91% 10%, #2c8db010 0, transparent 29%),
+    linear-gradient(165deg, #090b13 0%, #080a10 48%, #0b0d16 100%);
+  color: var(--brand-text);
+  font-family: Inter, "DM Sans", system-ui, sans-serif;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+#app-shell { isolation: isolate; min-width: 320px; }
+.studio-ambient { opacity: .72; pointer-events: none; }
+.topbar {
+  background: linear-gradient(105deg, #0c0e17f5 0%, #0b0d16f2 54%, #110e20f5 100%);
+  border-bottom: 1px solid #a995ff1b;
+  box-shadow: 0 12px 36px #0003, inset 0 -1px #ffffff04;
+  backdrop-filter: blur(20px) saturate(130%);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 1 208px;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  text-decoration: none;
+  line-height: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.brand:focus-visible { outline: 2px solid var(--brand-violet); outline-offset: 4px; border-radius: 8px; }
+.brand-logo {
+  display: block;
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: 208px;
+  height: auto;
+  aspect-ratio: 360 / 76;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 6px 14px #8c69ff13);
+  transition: filter .2s ease, transform .2s ease;
+}
+.brand:hover .brand-logo { filter: drop-shadow(0 7px 18px #8c69ff30); }
+.project-title {
+  min-width: 0;
+  border-color: #ffffff10;
+  background: linear-gradient(135deg, #ffffff07, #ffffff02);
+  box-shadow: inset 0 1px #ffffff05;
+}
+.ghost-input { color: #f3f0ff; font-weight: 650; }
+.save-state { color: #93e3c1; }
+.top-actions { gap: 7px; }
+.top-actions > .icon-btn,
+.top-actions > .top-btn,
+.top-actions > .primary-btn,
+.top-actions > .apk-download-btn {
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease, filter .18s ease;
+}
+.top-actions .icon-btn {
+  color: #d5caff;
+  border-color: #34334a;
+  background: linear-gradient(155deg,#1b1d2b,#11131d);
+}
+.top-actions .icon-btn:hover {
+  color: #fff;
+  border-color: #8c76cf;
+  background: linear-gradient(155deg,#2c2540,#191827);
+  box-shadow: 0 6px 18px #7350dc1b;
+}
+.top-actions .top-btn {
+  background: linear-gradient(155deg,#1b1e2b,#11141d);
+  border-color: #353a4c;
+}
+.top-actions .primary-btn,
+.export-top {
+  border-color: #a995ff69;
+  background: linear-gradient(118deg,#c2a8ff 0%,#9871ff 45%,#704dff 100%);
+  color: #120d20;
+  font-weight: 850;
+  box-shadow: 0 7px 23px #7c51ff35, inset 0 1px #ffffff70;
+}
+.top-actions .primary-btn:hover,
+.export-top:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 9px 28px #7c51ff49, inset 0 1px #ffffff85;
+}
+.panel, .inspector, .tool-rail, .export-queue, .power-modal {
+  border-color: #ffffff13;
+  background: linear-gradient(155deg, #151824eF 0%, #0e1119f9 75%, #10121cfa 100%);
+  box-shadow: 0 16px 40px #0003, inset 0 1px #ffffff07;
+}
+.panel { border-radius: var(--brand-radius-lg); }
+.inspector, .tool-rail { border-radius: var(--brand-radius-lg); }
+.panel-toolbar {
+  border-bottom-color: #ffffff0f;
+  background: linear-gradient(90deg,#ffffff04,transparent 56%,#9d80ff03);
+}
+.workspace-name { color: #b7a5ff; }
+.preview-panel { border-color: #ffffff17; }
+.preview-stage {
+  background:
+    radial-gradient(ellipse at 50% 42%, #25213a 0, #10121b 52%, #080a10 100%);
+}
+.preview-canvas {
+  border-color: #a995ff35;
+  border-radius: 13px;
+  box-shadow: 0 24px 62px #0008, 0 0 0 1px #ffffff06, 0 0 36px #916cff0a;
+}
+.transport {
+  border-top-color: #ffffff10;
+  background: linear-gradient(180deg,#ffffff02,transparent);
+}
+.seek { accent-color: var(--brand-violet); }
+.play-btn, .transport-btn {
+  border-color: #38394f;
+  background: linear-gradient(155deg,#1e2231,#151823);
+  color: #eae8f6;
+}
+.play-btn:hover, .transport-btn:hover {
+  border-color: #8774c6;
+  background: #262438;
+}
+.timeline-panel {
+  border-color: #ffffff14;
+  background: linear-gradient(150deg,#151824,#10121a 68%,#131523);
+}
+.timeline { border-color: #35394c; background: #090b12; }
+.timeline-block { border-color: #ffffff20; box-shadow: inset 0 1px #ffffff15; }
+.timeline-block.selected { outline-color: #c2acff; box-shadow: 0 0 0 3px #a78bfa20, inset 0 1px #ffffff25; }
+.clip-card {
+  border-color: #34394b;
+  background: linear-gradient(145deg,#151926,#10121a);
+}
+.clip-card.selected {
+  border-color: #a995ff;
+  background: linear-gradient(145deg,#28213d,#191724);
+  box-shadow: inset 0 0 0 1px #ac97ff23, 0 6px 16px #0002;
+}
+.inspector-head {
+  border-bottom-color: #ffffff10;
+  background: linear-gradient(90deg,#ffffff04,#ffffff00);
+}
+.inspector-head .eyebrow { color: #b4a3ff; }
+.inspector-pane { scrollbar-color: #464158 transparent; }
+.inspector-pane .pane-intro {
+  border-color: #343247;
+  background: linear-gradient(145deg,#1b1c2a,#12141e);
+  box-shadow: inset 0 1px #ffffff06;
+}
+.step-number {
+  border: 1px solid #a995ff28;
+  background: linear-gradient(145deg,#8f6cfb1e,#4c96ff0b);
+  color: #c6b8ff;
+}
+.field, input.field, textarea.field, select.field {
+  border-color: #3b4054;
+  background-color: #101420;
+  color: #f3f3fd;
+  border-radius: 12px;
+}
+.field:hover, input.field:hover, textarea.field:hover, select.field:hover { border-color: #58516e; }
+.field:focus, input.field:focus, textarea.field:focus, select.field:focus {
+  outline: none;
+  border-color: #a18aff;
+  box-shadow: 0 0 0 3px #a18aff22, inset 0 1px #ffffff06;
+}
+input[type="range"] { accent-color: var(--brand-violet); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--brand-violet); }
+.subhead {
+  color: #f0edff;
+  letter-spacing: .02em;
+}
+.hint, .muted { color: #9ca4b8; }
+.primary-btn {
+  background: linear-gradient(115deg,#c1a8ff 0%,#9872ff 48%,#7450fa 100%);
+  color: #120e20;
+  border: 1px solid #c8b6ff70;
+  box-shadow: 0 7px 22px #7750ff2e, inset 0 1px #ffffff75;
+  font-weight: 850;
+}
+.soft-btn, .top-btn, .danger-btn {
+  border: 1px solid #353b4d;
+  background: linear-gradient(155deg,#1c202d,#131620);
+  color: #e7e8f4;
+}
+.soft-btn:hover, .top-btn:hover {
+  border-color: #7668a9;
+  background: linear-gradient(155deg,#29263a,#191a27);
+}
+.danger-btn { border-color: #633344; background: linear-gradient(155deg,#351a27,#21141d); }
+.danger-btn:hover { border-color: #c06a80; background: #3a1d2a; }
+button:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid #b8a4ff;
+  outline-offset: 3px;
+}
+:where(.panel,.inspector,.tool-rail,.export-queue,.power-modal) :where(button,select,input,textarea) { max-width: 100%; }
+:where(.pane-intro,.section-title,.subhead,.timeline-head,.timeline-actions,.toolbar-left,.toolbar-right) {
+  min-width: 0;
+}
+:where(.pane-intro p,.hint,.section-title span,.result-card,.field-help) { overflow-wrap: anywhere; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0c13; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #343448; border: 2px solid #0a0c13; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #625386; }
+a { text-underline-offset: 3px; }
+::selection { background: #8e6bff64; color: #fff; }
+@media (min-width: 1200px) {
+  .brand-logo { max-width: 208px; }
+  .workspace { gap: 17px; }
+  .editor-center { gap: 17px; }
+}
+@media (max-width: 1100px) and (min-width: 821px) {
+  .brand { flex-basis: 170px; }
+  .brand-logo { max-width: 168px; }
+}
+@media (max-width: 960px) and (min-width: 821px) {
+  .brand { flex-basis: 145px; }
+  .brand-logo { max-width: 145px; }
+}
+@media (max-width: 820px) {
+  .brand { flex-basis: auto; width: auto; max-width: 178px; }
+  .brand-logo { width: 175px; max-width: 100%; }
+}
+@media (max-width: 520px) {
+  .brand { max-width: 158px; }
+  .brand-logo { width: 158px; }
+}
+@media (max-width: 360px) {
+  .brand { max-width: 142px; }
+  .brand-logo { width: 142px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
