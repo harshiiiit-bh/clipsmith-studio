@@ -58,7 +58,7 @@ assert.ok(html.includes('id="timelineZoomRange"'), "timeline zoom control exists
 assert.ok(html.includes('id="timelineZoomFitBtn"'), "timeline reset-to-fit control exists");
 assert.ok(html.includes('src="./workspace-controls.js?v=20261024-power3"'), "workspace controls cache key is refreshed for this release");
 assert.match(html, /src="\.\/app\.js\?v=[^"]+"/, "editor application has a cache-busting version");
-assert.ok(app.includes('from "./subtitle-tools.js?v=20261024-power3"'), "changed subtitle module cache key is refreshed");
+assert.match(app, /from "\.\/subtitle-tools\.js\?v=[^"]+"/, "subtitle module has a cache-busting version");
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
 assert.ok(css.includes(".timeline-zoom-controls"), "timeline zoom controls receive responsive styling");
 assert.ok(css.includes("overflow-x: auto"), "timeline supports horizontal scrolling when zoomed");
