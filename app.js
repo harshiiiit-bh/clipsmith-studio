@@ -853,12 +853,35 @@ function renderExportPreview(){
   }else if(video.getAttribute("src")){video.removeAttribute("src");video.load()}
   if(empty)empty.classList.toggle("hidden",hasSource);
   const sourceVideo=$("previewVideo"),videoWidth=video.videoWidth||sourceVideo?.videoWidth||0,videoHeight=video.videoHeight||sourceVideo?.videoHeight||0;
-  const aspect=state.exportAspect==="source"?(videoWidth>0&&videoHeight>0?`${videoWidth} / ${videoHeight}`:"16 / 9"):({"9:16":"9 / 16","1:1":"1 / 1","4:5":"4 / 5","16:9":"16 / 9"}[state.exportAspect]||"16 / 9");
-  stage.style.aspectRatio=aspect;stage.dataset.aspect=state.exportAspect;
+  const aspectValues={"9:16":9/16,"1:1":1,"4:5":4/5,"16:9":16/9};
+  const aspectRatio=state.exportAspect==="source"?(videoWidth>0&&videoHeight>0?videoWidth/videoHeight:16/9):(aspectValues[state.exportAspect]||16/9);
+  const fallbackOutputSizes={"9:16":[720,1280],"1:1":[1080,1080],"4:5":[864,1080],"16:9":[1280,720]};
+  const requestedOutputSize=exportDimensions(state.exportAspect,settings.resolution,videoWidth||1280,videoHeight||720);
+  const outputSize=requestedOutputSize||(state.exportAspect!=="source"?fallbackOutputSizes[state.exportAspect]:[videoWidth||1280,videoHeight||720]);
+  stage.dataset.aspect=state.exportAspect;
+  // Fit the stage inside the preview panel while preserving the encoded ratio.
+  // max-height on a full-width aspect-ratio element can distort the canvas.
+  const previewPanel=stage.parentElement;
+  const previewPanelStyle=previewPanel?getComputedStyle(previewPanel):null;
+  const horizontalPadding=previewPanelStyle?parseFloat(previewPanelStyle.paddingLeft||"0")+parseFloat(previewPanelStyle.paddingRight||"0"):0;
+  const availableWidth=Math.max(0,(previewPanel?.clientWidth||0)-horizontalPadding);
+  const maxHeight=Math.max(120,Math.min(Math.round(window.innerHeight*.46),360));
+  if(availableWidth>0){
+    const frameWidth=Math.floor(Math.min(availableWidth,maxHeight*aspectRatio));
+    const frameHeight=Math.floor(frameWidth/aspectRatio);
+    stage.style.width=`${frameWidth}px`;
+    stage.style.height=`${frameHeight}px`;
+    stage.style.maxWidth="100%";
+    stage.style.maxHeight="none";
+    stage.style.aspectRatio="auto";
+    stage.style.marginInline="auto";
+  }
   const visible=state.burnOverlays!==false,includeTitle=visible&&settings.includeTitle!==false;
   const style=c?.titleStyle||state.titleStyle,titleText=includeTitle?(c?displayClipTitle(c):"Preview heading"):"";
   title.textContent=titleText;title.classList.toggle("hidden",!titleText);
+  // Use the output frame, not its wider surrounding column, as the typography reference.
   const scale=Math.max(.28,stage.clientWidth/420);
+  const scaleY=stage.clientHeight/Math.max(1,outputSize[1]);
   Object.assign(title.style,{
     fontFamily:`"${String(style.font||"Inter").replace(/["\\\\]/g,"")}",Inter,sans-serif`,
     fontSize:`${Math.max(12,(Number(style.size)||30)*scale)}px`,
@@ -877,11 +900,19 @@ function renderExportPreview(){
   });
   const capStyle=c?.captionStyle||state.captionStyle,manual=visible&&settings.includeManualCaption!==false?String(c?.caption??""):"";
   caption.textContent=manual;caption.dataset.style=capStyle.style||"Classic";caption.style.color=capStyle.highlight||"#9e83ff";
+  const manualOutputSize=Math.max(14,Math.min(64,Number(capStyle.size)||Math.min(42,outputSize[1]*.035)));
+  caption.style.fontSize=`${manualOutputSize*scaleY}px`;
   caption.style.bottom=`${100-clamp(Number(capStyle.positionY??78),0,100)}%`;caption.classList.toggle("hidden",!manual);
+  const subtitleStyle=state.subtitleSettings||{};
   const cue=visible&&settings.includeTimedSubtitles!==false?state.subtitleCues.find(item=>video.currentTime>=Number(item.start)&&video.currentTime<Number(item.end))||null:null;
-  timed.textContent=cue?.text||"";timed.classList.toggle("hidden",!cue?.text);
+  const timedOutputSize=Math.max(14,Math.min(64,Number(subtitleStyle.size)||Math.min(42,outputSize[1]*.035)));
+  timed.textContent=cue?.text||"";timed.dataset.style=subtitleStyle.style||"Classic";timed.style.color=subtitleStyle.highlight||"#9e83ff";
+  timed.style.fontSize=`${timedOutputSize*scaleY}px`;
+  timed.style.bottom=`${100-clamp(Number(subtitleStyle.positionY??82),0,100)}%`;
+  timed.classList.toggle("hidden",!cue?.text);
   watermark.textContent=visible&&settings.watermark?String(settings.watermarkText||"ClipSmith"):"";
-  watermark.style.color=settings.watermarkColor||"#fff";watermark.style.fontSize=`${Math.max(12,Number(settings.watermarkSize)||28)*scale}px`;
+  watermark.style.color=settings.watermarkColor||"#fff";
+  watermark.style.fontSize=`${Math.max(12,Number(settings.watermarkSize)||28)*stage.clientHeight/720}px`;
   watermark.style.opacity=String(clamp(Number(settings.watermarkOpacity??72)/100,0,1));watermark.dataset.position=settings.watermarkPosition||"bottom-right";
   watermark.classList.toggle("hidden",!watermark.textContent);
   const fx={...DEFAULT_FX,...(c?.fx||state.fx)};
@@ -900,7 +931,7 @@ function renderExportPreview(){
   const time=$("exportPreviewTime");if(time)time.textContent=`${formatPreviewTime(current)} / ${formatPreviewTime(duration)}`;
   const play=$("exportPreviewPlayToggle");if(play){play.disabled=!hasSource||!c;play.textContent=video.paused?"▶ Preview":"Ⅱ Pause"}
   const heading=$("exportPreviewHeading");if(heading)heading.textContent=c?displayClipTitle(c):"No clip selected";
-  const meta=$("exportPreviewMeta");if(meta)meta.textContent=c?`${fmt(c.end-c.start)} clip · ${state.exportAspect==="source"?"source aspect":"output "+state.exportAspect} · ${settings.resolution==="source"?"source resolution":settings.resolution+"p"} · ${settings.frameRate==="source"?"source FPS":settings.frameRate+" FPS"} · CRF ${settings.crf}`:"Select a clip to preview";
+  const meta=$("exportPreviewMeta");if(meta)meta.textContent=c?`${fmt(c.end-c.start)} clip · ${outputSize[0]} × ${outputSize[1]} · ${settings.frameRate==="source"?"source FPS":settings.frameRate+" FPS"} · CRF ${settings.crf}`:"Select a clip to preview";
 }
 function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
@@ -973,7 +1004,7 @@ $("exportPreviewVideo").addEventListener("loadedmetadata",()=>{const video=$("ex
 $("exportPreviewVideo").addEventListener("timeupdate",()=>{const video=$("exportPreviewVideo"),c=state.clips.find(clip=>clip.id===exportPreviewClipId);if(c&&video.currentTime>=c.end){video.pause();video.currentTime=c.end;renderExportPreview();return}renderExportPreview()});
 $("exportPreviewVideo").addEventListener("play",renderExportPreview);$("exportPreviewVideo").addEventListener("pause",renderExportPreview);
 $("exportPreviewSeek").addEventListener("input",event=>{const video=$("exportPreviewVideo");video.currentTime=Number(event.target.value);renderExportPreview()});
-$("exportPreviewMute").addEventListener("change",renderExportPreview);$("exportPreviewVolume").addEventListener("input",renderExportPreview);
+$("exportPreviewMute").addEventListener("change",renderExportPreview);$("exportPreviewVolume").addEventListener("input",renderExportPreview);window.addEventListener("resize",renderExportPreview,{passive:true});
 $("recoveryOriginalBtn").onclick=()=>{exportMode='copy';startExport()};$("recoveryLowBtn").onclick=()=>{exportMode='mobile';startExport()};$("recoverySingleClipBtn").onclick=async()=>{const c=selected();if(!c)return toast('Select one clip first');try{const b=await renderClip(c,0,'mobile');downloadBlob(b,outputName(c,0));toast('Selected clip exported')}catch(e){toast(e.message||'Single-clip export failed','error')}};
 $("saveProjectBtn").onclick=()=>{const m=createProjectManifest({projectName:state.projectName,sourceFileName:state.sourceFile?.name||state.sourceMeta?.fileName||'',sourceFileSize:state.sourceFile?.size||state.sourceMeta?.fileSize||0,sourceDuration:state.duration,sourceUrl:state.sourceMeta?.sourceUrl||'',clips:state.clips,controls:{aspectSelect:state.aspect,skipRanges:state.skipRanges,subtitleCues:state.subtitleCues,subtitleSettings:state.subtitleSettings,exportAspect:state.exportAspect,burnOverlays:state.burnOverlays,burnOverlaysExplicitlySet:state.burnOverlaysExplicitlySet,exportSettings:state.exportSettings}},new Date().toISOString());downloadBlob(new Blob([JSON.stringify(m,null,2)],{type:'application/json'}),`${state.projectName.replace(/\W+/g,'-')||'clipsmith-project'}.clipsmith.json`);toast('Project saved')};$("loadProjectBtn").onclick=()=>$("projectFileInput").click();$("projectFileInput").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const m=validateProjectManifest(JSON.parse(await f.text()));if(!m)throw Error('Invalid ClipSmith project file');if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}state.projectName=m.projectName;state.clips=m.clips;state.aspect=m.controls?.aspectSelect||'16:9';state.skipRanges=Array.isArray(m.controls?.skipRanges)?m.controls.skipRanges.filter(r=>Number.isFinite(Number(r?.start))&&Number.isFinite(Number(r?.end))&&Number(r.end)>Number(r.start)).slice(0,500).map(r=>({id:typeof r.id==='string'?r.id:uid(),start:Math.max(0,Number(r.start)),end:Math.max(0,Number(r.end)),label:'Promo / ad break'})):[];state.subtitleCues=Array.isArray(m.controls?.subtitleCues)?m.controls.subtitleCues.filter(q=>Number.isFinite(Number(q.start))&&Number.isFinite(Number(q.end))&&Number(q.end)>Number(q.start)&&String(q.text||'').trim()).slice(0,50000):[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(m.controls?.subtitleSettings||{})};state.exportAspect=m.controls?.exportAspect||"source";state.burnOverlays=m.controls?.burnOverlays!==false;state.burnOverlaysExplicitlySet=m.controls?.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(m.controls?.exportSettings||{})};state.duration=m.source.duration||0;state.sourceMeta={fileName:m.source.fileName,fileSize:m.source.fileSize,sourceUrl:m.source.url||'',duration:state.duration};state.sourceFile=null;state.selectedId=state.clips[0]?.id||null;$("projectName").value=state.projectName;$("mediaName").textContent=`Saved project · ${state.sourceMeta.fileName||'video'}`;$("previewEmptyTitle").textContent='Project opened';$("previewEmptyHint").textContent='Re-import the source video to preview and export.';$("previewEmpty").classList.remove('hidden');commit();renderAll();toast('Project opened')}catch(err){toast(err.message||'Could not open project','error')}finally{e.target.value=''}};
 $("projectName").oninput=e=>{state.projectName=e.target.value;persist()};
