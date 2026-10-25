@@ -1925,13 +1925,15 @@ body.archive-picker-open{overflow:hidden}
    stage. That was correct before the inner canvas existed, but it shifts the
    title out of the canvas now. Explicitly anchor it to the canvas box. */
 .preview-canvas > .title-overlay {
-  left: 5% !important;
-  right: 5% !important;
-  width: auto !important;
-  max-width: 90% !important;
-  margin: 0 !important;
-  display: block !important;
-  transform: none !important;
+  /* Baseline geometry only. Inline editor settings must be able to control
+     centering, fitted backing panels and rotation at every aspect ratio. */
+  left: 5%;
+  right: 5%;
+  width: auto;
+  max-width: 90%;
+  margin: 0;
+  display: block;
+  transform: none;
 }
 .preview-canvas > .subtitle-overlay[data-style="Pop"] {
   left: 5% !important;
