@@ -275,26 +275,46 @@ function initializeClipStripSlider(){
   requestAnimationFrame(syncClipStripSlider);
 }
 initializeClipStripSlider();
+let requestedTitleFontKey = "";
+function ensureTitleFont(style){
+  const font=String(style?.font||"Inter").replace(/["\\\\]/g,"").trim()||"Inter";
+  const weight=clamp(Number(style?.weight??(style?.bold===false?500:800)),100,900);
+  const italic=!!style?.italic;
+  const key=`${font}| ${weight}|${italic}`;
+  const text=$("titleOverlayText");
+  if(text)text.style.fontFamily=`"${font}", Inter, sans-serif`;
+  if(key===requestedTitleFontKey||!document.fonts?.load)return;
+  requestedTitleFontKey=key;
+  void document.fonts.load(`${italic?"italic ":""}${weight} 24px "${font}"`).then(()=>{
+    const current=selected()?.titleStyle||state.titleStyle;
+    const currentFont=String(current?.font||"Inter").replace(/["\\\\]/g,"").trim()||"Inter";
+    const currentKey=`${currentFont}| ${clamp(Number(current?.weight??(current?.bold===false?500:800)),100,900)}|${!!current?.italic}`;
+    if(currentKey===key)requestAnimationFrame(fitCanvasOverlayText);
+  }).catch(()=>{});
+}
 function updatePreview(){
   const c=selected(),style=c?.titleStyle||state.titleStyle,cap=c?.captionStyle||state.captionStyle;
-  const title=$("titleOverlay"),caption=$("captionOverlay");
-  $("titleOverlayText").textContent=c?.title||`${state.seriesTitle} · Part 1`;
+  const title=$("titleOverlay"),caption=$("captionOverlay"),titleText=$("titleOverlayText");
+  titleText.textContent=c?.title||`${state.seriesTitle} · Part 1`;
+  ensureTitleFont(style);
+  // The overlay is a positioning/background box. Typography belongs to the
+  // editable text node so every property affects the visible letters reliably.
   Object.assign(title.style,{
-    fontFamily:style.font||"Inter",
-    fontSize:String(style.size)+"px",
-    fontWeight:clamp(Number(style.weight??(style.bold===false?500:800)),100,900),
-    fontStyle:style.italic?"italic":"normal",
-    letterSpacing:String(Number(style.spacing)||0)+"px",
-    color:style.color||"#ffffff",
-    opacity:clamp(Number(style.opacity??1),0,1),
-    textTransform:style.transform||"none",
-    textAlign:style.align||"center",
-    textDecoration:style.decoration||"none",
-    lineHeight:String(clamp(Number(style.lineHeight??1.08),.8,1.5)),
-    left:style.bgEnabled?"50%":"8%",
-    right:style.bgEnabled?"auto":"8%",
+    color:"inherit",
+    fontFamily:"inherit",
+    fontSize:"inherit",
+    fontWeight:"inherit",
+    fontStyle:"inherit",
+    letterSpacing:"normal",
+    textTransform:"none",
+    textAlign:"inherit",
+    textDecoration:"none",
+    lineHeight:"inherit",
+    opacity:"1",
+    left:style.bgEnabled?"50%":"5%",
+    right:style.bgEnabled?"auto":"5%",
     width:style.bgEnabled?"fit-content":"auto",
-    maxWidth:style.bgEnabled?"84%":"none",
+    maxWidth:style.bgEnabled?"84%":"90%",
     display:"block",
     boxSizing:"border-box",
     overflowWrap:"anywhere",
@@ -438,22 +458,43 @@ function fitCanvasOverlayText(){
   const width=canvas.clientWidth;
   if(width<2)return;
   const clip=selected(),style=clip?.titleStyle||state.titleStyle;
-  // Scale typography effects with the preview canvas. Previously the font
-  // shrank for 9:16, while its full-size black stroke and shadow stayed fixed,
-  // making the title look muddy or almost black on narrow portrait previews.
-  const scale=Math.min(1,Math.max(.4,width/420));
-  const titleFontSize=Math.max(13,(Number(style?.size)||30)*scale);
+  // Use one ratio-aware scale for text, tracking, stroke, glow and backing
+  // spacing. This keeps presets visually consistent on landscape, square,
+  // portrait, and 4:5 canvases without making narrow text illegible.
+  const scale=Math.min(1,Math.max(.28,width/420));
+  const titleFontSize=Math.max(12,(Number(style?.size)||30)*scale);
   const title=$("titleOverlay"),titleText=$("titleOverlayText");
-  if(title){title.style.fontSize=titleFontSize+"px";title.style.lineHeight=String(clamp(Number(style?.lineHeight??1.08),.8,1.5))}
-  if(titleText){
-    titleText.style.fontSize=titleFontSize+"px";
-    const shadow=clamp(Number(style?.shadow??6),0,16),glow=clamp(Number(style?.glow??0),0,24);
-    const shadows=[];
-    if(shadow>0)shadows.push(`0 ${Math.max(.5,2*scale)}px ${Math.max(.6,shadow*scale)}px ${style?.shadowColor||"#000000"}`);
-    if(glow>0)shadows.push(`0 0 ${Math.max(.6,glow*scale)}px ${style?.glowColor||"#8b5cf6"}`);
-    titleText.style.textShadow=shadows.join(", ")||"none";
-    const outlineWidth=clamp(Number(style?.outlineWidth??2),0,12)*scale;
-    titleText.style.setProperty("-webkit-text-stroke",outlineWidth>0?`${outlineWidth.toFixed(2)}px ${style?.outline||"#000000"}`:"0 transparent");
+  const font=String(style?.font||"Inter").replace(/["\\\\]/g,"").trim()||"Inter";
+  const weight=clamp(Number(style?.weight??(style?.bold===false?500:800)),100,900);
+  const shadow=clamp(Number(style?.shadow??6),0,16),glow=clamp(Number(style?.glow??0),0,24);
+  const shadows=[];
+  if(shadow>0)shadows.push(`0 ${Math.max(.5,2*scale)}px ${Math.max(.6,shadow*scale)}px ${style?.shadowColor||"#000000"}`);
+  if(glow>0)shadows.push(`0 0 ${Math.max(.6,glow*scale)}px ${style?.glowColor||"#8b5cf6"}`);
+  Object.assign(titleText.style,{
+    fontFamily:`"${font}", Inter, sans-serif`,
+    fontSize:titleFontSize+"px",
+    fontWeight:weight,
+    fontStyle:style?.italic?"italic":"normal",
+    letterSpacing:(clamp(Number(style?.spacing)||0,-2,10)*scale)+"px",
+    color:style?.color||"#ffffff",
+    opacity:String(clamp(Number(style?.opacity??1),0,1)),
+    textTransform:style?.transform||"none",
+    textAlign:style?.align||"center",
+    textDecoration:style?.decoration||"none",
+    lineHeight:String(clamp(Number(style?.lineHeight??1.08),.8,1.5)),
+    textShadow:shadows.join(", ")||"none",
+    fontKerning:"normal",
+    textRendering:"geometricPrecision"
+  });
+  titleText.style.setProperty("-webkit-text-stroke",clamp(Number(style?.outlineWidth??2),0,12)*scale>0
+    ?`${(clamp(Number(style?.outlineWidth??2),0,12)*scale).toFixed(2)}px ${style?.outline||"#000000"}`
+    :"0 transparent");
+  if(title){
+    title.style.fontSize=titleFontSize+"px";
+    title.style.lineHeight=String(clamp(Number(style?.lineHeight??1.08),.8,1.5));
+    title.style.opacity="1";
+    title.style.padding=style?.bgEnabled?`${clamp(Number(style?.bgPadding??10),0,30)*scale}px`:"0px";
+    title.style.borderRadius=style?.bgEnabled?`${clamp(Number(style?.bgRadius??10),0,24)*scale}px`:"0px";
   }
   const caption=$("captionOverlay");
   if(caption)caption.style.fontSize=Math.max(11,21*Math.min(1,Math.max(.52,width/420)))+"px";
