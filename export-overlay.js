@@ -51,7 +51,9 @@ function drawHeading(ctx, text, style, width, height) {
   const lineHeight = size * clamp(style.lineHeight == null ? 1.08 : style.lineHeight, 0.8, 1.5);
   const widths = lines.map(line => ctx.measureText(line).width);
   const boxWidth = Math.min(width * 0.92, Math.max(1, ...widths) + pad * 2);
-  const boxHeight = lineHeight * lines.length, x = panel ? width / 2 : align === "left" ? width * 0.05 : align === "right" ? width * 0.95 : width / 2;
+  const boxHeight = lineHeight * lines.length;
+  const hasPositionX = style.positionX !== undefined && style.positionX !== null && style.positionX !== "" && Number.isFinite(Number(style.positionX));
+  const x = hasPositionX ? width * clamp(style.positionX, 3, 97) / 100 : panel ? width / 2 : align === "left" ? width * 0.05 : align === "right" ? width * 0.95 : width / 2;
   const y = height * clamp(style.positionY == null ? 17 : style.positionY, 4, 90) / 100;
   ctx.translate(x, y); ctx.rotate(clamp(style.rotation, -180, 180) * Math.PI / 180);
   if (panel) {
@@ -92,11 +94,13 @@ function drawCaption(ctx, text, style, width, height) {
   if (variant === "Karaoke" && "letterSpacing" in ctx) ctx.letterSpacing = (size * 0.01) + "px";
   const lines = wrap(ctx, text, maxWidth), lineHeight = size * (variant === "Cinematic" ? 1.2 : 1.15);
   const blockHeight = lines.length * lineHeight, centerY = height * clamp(style.positionY == null ? 78 : style.positionY, 0, 100) / 100;
+  const hasPositionX = style.positionX !== undefined && style.positionX !== null && style.positionX !== "" && Number.isFinite(Number(style.positionX));
+  const centerX = hasPositionX ? width * clamp(style.positionX, 3, 97) / 100 : width / 2;
   if (variant === "Pop") {
     const px = size * 0.34, py = size * 0.22;
     const widest = Math.min(maxWidth, Math.max(1, ...lines.map(line => ctx.measureText(line).width)));
     ctx.fillStyle = alphaColor("#0a0b10", 0.79);
-    rounded(ctx, width / 2 - widest / 2 - px, centerY - blockHeight / 2 - py, widest + 2 * px, blockHeight + 2 * py, size * 0.15);
+    rounded(ctx, centerX - widest / 2 - px, centerY - blockHeight / 2 - py, widest + 2 * px, blockHeight + 2 * py, size * 0.15);
     ctx.fill();
   }
   ctx.globalAlpha = 1; ctx.fillStyle = style.highlight || "#9e83ff"; ctx.strokeStyle = variant === "Pop" ? "#0a0b10" : "rgba(0,0,0,.82)";
@@ -104,8 +108,8 @@ function drawCaption(ctx, text, style, width, height) {
   ctx.shadowColor = "#000"; ctx.shadowBlur = variant === "Pop" ? 0 : 2; ctx.shadowOffsetY = variant === "Pop" ? 0 : 1;
   lines.forEach((line, index) => {
     const y = centerY - blockHeight / 2 + lineHeight * (index + 0.5);
-    if (variant !== "Cinematic") ctx.strokeText(line, width / 2, y, maxWidth);
-    ctx.fillText(line, width / 2, y, maxWidth);
+    if (variant !== "Cinematic") ctx.strokeText(line, centerX, y, maxWidth);
+    ctx.fillText(line, centerX, y, maxWidth);
   });
   ctx.restore();
 }
@@ -114,9 +118,11 @@ function drawWatermark(ctx, item, width, height) {
   const size = Math.max(12, Math.min(100, Number(item.size) || 28)) * height / 720;
   const margin = Math.max(12, Math.min(width, height) * 0.035), pos = String(item.position || "bottom-right");
   const left = pos.endsWith("left"), center = pos.endsWith("center"), top = pos.startsWith("top");
-  const x = center ? width / 2 : left ? margin : width - margin, y = top ? margin : height - margin;
-  ctx.save(); ctx.font = "600 " + size + "px Inter, sans-serif"; ctx.textAlign = center ? "center" : left ? "left" : "right";
-  ctx.textBaseline = top ? "top" : "bottom"; ctx.globalAlpha = clamp(item.opacity == null ? 0.72 : item.opacity, 0, 1);
+  const customPosition = item.x !== undefined && item.x !== null && item.x !== "" && item.y !== undefined && item.y !== null && item.y !== "" && Number.isFinite(Number(item.x)) && Number.isFinite(Number(item.y));
+  const x = customPosition ? width * clamp(item.x, 3, 97) / 100 : center ? width / 2 : left ? margin : width - margin;
+  const y = customPosition ? height * clamp(item.y, 3, 97) / 100 : top ? margin : height - margin;
+  ctx.save(); ctx.font = "600 " + size + "px Inter, sans-serif"; ctx.textAlign = customPosition ? "center" : center ? "center" : left ? "left" : "right";
+  ctx.textBaseline = customPosition ? "middle" : top ? "top" : "bottom"; ctx.globalAlpha = clamp(item.opacity == null ? 0.72 : item.opacity, 0, 1);
   ctx.fillStyle = item.color || "#fff"; ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = Math.max(1, size * 0.12);
   ctx.fillText(text, x, y, width * 0.8); ctx.restore();
 }
