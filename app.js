@@ -836,7 +836,7 @@ function cancelExport(){
   const button=$("cancelExportBtn");if(button){button.disabled=true;button.textContent="Cancelling…"}
   if(ffmpegInstance){
     const active=ffmpegInstance;ffmpegInstance=null;ffmpegLoading=null;
-    try{active.terminate()}catch{}
+    toast("The current clip will finish processing; the remaining queue will stop.");
   }
   toast("Cancel requested · stopping the current render.");
 }
