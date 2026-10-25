@@ -340,7 +340,7 @@ function updatePreview(){
   const hasCaptionPositionX=hasNumericPosition(cap.positionX);
   caption.style.left=hasCaptionPositionX?`${clamp(Number(cap.positionX),3,97)}%`:"8%";
   caption.style.right=hasCaptionPositionX?"auto":"8%";caption.style.width=hasCaptionPositionX?"max-content":"auto";caption.style.maxWidth="84%";
-  caption.style.transform=hasCaptionPositionX?"translateX(-50%)":"none";caption.style.top="auto";
+  caption.style.transform=hasCaptionPositionX||cap.style==="Pop"?"translateX(-50%)":"none";caption.style.top="auto";
   caption.style.bottom=`${100-clamp(Number(cap.positionY??78),0,100)}%`;
   updateActiveSubtitle();
   const v=$("previewVideo");
