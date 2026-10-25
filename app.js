@@ -1,6 +1,6 @@
 import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
 import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-power3";
-import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261024-power3";
+import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-studio-fonts1";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
 import { getImportKind, chooseVideoFromZip } from "./media-import.js?v=20261024-zipimport1";
@@ -298,12 +298,19 @@ function updatePreview(){
     textAlign:style.align||"center",
     textDecoration:style.decoration||"none",
     lineHeight:String(clamp(Number(style.lineHeight??1.08),.8,1.5)),
+    left:style.bgEnabled?"50%":"8%",
+    right:style.bgEnabled?"auto":"8%",
+    width:style.bgEnabled?"fit-content":"auto",
+    maxWidth:style.bgEnabled?"84%":"none",
+    display:"block",
+    boxSizing:"border-box",
+    overflowWrap:"anywhere",
     backgroundColor:style.bgEnabled?hexToRgba(style.bgColor,style.bgOpacity??.72):"transparent",
     padding:style.bgEnabled?`${clamp(Number(style.bgPadding??10),0,30)}px`:"0px",
     borderRadius:style.bgEnabled?`${clamp(Number(style.bgRadius??10),0,24)}px`:"0px",
     top:`${clamp(Number(style.positionY??17),4,90)}%`,
     bottom:"auto",
-    transform:`rotate(${clamp(Number(style.rotation??0),-180,180)}deg)`
+    transform:`${style.bgEnabled?"translateX(-50%) ":""}rotate(${clamp(Number(style.rotation??0),-180,180)}deg)`
   });
   caption.textContent=c?.caption||cap.text||"";
   caption.style.color=cap.highlight;
@@ -388,7 +395,7 @@ async function exportCurrentThumbnail(){
   const clip=selected(),style=clip?.titleStyle||state.titleStyle;
   const title=transformTitleText(clip?.title||state.seriesTitle,style.transform||"none");
   const size=clamp(Number(style.size)||30,14,108)*scale,weight=clamp(Number(style.weight??(style.bold===false?500:800)),100,900);
-  ctx.save();ctx.translate(canvas.width/2,canvas.height*clamp(Number(style.positionY??9),4,90)/100);ctx.rotate(clamp(Number(style.rotation)||0,-180,180)*Math.PI/180);
+  ctx.save();ctx.translate(canvas.width/2,canvas.height*clamp(Number(style.positionY??17),4,90)/100);ctx.rotate(clamp(Number(style.rotation)||0,-180,180)*Math.PI/180);
   ctx.font=`${style.italic?"italic ":""}${weight} ${size}px "${String(style.font||"Inter").replace(/["\\\\]/g,"")}"`;
   if("letterSpacing" in ctx)ctx.letterSpacing=String((Number(style.spacing)||0)*scale)+"px";
   ctx.textAlign=style.align||"center";ctx.textBaseline="top";ctx.lineJoin="round";
@@ -397,9 +404,9 @@ async function exportCurrentThumbnail(){
   const maxWidth=canvas.width*.9,words=title.split(/\s+/),lines=[];let line="";
   for(const word of words){const next=line?line+" "+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word}else line=next}if(line)lines.push(line);
   const lineHeight=size*clamp(Number(style.lineHeight??1.08),.8,1.5),drawLines=lines.slice(0,4);
-  drawLines.forEach((value,index)=>{const y=index*lineHeight,metrics=ctx.measureText(value),width=Math.min(maxWidth,metrics.width);let x=0;if(ctx.textAlign==="center")x=-width/2;else if(ctx.textAlign==="right")x=canvas.width*.45-width;else x=-canvas.width*.45;
+  drawLines.forEach((value,index)=>{const y=index*lineHeight,metrics=ctx.measureText(value),width=Math.min(maxWidth,metrics.width);const tx=ctx.textAlign==="center"?0:ctx.textAlign==="right"?canvas.width*.45:-canvas.width*.45;const x=ctx.textAlign==="center"?-width/2:ctx.textAlign==="right"?tx-width:tx;
     if(style.bgEnabled){const pad=clamp(Number(style.bgPadding??10),0,30)*scale;ctx.save();ctx.shadowBlur=0;ctx.fillStyle=hexToRgba(style.bgColor,style.bgOpacity??.72);const bx=x-pad,by=y-pad,bw=width+pad*2,bh=lineHeight+pad*2,rad=clamp(Number(style.bgRadius??10),0,24)*scale;ctx.beginPath();ctx.roundRect?ctx.roundRect(bx,by,bw,bh,rad):(ctx.rect(bx,by,bw,bh));ctx.fill();ctx.restore()}
-    ctx.fillStyle=style.color||"#ffffff";ctx.strokeStyle=style.outline||"#000000";ctx.lineWidth=clamp(Number(style.outlineWidth??2),0,12)*scale;ctx.shadowBlur=clamp(Number(style.glow)||0,0,24)*scale;ctx.shadowColor=style.glowColor||"#8b5cf6";if(ctx.lineWidth>0)ctx.strokeText(value,0,y,maxWidth);ctx.fillText(value,0,y,maxWidth);
+    ctx.fillStyle=style.color||"#ffffff";ctx.strokeStyle=style.outline||"#000000";ctx.lineWidth=clamp(Number(style.outlineWidth??2),0,12)*scale;ctx.shadowBlur=clamp(Number(style.glow)||0,0,24)*scale;ctx.shadowColor=style.glowColor||"#8b5cf6";if(ctx.lineWidth>0)ctx.strokeText(value,tx,y,maxWidth);ctx.fillText(value,tx,y,maxWidth);
   });
   ctx.restore();
   canvas.toBlob(blob=>{if(!blob)return toast("Thumbnail export failed","error");downloadBlob(blob,`${(state.projectName||"clipsmith").replace(/[^a-zA-Z0-9_-]+/g,"-")}-thumbnail.png`);toast("Thumbnail PNG saved")},"image/png")
@@ -579,7 +586,7 @@ $("setSkipStartBtn").onclick=()=>setSkipFromPlayhead("start");$("setSkipEndBtn")
 $("captionText").oninput=e=>{const c=selected();if(c)c.caption=e.target.value;else state.captionStyle.text=e.target.value;updatePreview();persist()};$("applyCaptionBtn").onclick=()=>{const c=selected();if(!c)return toast("Select a clip first");c.caption=$("captionText").value;c.captionStyle={...c.captionStyle,style:$("captionStyle").value,highlight:$("captionHighlightColor").value,positionY:Number($("captionPositionY").value)};commit();updatePreview();toast("Caption applied")};
 const titleControlMap={titleFont:"font",titleSize:"size",titleColor:"color",titleOutline:"outline",titleOpacity:"opacity",titleBold:"bold",titleItalic:"italic",titleSpacing:"spacing",titleShadow:"shadow",titleWeight:"weight",titleTransform:"transform",titleAlign:"align",titleDecoration:"decoration",titleOutlineWidth:"outlineWidth",titleShadowColor:"shadowColor",titleGlow:"glow",titleGlowColor:"glowColor",titleBgEnabled:"bgEnabled",titleBgColor:"bgColor",titleBgOpacity:"bgOpacity",titleBgPadding:"bgPadding",titleBgRadius:"bgRadius",titleRotation:"rotation",titleLineHeight:"lineHeight",titlePositionY:"positionY"};
 const titleNumberKeys=new Set(["size","opacity","spacing","shadow","weight","outlineWidth","glow","bgOpacity","bgPadding","bgRadius","rotation","lineHeight","positionY"]);
-Object.entries(titleControlMap).forEach(([id,key])=>{const control=$(id);if(!control)return;const applyTitleControl=event=>{const raw=event.currentTarget.type==="checkbox"?event.currentTarget.checked:event.currentTarget.value;const value=titleNumberKeys.has(key)?Number(raw):raw;state.titleStyle={...state.titleStyle,[key]:value};if(key==="weight")state.titleStyle.bold=Number(value)>=700;if(key==="bold"){state.titleStyle.weight=value?Math.max(700,Number(state.titleStyle.weight)||800):Math.min(600,Number(state.titleStyle.weight)||500);const weightControl=$("titleWeight");if(weightControl)weightControl.value=state.titleStyle.weight}if(key==="font")control.style.fontFamily=`"${String(value).replace(/["\\\\]/g,"")}"`;const c=selected();if(c)c.titleStyle={...state.titleStyle};updatePreview();persist()};control.addEventListener("input",applyTitleControl);control.addEventListener("change",applyTitleControl)});
+Object.entries(titleControlMap).forEach(([id,key])=>{const control=$(id);if(!control)return;const applyTitleControl=event=>{const raw=event.currentTarget.type==="checkbox"?event.currentTarget.checked:event.currentTarget.value;const value=titleNumberKeys.has(key)?Number(raw):raw;state.titleStyle={...state.titleStyle,[key]:value};if(key==="weight"){state.titleStyle.bold=Number(value)>=700;const boldControl=$("titleBold");if(boldControl)boldControl.checked=state.titleStyle.bold}if(key==="bold"){state.titleStyle.weight=value?Math.max(700,Number(state.titleStyle.weight)||800):Math.min(600,Number(state.titleStyle.weight)||500);const weightControl=$("titleWeight");if(weightControl)weightControl.value=state.titleStyle.weight}if(key==="font")control.style.fontFamily=`"${String(value).replace(/["\\\\]/g,"")}"`;const c=selected();if(c)c.titleStyle={...state.titleStyle};updatePreview();persist()};control.addEventListener("input",applyTitleControl);control.addEventListener("change",applyTitleControl)});
 
 ["fxPreset","fxBrightness","fxContrast","fxSaturation","fxBlur","fxSpeed","fxVolume","fxMute"].forEach(id=>$(id).oninput=e=>{const c=selected();if(!c)return;const fx={...DEFAULT_FX,...(c.fx||{})};const k=id==='fxMute'?'mute':id.slice(2).toLowerCase();if(id==='fxPreset'){fx.preset=e.target.value;if(fx.preset==='Cinema')Object.assign(fx,{contrast:1.12,saturation:.82,brightness:-.03});if(fx.preset==='Vibrant')Object.assign(fx,{contrast:1.08,saturation:1.35,brightness:.02});if(fx.preset==='Mono')fx.saturation=0;if(fx.preset==='Dreamy')Object.assign(fx,{brightness:.07,saturation:1.1,blur:.3});if(fx.preset==='Original')Object.assign(fx,DEFAULT_FX)}else fx[k]=id==='fxMute'?e.target.checked:Number(e.target.value);c.fx=fx;syncInspector();updatePreview();persist()});
 $("autoSubtitleBtn").onclick=generateAutoSubtitles;$("cancelTranscriptionBtn").onclick=cancelAutoSubtitles;$("downloadSrtBtn").onclick=downloadSubtitleFile;
