@@ -503,6 +503,18 @@ try {
   assert.equal(savedExportSettings.crf, 18, "output quality is autosaved as a number");
   assert.equal(savedExportSettings.watermark, true, "watermark setting is autosaved");
   assert.equal(savedExportSettings.watermarkText, "My Channel", "watermark text is autosaved");
+  assert.equal(await page.locator("#exportPreviewStage").isVisible(), true, "export center contains the final-output preview stage");
+  await page.locator("#exportPreviewClipSelect").selectOption("caption-regression");
+  await page.locator("#exportIncludeTitle").uncheck();
+  assert.equal(await page.locator("#exportPreviewTitle").isVisible(), false, "disabling Burn heading hides it in the final-output preview");
+  await page.locator("#exportIncludeTitle").check();
+  assert.equal(await page.locator("#exportPreviewTitle").textContent(), "Regression heading", "final-output preview uses the chosen clip heading");
+  await page.locator("#exportWatermark").check();
+  assert.equal(await page.locator("#exportPreviewWatermark").textContent(), "My Channel", "watermark settings update the preview");
+  await page.locator("#clearExportClipSelectionBtn").click();
+  assert.equal(await page.locator("#exportSelectionCount").textContent(), "0 of 1 selected", "Clear selection works");
+  await page.locator("#selectAllExportClipsBtn").click();
+  assert.equal(await page.locator("#exportSelectionCount").textContent(), "1 of 1 selected", "Select all works");
 
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
