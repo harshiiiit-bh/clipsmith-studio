@@ -92,3 +92,8 @@ ClipSmith can be built as a native Android shell with its web editor packaged lo
 ## Premium spacing and responsive layout
 
 The latest visual layer standardises spacing across the header, tool rail, editing canvas, timeline, inspector, modals and mobile navigation. Responsive layouts reduce toolbar crowding, make actions wrap or collapse before colliding, increase panel breathing room, and use a seven-column mobile navigation so all destinations fit without an extra overflowing tab. Long inspector content scrolls inside its own panel rather than covering neighbouring work areas.
+
+
+## ClipSmith brand identity
+
+The header now uses a custom scalable SVG wordmark; the matching gradient play-frame mark is also the browser favicon. The brand finish stylesheet applies a consistent navy/violet/cyan visual system, refined surfaces and controls, improved hover and keyboard-focus states, and responsive logo sizing. The logo remains vector-based for crisp display across desktop and mobile resolutions.
