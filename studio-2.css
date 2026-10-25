@@ -2114,3 +2114,31 @@ body.archive-picker-open{overflow:hidden}
   font-weight: 600;
   letter-spacing: .03em;
 }
+
+
+/* Pro export panel: readable controls, clear grouping and responsive spacing. */
+.export-settings-panel { margin:12px 0; border:1px solid #353449; border-radius:12px; background:linear-gradient(145deg,#11131d,#0c0e15); overflow:clip; }
+.export-settings-panel > summary { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; color:#f1edff; font-size:12px; font-weight:750; cursor:pointer; list-style:none; }
+.export-settings-panel > summary::-webkit-details-marker { display:none; }
+.export-settings-panel > summary::after { content:"⌄"; color:#b6a4ff; margin-left:auto; }
+.export-settings-panel[open] > summary { border-bottom:1px solid #292a3a; }
+.export-settings-panel > summary small { color:#bcaeff; font-size:9px; font-weight:650; white-space:nowrap; }
+.export-settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:12px; align-items:start; }
+.export-settings-grid > * { min-width:0; }
+.export-settings-grid .field-block { margin:0; min-width:0; }
+.export-settings-grid .field-block > label,.export-settings-grid > .check { color:#d6d9e7; font-size:10px; line-height:1.45; }
+.export-settings-grid .field-block > label { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; }
+.export-settings-grid .field { width:100%; min-width:0; color:#f7f7ff; background:#090b12; border-color:#34384a; }
+.export-settings-grid .range-field { width:100%; min-width:0; accent-color:#a992ff; }
+.export-settings-grid .color-field { max-width:100%; }
+.export-settings-grid .check { display:flex; align-items:flex-start; gap:7px; min-height:27px; padding:5px 0; }
+.export-settings-grid .check input { flex:0 0 auto; margin-top:2px; accent-color:#a992ff; }
+.export-setting-full { grid-column:1 / -1; }
+#exportCrfValue,#exportWatermarkOpacityValue { color:#c4b7ff; font-size:9px; font-weight:700; }
+.export-burn-toggle { padding:9px 0; border-top:1px solid #2b2c3a; }
+select.field,.field select { color:#f4f5ff; background-color:#0b0d15; color-scheme:dark; }
+select.field option,select.field optgroup { color:#f4f5ff; background-color:#11131d; }
+#titleOverlayText { display:block; min-width:0; color:inherit; font-family:inherit; font-weight:inherit; font-style:inherit; text-align:inherit; text-decoration:inherit; white-space:pre-wrap; overflow-wrap:anywhere; }
+#titleOverlayText:focus-visible { outline:2px solid #ad9aff; outline-offset:3px; border-radius:3px; }
+@media(max-width:620px) { .export-settings-grid { grid-template-columns:minmax(0,1fr); gap:9px; } .export-setting-full { grid-column:auto; } }
+
