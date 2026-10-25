@@ -54,7 +54,7 @@ function toast(msg,type="info"){let t=document.querySelector(".toast");if(!t){t=
 function selected(){return state.clips.find(c=>c.id===state.selectedId)||null}
 function undo(){const p=state.history.pop();if(!p)return toast("Nothing to undo");state.future.push(snap());restore(p);setSave("● Undo")}
 function redo(){const n=state.future.pop();if(!n)return toast("Nothing to redo");state.history.push(snap());restore(n);setSave("● Redo")}
-function restore(s){Object.assign(state,JSON.parse(JSON.stringify(s)));state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
+function restore(s){Object.assign(state,JSON.parse(JSON.stringify(s)));state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(s.exportSettings||{})};state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
 function hasRecoverableDraft(snapshot){
   return Boolean(snapshot&&(
     (Array.isArray(snapshot.clips)&&snapshot.clips.length)||
@@ -738,7 +738,9 @@ async function renderClip(c,i,mode){
         const vf=[];
         if(fx.brightness||fx.contrast!==1||fx.saturation!==1)vf.push(`eq=brightness=${fx.brightness}:contrast=${fx.contrast}:saturation=${fx.saturation}`);
         if(fx.blur>0)vf.push(`boxblur=${fx.blur}:1`);
-        if(fx.speed!==1)vf.push(`setpts=${1/speed}*PTS`);
+        vf.push(`trim=duration=${duration}`);
+        if(fx.speed!==1)vf.push(`setpts=(PTS-STARTPTS)/${speed}`);
+        else vf.push("setpts=PTS-STARTPTS");
         if(needsAspect||needsResolution){
           const size=desiredSize||fallbackSizes[state.exportAspect]||[1280,720],[w,h]=size;
           if(settings.fitMode==="stretch")vf.push(`scale=${w}:${h}`);
@@ -753,7 +755,8 @@ async function renderClip(c,i,mode){
         if(!settings.includeAudio||fx.mute)args.push("-an");
         else{
           const af=[];
-          if(fx.speed!==1)af.push(`atempo=${clamp(speed,.5,2)}`);
+          af.push(`atrim=duration=${duration}`,"asetpts=PTS-STARTPTS");
+          if(fx.speed!==1){let tempo=speed;while(tempo<.5){af.push("atempo=0.5");tempo/=.5}while(tempo>2){af.push("atempo=2");tempo/=2}if(Math.abs(tempo-1)>.0001)af.push(`atempo=${tempo}`)}
           if(fx.volume!==1)af.push(`volume=${fx.volume}`);
           if(fx.normalize||settings.normalizeAudio)af.push("loudnorm=I=-16:TP=-1.5:LRA=11");
           if(audioFadeIn>0)af.push(`afade=t=in:st=0:d=${audioFadeIn}`);
@@ -765,7 +768,7 @@ async function renderClip(c,i,mode){
         args.push("-c:v","libx264","-preset",preset,"-crf",String(crf),"-pix_fmt","yuv420p");
         if(!settings.includeAudio||fx.mute){}else args.push("-c:a","aac","-b:a",mode==="mobile"?"96k":settings.audioBitrate||"128k");
       }
-      const metadataTitle=String(settings.metadataTitle||state.projectName||"ClipSmith").replace(/[\\r\\n\\u0000-\\u001f]+/g," ").trim().slice(0,160);
+      const metadataTitle=String(settings.metadataTitle||state.projectName||"ClipSmith").replace(/[\r\n\u0000-\u001f]+/g," ").trim().slice(0,160);
       if(settings.writeMetadata!==false&&metadataTitle)args.push("-metadata",`title=${metadataTitle}`);
       args.push("-movflags","+faststart",output);return args;
     };
