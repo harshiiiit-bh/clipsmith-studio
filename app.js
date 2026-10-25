@@ -525,7 +525,7 @@ async function loadFile(file){
   const kind=getImportKind(file);
   if(kind==="zip"){
     try{
-      const episode=await chooseVideoFromZip(file,{onStatus:updateImportStatus});
+      const episode=await chooseVideoFromZip(file,{onStatus:updateImportStatus,onBeforeExtract:({fileSize})=>{if(!memorySafeMode)return true;const warning=getMediaMemoryWarning({fileSize,duration:0});return !warning||confirm("ClipSmith ZIP memory-safety check:\n\n"+warning+"\n\nExtracting this episode may temporarily duplicate its storage in memory. Continue?")}});
       if(episode)await loadFile(episode);
       else updateImportStatus("ZIP selection cancelled.","info");
     }catch(error){
