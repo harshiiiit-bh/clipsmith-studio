@@ -11,7 +11,7 @@ A browser-first video clipping studio for turning an authorised source video int
 
 - Fixed-height three-column desktop editor: media/clip queue, preview/timeline, and a tabbed inspector.
 - Compact mobile workspace with dedicated Media, Preview, Clips, Text, Ideas and Export views. The old floating export bar is removed so it does not cover the queue.
-- Expanded heading typography: a larger font library, case transforms, alignment, letter spacing, line height, italics, outline colour/thickness, shadow, backing, opacity, rotation and placement.
+- Expanded heading typography: **41 font families**, **30 one-tap title looks**, and 16 advanced controls for weight, letter case, alignment, decoration, outline thickness, shadow colour, glow, backing-panel colour/opacity/padding/roundness, rotation, line height and vertical placement. Native select menus use explicit dark-theme option colours for readable font names.
 - Expanded captions: font presets, text transforms, alignment, spacing, colour, background, outline, shadow, opacity, karaoke highlight colour and fine vertical placement.
 - Shared title patterns across a series, per-clip title/caption edits, selected-clip operations, grouping, preview and custom-duration splitting.
 - FX / Audio inspector: brightness, contrast, saturation, soft focus, grayscale, speed, volume, mute and quick visual presets.
