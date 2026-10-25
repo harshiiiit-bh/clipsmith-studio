@@ -321,6 +321,14 @@ try {
   });
   const checkTypography = async (ratio) => {
     await page.locator("#aspectSelect").selectOption(ratio);
+    await page.waitForFunction(() => {
+      const element = document.querySelector("#titleOverlayText");
+      const canvas = document.querySelector("#preview-canvas");
+      if (!element || !canvas) return false;
+      const width = canvas.clientWidth;
+      const expected = 2.5 * Math.max(.28, width / 420);
+      return Math.abs(parseFloat(getComputedStyle(element).letterSpacing) - expected) < .1;
+    });
     const result = await page.locator("#titleOverlayText").evaluate((element) => {
       const style = getComputedStyle(element);
       return {
