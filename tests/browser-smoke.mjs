@@ -86,7 +86,8 @@ try {
   });
 
   await page.addInitScript(() => {
-    localStorage.setItem("clipsmith.project.v2", JSON.stringify({
+    if (!localStorage.getItem("clipsmith.project.v2")) {
+      localStorage.setItem("clipsmith.project.v2", JSON.stringify({
       projectName: "Stale test draft",
       sourceMeta: { fileName: "old-video.mp4", fileSize: 1234, duration: 60 },
       duration: 60,
@@ -98,7 +99,8 @@ try {
       clips: [{ id: "old-clip", start: 0, end: 30, title: "Stale Part 1", autoTitle: true }],
       subtitleCues: [],
       skipRanges: []
-    }));
+      }));
+    }
   });
 
   const response = await page.goto(origin + "/", { waitUntil: "domcontentloaded" });
