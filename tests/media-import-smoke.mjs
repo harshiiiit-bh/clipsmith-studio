@@ -72,6 +72,9 @@ assert.match(app, /e\.dataset\.clipId=c\.id;/, "timeline segments need stable cl
 assert.match(importer, /new ZipReader\(new BlobReader\(file\)\)/, "archive indexing should seek through the selected local File");
 assert.match(importer, /entry\.getData\(new BlobWriter\(mime\)/, "only the selected entry should be extracted");
 assert.match(importer, /entry\.uncompressedSize/);
+assert.match(importer,/onBeforeExtract = async \(\) => true/,"ZIP extraction accepts a pre-allocation memory guard");
+assert.match(importer,/const allowed = await onBeforeExtract\(\{ fileSize: size, filename: entry\.filename \}\)/,"the memory guard runs before the selected ZIP entry is extracted");
+assert.match(app,/onBeforeExtract:\(\{fileSize\}\)=>\{if\(!memorySafeMode\)return true;const warning=getMediaMemoryWarning/,"large ZIP episodes use the same device memory guidance before extraction");
 assert.match(importer, /password-protected or encrypted/);
 assert.match(css, /\.archive-picker-backdrop/);
 assert.match(css, /\.archive-episode-row\.selected/);
