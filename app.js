@@ -1,6 +1,6 @@
 import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
 import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-power3";
-import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-studio-fonts1";
+import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-stylefinder2";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
 import { getImportKind, chooseVideoFromZip } from "./media-import.js?v=20261024-zipimport1";
@@ -766,4 +766,4 @@ $("memorySaveNowBtn")?.addEventListener("click",saveMemoryNow);$("memoryClearBtn
 });
 
 $("restoreDraftBtn").onclick=()=>{const snapshot=pendingRecoverySnapshot;if(!snapshot)return;if(applyRecoveredDraft(snapshot)){setMemoryVaultStatus("Project memory restored",state.sourceMeta?.fileName?`Your saved edits are restored. Re-import ${state.sourceMeta.fileName} to reconnect preview and export.`:"Your saved edits are restored. Add a video to preview and export.");toast("Saved draft restored")}};$("startFreshBtn").onclick=()=>{void startFreshProject()};recover();lastCommitted=snap();if($("projectName"))$("projectName").value=state.projectName;renderAll();refreshMemoryPanel();void restoreRememberedMemory();
-window.dispatchEvent(new CustomEvent("clipsmith:app-ready", { detail: { build: "20261024-power3" } }));
+window.dispatchEvent(new CustomEvent("clipsmith:app-ready", { detail: { build: "20261025-stylefinder2" } }));
