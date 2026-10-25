@@ -520,13 +520,13 @@ function renderAll(){renderTimeline();renderClips();renderSkipRanges();renderSub
 function setTool(tool){if(typeof tool!=="string"||!tool)return;if(tool==="preview"){state.activeTool="preview";$("inspector").classList.remove("open");$$('.tool,.mobile-tab').forEach(x=>x.classList.remove('active'));$$('.mobile-tab[data-tool="preview"]').forEach(x=>x.classList.add('active'));return}state.activeTool=tool;$$('.tool,.mobile-tab').forEach(x=>x.classList.toggle('active',x.dataset.tool===tool));$$('.inspector-pane').forEach(x=>x.classList.add('hidden'));const pane=$("pane-"+tool);if(pane)pane.classList.remove('hidden');$("inspectorTitle").textContent=tool==="cut"?"Clips":tool==="creator"?"Creator Intelligence":tool[0].toUpperCase()+tool.slice(1);if(innerWidth<=820)$("inspector").classList.add('open')}
 function updateImportStatus(text,type="info"){const n=$("importStatus");if(n){n.textContent=text;n.dataset.state=type}}
 function updateSource(file,{sourceUrl=""}={}){if(!file)return;previewSourceVersion++;if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}restoreExistingClipsOnLoad=false;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.subtitleCues=[];subtitleCueLimit=80;renderSubtitleCueList();updateActiveSubtitle();state.skipRanges=[];setTimeInputs("skipStart",null);setTimeInputs("skipEnd",null);renderSkipRanges();state.sourceFile=file;state.sourceUrl=sourceUrl;state.sourceMeta={fileName:file.name,fileSize:file.size,sourceUrl,duration:0};state.objectUrl=URL.createObjectURL(file);const v=$("previewVideo");v.src=state.objectUrl;v.load();$("mediaName").textContent=file.name;$("previewEmptyTitle").textContent="Preparing your edit…";$("previewEmptyHint").textContent="Reading the video and building your first clip plan."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Reading video metadata…","loading");setSave("● Media loaded");persist();void rememberSourceMedia(file)}
-async function loadFile(file){
+async function loadFile(file,{memoryCheckConfirmed=false}={}){
   if(!file)return;
   const kind=getImportKind(file);
   if(kind==="zip"){
     try{
       const episode=await chooseVideoFromZip(file,{onStatus:updateImportStatus,onBeforeExtract:({fileSize})=>{if(!memorySafeMode)return true;const warning=getMediaMemoryWarning({fileSize,duration:0});return !warning||confirm("ClipSmith ZIP memory-safety check:\n\n"+warning+"\n\nExtracting this episode may temporarily duplicate its storage in memory. Continue?")}});
-      if(episode)await loadFile(episode);
+      if(episode)await loadFile(episode,{memoryCheckConfirmed:true});
       else updateImportStatus("ZIP selection cancelled.","info");
     }catch(error){
       const message=error?.message||"Could not read that ZIP archive.";
@@ -543,7 +543,7 @@ async function loadFile(file){
     const message="Choose a video file or a ZIP archive containing video episodes. ClipSmith accepts common video containers and can attempt a local compatibility conversion if the browser cannot decode the video.";
     updateImportStatus(message,"error");toast("Choose a video file or ZIP archive","error");return;
   }
-  if(memorySafeMode){
+  if(memorySafeMode&&!memoryCheckConfirmed){
     const warning=getMediaMemoryWarning({fileSize:file.size,duration:0});
     if(warning&&!confirm("ClipSmith memory-safety check:\\n\\n"+warning+"\\n\\nClose other apps before continuing. Continue anyway?"))return;
   }
