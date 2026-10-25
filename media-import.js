@@ -146,7 +146,7 @@ function chooseArchiveEntry(file, entries) {
  * BlobReader lets zip.js seek to the central directory/entry without inflating every
  * episode into memory. The selected episode remains a local File; nothing is uploaded.
  */
-export async function chooseVideoFromZip(file, { onStatus = () => {} } = {}) {
+export async function chooseVideoFromZip(file, { onStatus = () => {}, onBeforeExtract = async () => true } = {}) {
   if (!file || getImportKind(file) !== "zip") throw new Error("Choose a .zip archive.");
   onStatus("Reading ZIP index…", "loading");
 
@@ -170,6 +170,14 @@ export async function chooseVideoFromZip(file, { onStatus = () => {} } = {}) {
       throw new Error("That episode is too large for safe in-browser processing (ClipSmith's current limit is 1.75 GB). Choose a smaller episode.");
     }
 
+    // Ask the host to run its memory-safety check before allocating the
+    // entire uncompressed entry as a Blob. A post-extraction warning is too late
+    // for large ZIP entries, which can briefly exist alongside the archive in RAM.
+    const allowed = await onBeforeExtract({ fileSize: size, filename: entry.filename });
+    if (!allowed) {
+      onStatus("ZIP extraction cancelled before allocating the selected episode.", "info");
+      return null;
+    }
     onStatus(`Extracting selected episode: ${entry.filename.split(/[\\/]/).pop()}…`, "loading");
     const mime = getVideoMimeType(entry.filename);
     const blob = await entry.getData(new BlobWriter(mime), {
