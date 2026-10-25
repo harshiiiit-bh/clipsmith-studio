@@ -834,11 +834,7 @@ function cancelExport(){
   if(!exportBusy)return;
   cancelExportRequested=true;
   const button=$("cancelExportBtn");if(button){button.disabled=true;button.textContent="Cancelling…"}
-  if(ffmpegInstance){
-    const active=ffmpegInstance;ffmpegInstance=null;ffmpegLoading=null;
-    toast("The current clip will finish processing; the remaining queue will stop.");
-  }
-  toast("Cancel requested · stopping the current render.");
+  toast("Cancel requested · the current render will finish, then the remaining queue stops.");
 }
 function formatPreviewTime(seconds){
   const n=Math.max(0,Number(seconds)||0),m=Math.floor(n/60),s=(n%60).toFixed(1).padStart(4,"0");
