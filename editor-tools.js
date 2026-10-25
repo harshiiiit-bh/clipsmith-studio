@@ -293,9 +293,9 @@ export function getClipDisplayTitle(clip, clips = [], seriesTitle = "Your series
   // Migrate legacy auto-generated titles from saved projects whose clips predate
   // the autoTitle flag, and always reflect the clip's live sequence position.
   const titleTail = customTitle.toLocaleLowerCase().startsWith(baseTitle.toLocaleLowerCase())
-    ? customTitle.slice(baseTitle.length).trim().replace(/^[·•–—-]\\s*/, "").trim()
+    ? customTitle.slice(baseTitle.length).trim().replace(/^[·•–—-]\s*/, "").trim()
     : "";
-  const legacyAutoTitle = /^part\\s*\\d+$/i.test(titleTail);
+  const legacyAutoTitle = /^part\s*\d+$/i.test(titleTail);
   if ((clip?.autoTitle === true || legacyAutoTitle) && clipIndex >= 0) {
     return `${baseTitle} · Part ${clipIndex + 1}`;
   }
