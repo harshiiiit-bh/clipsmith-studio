@@ -55,18 +55,7 @@
       <div class="timeline-head"><div><strong>Clip sequence</strong><span id="timelineHint">Import a video to begin</span></div><div class="timeline-zoom-controls" role="group" aria-label="Timeline zoom"><button id="timelineZoomOutBtn" class="soft-btn timeline-zoom-step" type="button" aria-label="Zoom timeline out" title="Zoom out">−</button><input id="timelineZoomRange" type="range" min="1" max="3" step="0.25" value="1" aria-label="Timeline zoom level"><span id="timelineZoomValue" aria-live="polite">100%</span><button id="timelineZoomInBtn" class="soft-btn timeline-zoom-step" type="button" aria-label="Zoom timeline in" title="Zoom in">+</button><button id="timelineZoomFitBtn" class="soft-btn timeline-zoom-fit" type="button" title="Reset timeline zoom to fit">Fit</button></div><div class="timeline-actions"><button id="sceneScanBtn" class="soft-btn">✦ Find scene cuts</button><button id="thumbnailBtn" class="soft-btn">Frame PNG</button><button id="splitAtPlayheadBtn" class="soft-btn">Split</button><button id="duplicateClipBtn" class="soft-btn">Duplicate</button><button id="moveClipEarlierBtn" class="soft-btn">←</button><button id="moveClipLaterBtn" class="soft-btn">→</button><button id="deleteClipBtn" class="danger-btn">Delete</button></div></div>
       <div class="scene-scan-stack"><div id="sceneScanStatus" class="scene-scan-status" aria-live="polite"></div><div id="sceneScanResults" class="scene-scan-results hidden"></div></div>
       <div id="timeline" class="timeline"></div>
-      <section class="clip-strip-section" aria-label="Clip browser">
-        <div class="clip-strip-toolbar">
-          <span class="clip-strip-label">Browse clips</span>
-          <div class="clip-strip-controls">
-            <button id="clipStripPrevBtn" class="clip-strip-nav" type="button" aria-label="Slide to earlier clips" title="Earlier clips" disabled>←</button>
-            <input id="clipStripSlider" class="clip-strip-slider" type="range" min="0" max="1000" step="1" value="0" aria-label="Slide through clips" aria-valuetext="No clips" disabled>
-            <button id="clipStripNextBtn" class="clip-strip-nav" type="button" aria-label="Slide to later clips" title="Later clips" disabled>→</button>
-            <span id="clipStripPosition" class="clip-strip-position" aria-live="polite">No clips</span>
-          </div>
-        </div>
-        <div id="clip-strip" class="clip-strip" aria-label="Clip cards"><!-- clip cards support drag-to-reorder --></div>
-      </section>
+      
     </div>
   </section>
   <aside id="inspector" class="inspector panel">
