@@ -441,7 +441,7 @@ try {
 
   // Regression: manual caption text and style controls must update the actual preview live.
   await page.setViewportSize({ width: 1440, height: 960 });
-  await page.evaluate(() => localStorage.setItem("clipsmith.project.v2", JSON.stringify({
+  const captionRegressionDraft = {
     projectName: "Caption Styling Regression", duration: 12, durationPreset: 30, aspect: "16:9",
     seriesTitle: "Caption test", autoParts: false, selectedId: "caption-regression",
     sourceMeta: { fileName: "caption-fixture.mp4", fileSize: 4096, duration: 12 },
@@ -450,8 +450,11 @@ try {
     subtitleSettings: { style: "Classic", highlight: "#9e83ff", positionY: 82 }, exportAspect: "source", burnOverlays: true,
     clips: [{ id: "caption-regression", start: 0, end: 12, title: "Regression heading", autoTitle: false, caption: "Initial live caption", titleStyle: { font: "Inter", size: 30, color: "#ffffff", outline: "#000000", opacity: 1, bold: true, italic: false, spacing: 0, shadow: 6, weight: 800, transform: "none", align: "center", decoration: "none", outlineWidth: 2, shadowColor: "#000000", glow: 0, glowColor: "#8b5cf6", bgEnabled: false, bgColor: "#111827", bgOpacity: .72, bgPadding: 10, bgRadius: 10, rotation: 0, lineHeight: 1.08, positionY: 17 }, captionStyle: { style: "Classic", highlight: "#9e83ff", positionY: 78 }, fx: { preset: "Original", brightness: 0, contrast: 1, saturation: 1, blur: 0, speed: 1, volume: 1, mute: false, normalize: false } }],
     skipRanges: [], subtitleCues: [], exportSettings: {}
-  })));
-  await page.reload({ waitUntil: "domcontentloaded" });
+  };
+
+  await page.addInitScript((draft) => localStorage.setItem("clipsmith.project.v2", JSON.stringify(draft)), captionRegressionDraft);
+  await page.goto(origin + "/?caption-style-regression=1", { waitUntil: "domcontentloaded" });
+
   await page.waitForFunction(() => {
     const actions = document.querySelector("#draftRecoveryActions");
     return actions && !actions.classList.contains("hidden");
