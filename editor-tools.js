@@ -285,13 +285,21 @@ export function reorderClip(clips, fromId, toId, options = {}) {
  * burn that same title rather than silently omitting the heading.
  */
 export function getClipDisplayTitle(clip, clips = [], seriesTitle = "Your series title") {
-  const customTitle = String(clip?.title ?? "").trim();
-  if (customTitle) return customTitle;
   const clipIndex = Array.isArray(clips) && clip?.id
     ? clips.findIndex((item) => item?.id === clip.id)
     : -1;
-  const partNumber = clipIndex >= 0 ? clipIndex + 1 : 1;
   const baseTitle = String(seriesTitle ?? "").trim() || "Your series title";
+  const customTitle = String(clip?.title ?? "").trim();
+  // Older saved projects can lack autoTitle. Recognize their generated
+  // "series name - Part N" headings and derive their number from current order.
+  const titleTail = customTitle.toLocaleLowerCase().startsWith(baseTitle.toLocaleLowerCase())
+    ? customTitle.slice(baseTitle.length).trim().replace(/^[·•–—-]\s*/, "").trim()
+    : "";
+  const legacyAutoTitle = /^part\s*\d+$/i.test(titleTail);
+  const isAutomatic = clip?.autoTitle === true || (clip?.autoTitle !== false && legacyAutoTitle);
+  if (isAutomatic && clipIndex >= 0) return `${baseTitle} · Part ${clipIndex + 1}`;
+  if (customTitle) return customTitle;
+  const partNumber = clipIndex >= 0 ? clipIndex + 1 : 1;
   return `${baseTitle} · Part ${partNumber}`;
 }
 
