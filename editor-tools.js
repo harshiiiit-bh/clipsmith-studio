@@ -294,3 +294,28 @@ export function getClipDisplayTitle(clip, clips = [], seriesTitle = "Your series
   const baseTitle = String(seriesTitle ?? "").trim() || "Your series title";
   return `${baseTitle} · Part ${partNumber}`;
 }
+
+
+/** Create a safe, readable MP4 filename from the visible clip title. */
+function safeFilenamePart(value, maxLength) {
+  return String(value ?? "")
+    .normalize("NFC")
+    .replace(/[^\p{L}\p{N}_-]+/gu, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, maxLength)
+    .replace(/-+$/g, "");
+}
+
+export function buildExportFilename(clip, index = 0, { prefix = "", mode = "number-title" } = {}) {
+  const partNumber = Math.max(1, Math.trunc(Number(index) || 0) + 1);
+  const partLabel = String(partNumber).padStart(2, "0");
+  const safePrefix = safeFilenamePart(prefix, 48);
+  const safeTitle = safeFilenamePart(clip?.title || "", 70) || "clip-" + partLabel;
+  const stem = mode === "title-only"
+    ? safeTitle
+    : mode === "part-title"
+      ? "Part-" + partLabel + "-" + safeTitle
+      : partLabel + "-" + safeTitle;
+  return (safePrefix ? safePrefix + "-" : "") + stem + ".mp4";
+}
