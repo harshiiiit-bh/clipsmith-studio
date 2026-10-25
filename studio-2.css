@@ -1797,7 +1797,7 @@ body.archive-picker-open{overflow:hidden}
   border: 1px solid #929ab72d;
   border-radius: 8px;
   box-shadow: 0 20px 60px #0008, 0 0 0 1px #ffffff08, inset 0 0 0 1px #ffffff06;
-  transition: width .18s ease, height .18s ease, border-radius .18s ease;
+  transition: border-radius .18s ease; /* Keep aspect changes and text scaling in sync. */
 }
 .preview-canvas > #previewVideo {
   position: absolute;
