@@ -74,7 +74,7 @@ const assColor = (value, opacity = 1) => {
 const assTime = value => { const cs=Math.max(0,Math.round((Number(value)||0)*100)); const h=Math.floor(cs/360000),m=Math.floor(cs%360000/6000),s=Math.floor(cs%6000/100),fraction=cs%100; return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(fraction).padStart(2,'0')}`; };
 
 /** Create a portable ASS subtitle track with a persistent heading and timecoded captions. */
-export function createAssDocument({ title = '', caption = '', duration = 0, width = 1280, height = 720, cues = [], titleStyle = {}, subtitleStyle = {}, captionStyle = null } = {}) {
+export function createAssDocument({ title = '', caption = '', duration = 0, width = 1280, height = 720, cues = [], titleStyle = {}, subtitleStyle = {}, captionStyle = null, watermark = null } = {}) {
   const w=Math.max(2,Math.round(Number(width)||1280)),h=Math.max(2,Math.round(Number(height)||720));
   // Title controls are expressed in CSS pixels at a 420px reference canvas.
   // Scale by output width so exported MP4 text matches the on-canvas proportions.
@@ -125,11 +125,21 @@ export function createAssDocument({ title = '', caption = '', duration = 0, widt
   const bgOpacity=Math.max(0,Math.min(1,Number(titleStyle.bgOpacity??.72)));
   const titleBackColour=titleStyle.bgEnabled?assColor(titleStyle.bgColor||'#111827',bgOpacity):'&H88000000';
   const titleBorderStyle=titleStyle.bgEnabled?3:1;
-  const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${titleShadow.toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},${captionOutlineColour},${captionBackColour},${captionWeight},0,0,0,100,100,${captionSpacing},0,${captionBorderStyle},${captionOutline.toFixed(1)},${captionShadow.toFixed(1)},2,${marginL},${marginL},${captionMargin},1\n${manualCaptionStyleLine}\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+  const watermarkConfig=watermark&&typeof watermark==='object'?watermark:null;
+  const watermarkText=assSafeText(String(watermarkConfig?.text||'').slice(0,80));
+  const watermarkOpacity=Number.isFinite(Number(watermarkConfig?.opacity))?Math.max(0,Math.min(1,Number(watermarkConfig.opacity))):0.72;
+  const watermarkColour=assColor(watermarkConfig?.color||'#ffffff',watermarkOpacity);
+  const watermarkSize=Math.max(12,Math.min(100,Number(watermarkConfig?.size)||28))*h/720;
+  const watermarkPlacement=String(watermarkConfig?.position||'bottom-right');
+  const watermarkAlignment=({'top-left':7,'top-center':8,'top-right':9,'bottom-left':1,'bottom-center':2,'bottom-right':3})[watermarkPlacement]||3;
+  const watermarkMargin=Math.max(12,Math.round(Math.min(w,h)*0.035));
+  const watermarkStyleLine=`Style: Watermark,Inter,${Math.round(watermarkSize)},${watermarkColour},${watermarkColour},&HFF000000,&HFF000000,0,0,0,0,100,100,0,0,1,0,1,${watermarkAlignment},${watermarkMargin},${watermarkMargin},${watermarkMargin},1`;
+  const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${titleShadow.toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},${captionOutlineColour},${captionBackColour},${captionWeight},0,0,0,100,100,${captionSpacing},0,${captionBorderStyle},${captionOutline.toFixed(1)},${captionShadow.toFixed(1)},2,${marginL},${marginL},${captionMargin},1\n${manualCaptionStyleLine}\n${watermarkStyleLine}\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
   const events=[];
   if(titleLine)events.push(`Dialogue: 0,${assTime(0)},${assTime(total)},Heading,,0,0,0,,${titleLine}`);
   const manualTextRaw=String(caption??''),manualText=assSafeText(manualIsKaraoke?manualTextRaw.toLocaleUpperCase():manualTextRaw);
   if(manualText)events.push(`Dialogue: 1,${assTime(0)},${assTime(total)},ManualCaption,,0,0,0,,${manualText}`);
+  if(watermarkText)events.push(`Dialogue: 3,${assTime(0)},${assTime(total)},Watermark,,0,0,0,,${watermarkText}`);
   for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),rawText=String(cue?.text??''),styledText=captionIsKaraoke?rawText.toLocaleUpperCase():rawText,text=assSafeText(styledText);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 2,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${text}`)}
   return `${header}\n${events.join('\n')}\n`;
 }
