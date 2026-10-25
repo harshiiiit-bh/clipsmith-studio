@@ -667,7 +667,7 @@ async function renderClip(c,i,mode){
   const fx={...DEFAULT_FX,...(c.fx||{})};
   const needsFilter=fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||fx.volume!==1||fx.mute||fx.normalize;
   const needsAspect=state.exportAspect!=='source';
-  const needsOverlay=state.burnOverlays!==false&&Boolean(c.title||state.subtitleCues.some(q=>q.end>c.start&&q.start<c.end));
+  const needsOverlay=state.burnOverlays!==false&&Boolean(c.title||c.caption||state.subtitleCues.some(q=>q.end>c.start&&q.start<c.end));
   if(mode==='copy'&&(needsFilter||needsAspect||needsOverlay))throw Error('Original stream cannot apply visual/audio edits, change aspect ratio, or burn text. Turn off burn-in or choose Smart / High quality.');
   const ff=await getFFmpeg(),input=`source-${uid()}`,output=`clip-${uid()}.mp4`,assFile=`clip-overlay-${uid()}.ass`;
   const duration=Math.max(.5,c.end-c.start);
@@ -680,7 +680,7 @@ async function renderClip(c,i,mode){
       const width=Number(desired?.[0]||$("previewVideo").videoWidth||1280);
       const height=Number(desired?.[1]||$("previewVideo").videoHeight||720);
       const relativeCues=state.subtitleCues.filter(q=>q.end>c.start&&q.start<c.end).map(q=>({start:Math.max(0,Number(q.start)-c.start),end:Math.min(c.end,Number(q.end))-c.start,text:q.text})).filter(q=>q.end>q.start&&String(q.text||'').trim());
-      const ass=createAssDocument({title:c.title||'',duration,width,height,cues:relativeCues,titleStyle:c.titleStyle||state.titleStyle,subtitleStyle:state.subtitleSettings});
+      const ass=createAssDocument({title:c.title||'',caption:c.caption||'',duration,width,height,cues:relativeCues,titleStyle:c.titleStyle||state.titleStyle,subtitleStyle:state.subtitleSettings,captionStyle:c.captionStyle||state.captionStyle});
       await ff.writeFile(assFile,new TextEncoder().encode(ass));
       assWritten=true;
     }
