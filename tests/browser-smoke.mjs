@@ -592,9 +592,9 @@ try {
   await page.locator("#exportPreviewEditToggle").click();
   assert.equal(await headingEditor.getAttribute("contenteditable"), "false", "edit mode can be exited without changing the shared text state");
   await page.locator("#clearExportClipSelectionBtn").click();
-  assert.equal(await page.locator("#exportSelectionCount").textContent(), "0 of 1 selected", "Clear selection works");
+  assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (0)", "Clear selection works");
   await page.locator("#selectAllExportClipsBtn").click();
-  assert.equal(await page.locator("#exportSelectionCount").textContent(), "1 of 1 selected", "Select all works");
+  assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (1)", "Select all works");
 
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));

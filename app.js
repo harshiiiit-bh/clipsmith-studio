@@ -893,7 +893,7 @@ function updateExportSelectionSummary(){
   if(doneTab){doneTab.textContent=`Exported (${done.length})`;doneTab.disabled=exportBusy;doneTab.classList.toggle("active",exportQueueView==="exported");doneTab.setAttribute("aria-selected",String(exportQueueView==="exported"))}
   const actions=$("exportSelectionActions");if(actions)actions.classList.toggle("hidden",exportQueueView==="exported");
   const selectAll=$("selectAllExportClipsBtn");if(selectAll)selectAll.disabled=exportBusy||todo.length===0;
-  const clear=$("clearExportClipSelectionBtn");if(clear)clear.disabled=exportBusy||chosen.length===0;
+  const clear=$("clearExportClipSelectionBtn");if(clear)clear.disabled=exportBusy;
   const mark=$("markExportedSelectedBtn");if(mark)mark.disabled=exportBusy||chosen.length===0;
 }
 function setExportQueueView(view){if(exportBusy)return;exportQueueView=view==="exported"?"exported":"todo";renderQueue(state.clips)}
