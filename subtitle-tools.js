@@ -94,11 +94,15 @@ export function createAssDocument({ title = '', caption = '', duration = 0, widt
   const titleShadow=Math.max(0,Math.min(200,Math.max(Number(titleStyle.shadow??6)||0,(Number(titleStyle.glow)||0)*.35)*typographyScale));
   const titleOutlineWidth=Math.max(0,Math.min(200,Number(titleStyle.bgEnabled?(titleStyle.bgPadding??10):(titleStyle.outlineWidth??Math.max(1,Number(titleStyle.size)||32)*.09))*typographyScale));
   const titleRotation=Math.max(-180,Math.min(180,Number(titleStyle.rotation)||0));
-  const titleAlignment=({left:7,center:8,right:9})[titleStyle.align]||8;
+  const titleHasPositionX=hasAssPosition(titleStyle.positionX);
+  const titleAlignment=titleHasPositionX&&titleStyle.bgEnabled?8:({left:7,center:8,right:9})[titleStyle.align]||8;
   const titleText=String(title??'');
   const transformedTitle=titleStyle.transform==='uppercase'?titleText.toLocaleUpperCase():titleStyle.transform==='lowercase'?titleText.toLocaleLowerCase():titleStyle.transform==='capitalize'?titleText.toLocaleLowerCase().replace(/(^|[ -])([a-z])/g,(_,prefix,letter)=>prefix+letter.toLocaleUpperCase()):titleText
   const titleLine=assSafeText(transformedTitle),total=Math.max(.5,Number(duration)||.5);
   const marginL=Math.round(w*.055),marginV=Math.round(h*clampAssPosition(titleStyle.positionY,17)/100);
+  const titlePositionOverride=titleHasPositionX?`{\\pos(${Math.round(w*clampAssPosition(titleStyle.positionX,50)/100)},${Math.round(h*clampAssPosition(titleStyle.positionY,17)/100)})}`:'';
+  const captionHasPositionX=hasAssPosition(subtitleStyle.positionX);
+  const captionPositionOverride=captionHasPositionX?`{\\pos(${Math.round(w*clampAssPosition(subtitleStyle.positionX,50)/100)},${Math.round(h*clampAssPosition(subtitleStyle.positionY,82)/100)})}`:'';
   const captionMargin=Math.round(h*(100-clampAssPosition(subtitleStyle.positionY,82))/100);
   const captionWeight=captionIsCinematic?0:-1;
   const captionSpacing=captionIsKaraoke?captionSize*.01:captionIsCinematic?captionSize*.03:0;
@@ -114,6 +118,7 @@ export function createAssDocument({ title = '', caption = '', duration = 0, widt
   const manualSize=Math.max(14,Math.min(64,Number(manualStyle.size)||Math.min(42,h*.035)));
   const manualColor=assColor(manualStyle.highlight||'#9e83ff');
   const manualMargin=Math.round(h*(100-clampAssPosition(manualStyle.positionY,78))/100);
+  const manualPositionOverride=hasAssPosition(manualStyle.positionX)?`{\\pos(${Math.round(w*clampAssPosition(manualStyle.positionX,50)/100)},${Math.round(h*clampAssPosition(manualStyle.positionY,78)/100)})}`:'';
   const manualWeight=manualIsCinematic?0:-1;
   const manualSpacing=manualIsKaraoke?manualSize*.01:manualIsCinematic?manualSize*.03:0;
   const manualBorder=manualIsPop?3:1;
@@ -134,13 +139,16 @@ export function createAssDocument({ title = '', caption = '', duration = 0, widt
   const watermarkAlignment=({'top-left':7,'top-center':8,'top-right':9,'bottom-left':1,'bottom-center':2,'bottom-right':3})[watermarkPlacement]||3;
   const watermarkMargin=Math.max(12,Math.round(Math.min(w,h)*0.035));
   const watermarkStyleLine=`Style: Watermark,Inter,${Math.round(watermarkSize)},${watermarkColour},${watermarkColour},&HFF000000,&HFF000000,0,0,0,0,100,100,0,0,1,0,1,${watermarkAlignment},${watermarkMargin},${watermarkMargin},${watermarkMargin},1`;
+  const watermarkHasCustomPosition=hasAssPosition(watermarkConfig?.x)&&hasAssPosition(watermarkConfig?.y);
+  const watermarkPositionOverride=watermarkHasCustomPosition?`{\\an5\\pos(${Math.round(w*clampAssPosition(watermarkConfig.x,50)/100)},${Math.round(h*clampAssPosition(watermarkConfig.y,50)/100)})}`:'';
   const header=`[Script Info]\nScriptType: v4.00+\nPlayResX: ${w}\nPlayResY: ${h}\nScaledBorderAndShadow: yes\nWrapStyle: 2\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Heading,${titleFont},${Math.round(titleSize)},${titleColor},${titleColor},${titleOutline},${titleBackColour},${titleBold},${titleItalic},${titleUnderline},${titleStrike},100,100,${titleSpacing},${titleRotation},${titleBorderStyle},${titleOutlineWidth.toFixed(1)},${titleShadow.toFixed(1)},${titleAlignment},${marginL},${marginL},${marginV},1\nStyle: Captions,${captionFont},${Math.round(captionSize)},${captionColor},${captionColor},${captionOutlineColour},${captionBackColour},${captionWeight},0,0,0,100,100,${captionSpacing},0,${captionBorderStyle},${captionOutline.toFixed(1)},${captionShadow.toFixed(1)},2,${marginL},${marginL},${captionMargin},1\n${manualCaptionStyleLine}\n${watermarkStyleLine}\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
   const events=[];
-  if(titleLine)events.push(`Dialogue: 0,${assTime(0)},${assTime(total)},Heading,,0,0,0,,${titleLine}`);
+  if(titleLine)events.push(`Dialogue: 0,${assTime(0)},${assTime(total)},Heading,,0,0,0,,${titlePositionOverride}${titleLine}`);
   const manualTextRaw=String(caption??''),manualText=assSafeText(manualIsKaraoke?manualTextRaw.toLocaleUpperCase():manualTextRaw);
-  if(manualText)events.push(`Dialogue: 1,${assTime(0)},${assTime(total)},ManualCaption,,0,0,0,,${manualText}`);
-  if(watermarkText)events.push(`Dialogue: 3,${assTime(0)},${assTime(total)},Watermark,,0,0,0,,${watermarkText}`);
-  for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),rawText=String(cue?.text??''),styledText=captionIsKaraoke?rawText.toLocaleUpperCase():rawText,text=assSafeText(styledText);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 2,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${text}`)}
+  if(manualText)events.push(`Dialogue: 1,${assTime(0)},${assTime(total)},ManualCaption,,0,0,0,,${manualPositionOverride}${manualText}`);
+  if(watermarkText)events.push(`Dialogue: 3,${assTime(0)},${assTime(total)},Watermark,,0,0,0,,${watermarkPositionOverride}${watermarkText}`);
+  for(const cue of (Array.isArray(cues)?cues:[])){const start=Number(cue?.start),end=Number(cue?.end),rawText=String(cue?.text??''),styledText=captionIsKaraoke?rawText.toLocaleUpperCase():rawText,text=assSafeText(styledText);if(!text||!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;events.push(`Dialogue: 2,${assTime(start)},${assTime(end)},Captions,,0,0,0,,${captionPositionOverride}${text}`)}
   return `${header}\n${events.join('\n')}\n`;
 }
+function hasAssPosition(value){return value!==undefined&&value!==null&&value!==''&&Number.isFinite(Number(value))}
 function clampAssPosition(value,fallback){const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):fallback}
