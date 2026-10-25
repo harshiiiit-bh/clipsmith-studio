@@ -579,10 +579,17 @@ try {
   assert.ok(Number.isFinite(Number(movedTitle?.positionY)), "dragging a preview handle saves vertical text position");
   await page.locator("#exportPreviewEditToggle").click();
   assert.equal(await headingEditor.getAttribute("contenteditable"), "false", "edit mode can be exited without changing the shared text state");
-  await page.locator("#clearExportClipSelectionBtn").click();
-  assert.equal(await page.locator("#exportSelectionCount").textContent(), "0 of 1 selected", "Clear selection works");
+  const clearSelection = page.locator("#clearExportClipSelectionBtn");
+  assert.equal(await clearSelection.isDisabled(), true, "Clear selection is disabled when no clips are selected");
+  assert.equal(await page.locator("#startExportBtn").isDisabled(), true, "export cannot start with an empty selection");
   await page.locator("#selectAllExportClipsBtn").click();
-  assert.equal(await page.locator("#exportSelectionCount").textContent(), "1 of 1 selected", "Select all works");
+  assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (1)", "Select all selects the available clip");
+  assert.equal(await clearSelection.isDisabled(), false, "Clear selection becomes available when a clip is selected");
+  await clearSelection.click();
+  assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (0)", "Clear selection empties the selected clips");
+  assert.equal(await page.locator("#startExportBtn").isDisabled(), true, "export is disabled again after clearing the selection");
+  await page.locator("#selectAllExportClipsBtn").click();
+  assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (1)", "Select all can select clips again after clearing");
 
   assert.equal(pageErrors.length, 0, "no runtime exceptions during interactions: " + pageErrors.join(" | "));
   assert.equal(localRequestFailures.length, 0, "no local assets fail during interaction: " + localRequestFailures.join(" | "));
