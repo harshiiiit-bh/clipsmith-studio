@@ -325,7 +325,7 @@ function updatePreview(){
     bottom:"auto",
     transform:`${style.bgEnabled?"translateX(-50%) ":""}rotate(${clamp(Number(style.rotation??0),-180,180)}deg)`
   });
-  caption.textContent=c?.caption||cap.text||"";
+  caption.textContent=c?(typeof c.caption==="string"?c.caption:(cap.text||"")):(cap.text||"");
   caption.dataset.style=c?.captionStyle?.style||cap.style||"Classic";
   caption.style.color=cap.highlight;
   caption.style.bottom=`${100-cap.positionY}%`;
