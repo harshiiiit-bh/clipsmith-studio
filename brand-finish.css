@@ -353,3 +353,13 @@ a { text-underline-offset: 3px; }
     max-height: 15dvh;
   }
 }
+
+
+/* Preserve the preview renderer's calculated canvas ratio on compact displays. */
+@media (min-width: 821px) {
+  .export-queue .export-preview-stage {
+    flex: 0 0 auto;
+    min-height: 0;
+    max-height: none;
+  }
+}
