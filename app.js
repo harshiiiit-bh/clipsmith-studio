@@ -945,7 +945,7 @@ function outputName(c,i){const prefix=String($("powerExportPrefix")?.value||"").
 function getExportSettings(){return {...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})}}
 
 function getClipSizeEstimate(c){
-  const settings=getExportSettings(),fx={...DEFAULT_FX,...(c?.fx||{})};
+  const settings=getExportSettings(),fx={...DEFAULT_FX,...(c?.fx||state.fx)};
   const sourceVideo=$("previewVideo"),sourceWidth=Number(sourceVideo?.videoWidth)||Number(state.sourceMeta?.width)||1280,sourceHeight=Number(sourceVideo?.videoHeight)||Number(state.sourceMeta?.height)||720;
   const fallbackSizes={"9:16":[720,1280],"1:1":[1080,1080],"4:5":[864,1080],"16:9":[1280,720]};
   const customSize=exportDimensions(state.exportAspect,settings.resolution,sourceWidth,sourceHeight);
@@ -963,13 +963,14 @@ function getClipSizeEstimate(c){
   const sourceBytes=Number(state.sourceFile?.size)||Number(state.sourceMeta?.fileSize)||0;
   const sourceDuration=Number(state.sourceMeta?.duration)||Number(state.duration)||0;
   const audioRate=String(settings.audioBitrate||"128k").match(/[0-9.]+/)?.[0]||"128";
-  return estimateOutputFileSize({
+  const estimate=estimateOutputFileSize({
     clipDurationSeconds:Math.max(0,Number(c?.end)-Number(c?.start)),
     speed:fx.speed,sourceBytes,sourceDurationSeconds:sourceDuration,
     sourceWidth,sourceHeight,outputWidth:outputSize[0],outputHeight:outputSize[1],
     crf:settings.crf,mode:exportMode,audioBitrateKbps:Number(audioRate),
     includeAudio:settings.includeAudio!==false&&!fx.mute,reencode
   });
+  return {...estimate,requiresEncoding};
 }
 function getQueueSizeLabel(c){
   if(exportOutputSizes.has(c.id))return "Final file size · "+humanBytes(exportOutputSizes.get(c.id));
@@ -986,6 +987,11 @@ async function startExport(){
   if(exportBusy)return;
   const chosen=getSelectedExportClips();
   if(!chosen.length)return toast("Select at least one clip to export.","error");
+  if(exportMode==="copy"&&chosen.some(({clip})=>getClipSizeEstimate(clip).requiresEncoding)){
+    exportMode="smart";exportOutputSizes.clear();
+    $(".export-mode").forEach(button=>button.classList.toggle("active",button.dataset.mode==="smart"));
+    toast("Selected edits need re-encoding. Switched to Smart export so your edits are included.");
+  }
   cancelExportRequested=false;exportBusy=true;
   $("startExportBtn").disabled=true;$("startExportBtn").textContent="Preparing export…";
   $("cancelExportBtn").classList.remove("hidden");$("cancelExportBtn").disabled=false;$("cancelExportBtn").textContent="Cancel export";
