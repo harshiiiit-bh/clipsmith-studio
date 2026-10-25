@@ -224,3 +224,75 @@ select:focus-visible, input:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .title-preset-grid-extended button { transition: none; }
 }
+
+
+/* Studio pass 2: discoverable preset library and reliable quick actions. */
+.preset-discovery { display: grid; gap: 9px; margin: 10px 0 7px; min-width: 0; }
+.preset-search-wrap {
+  display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 42px;
+  padding: 0 12px; border: 1px solid #3a4054; border-radius: 11px;
+  background: linear-gradient(135deg,#181b28,#11131b); color: #a7aec0;
+}
+.preset-search-wrap:focus-within { border-color: #a995ff; box-shadow: 0 0 0 3px #9d7cff1b; }
+.preset-search-wrap > span { font-size: 20px; line-height: 1; color: #c6b8ff; }
+.preset-search-wrap input {
+  width: 100%; min-width: 0; padding: 0; border: 0; outline: 0;
+  color: #f5f6fc; background: transparent; font-size: 11px;
+}
+.preset-search-wrap input::placeholder { color: #81899e; }
+.preset-search-wrap input:focus-visible { outline: 0; box-shadow: none; }
+.preset-discovery-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 8px; }
+.preset-category-wrap { display: grid; gap: 5px; min-width: 0; color: #9ea6b9; font-size: 9px; font-weight: 700; letter-spacing: .15px; }
+.preset-category-wrap select { min-height: 36px; width: 100%; padding: 7px 27px 7px 9px; font-size: 10px; }
+.preset-favorites-toggle {
+  min-height: 36px; padding: 0 10px; border: 1px solid #393c50; border-radius: 10px;
+  background: #191b28; color: #d4d8e5; font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.preset-favorites-toggle:hover { border-color: #b9a4ff; background: #28223b; }
+.preset-favorites-toggle[aria-pressed="true"] { border-color: #a995ff; color: #fff; background: #514078; }
+.preset-results-count { margin: 0; min-height: 14px; color: #8d95aa; font-size: 9px; }
+.title-preset-grid-extended .preset-card {
+  position: relative; min-width: 0; min-height: 64px; overflow: visible;
+  isolation: isolate; border-radius: 11px;
+}
+.title-preset-grid-extended .preset-card > [data-title-preset] {
+  width: 100%; height: 100%; min-width: 0; min-height: 68px;
+  padding: 7px 5px 8px; padding-top: 10px;
+}
+.title-preset-grid-extended .preset-card > [data-title-preset][aria-pressed="true"] {
+  border-color: #b6a0ff; background: linear-gradient(150deg,#30264b,#191724);
+  box-shadow: 0 0 0 1px #9e83ff55, 0 7px 18px #0003;
+}
+.title-preset-grid-extended .preset-card > .preset-favorite {
+  position: absolute; z-index: 3; top: 4px; right: 4px;
+  display: grid; place-items: center; width: 23px; height: 23px; min-width: 23px; min-height: 23px;
+  padding: 0; border: 1px solid #41465a; border-radius: 7px;
+  background: #10131beF; color: #b8c0d2; font-size: 15px; line-height: 1;
+  box-shadow: 0 2px 8px #0005; cursor: pointer;
+}
+.title-preset-grid-extended .preset-card > .preset-favorite:hover,
+.title-preset-grid-extended .preset-card > .preset-favorite[aria-pressed="true"] {
+  color: #ffdf84; border-color: #a17d45; background: #342a21;
+}
+.title-preset-grid-extended .preset-card > .preset-favorite[aria-pressed="true"] { font-size: 0; }
+.title-preset-grid-extended .preset-card > .preset-favorite[aria-pressed="true"]::before { content: "★"; font-size: 13px; }
+.title-preset-grid-extended .preset-card.is-current > [data-title-preset]::after {
+  content: "LAST USED"; display: block; margin-top: 4px; color: #c2b2ff;
+  font: 700 7px/1.1 Inter, sans-serif; letter-spacing: .7px;
+}
+.preset-empty-state {
+  grid-column: 1 / -1; padding: 17px 12px; border: 1px dashed #3d4256;
+  border-radius: 12px; color: #a5adbf; background: #ffffff03; font-size: 11px; line-height: 1.5;
+}
+.typography-action-row { display: grid; grid-template-columns: minmax(95px,.75fr) minmax(0,1.6fr); gap: 9px; margin-top: 12px; }
+.typography-action-row > button { min-width: 0; min-height: 40px; padding-inline: 10px; font-size: 10px; }
+#applyStyleAllBtn { white-space: normal; line-height: 1.3; }
+#titleFont { font-size: 11px; }
+@media (max-width: 420px) {
+  .preset-discovery-row { grid-template-columns: minmax(0,1fr); }
+  .preset-favorites-toggle { width: 100%; }
+  .typography-action-row { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-preset-grid-extended .preset-card > [data-title-preset] { transition: none; }
+}
