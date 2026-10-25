@@ -2436,3 +2436,28 @@ select.field option,select.field optgroup { color:#f4f5ff; background-color:#111
 }
 .export-preview-stage video { width: 100%; height: 100%; }
 .export-preview-title, .export-preview-caption, .export-preview-timed-subtitle { box-sizing: border-box; overflow-wrap: anywhere; }
+
+
+/* Output size is a first-class export detail: estimates before rendering,
+   exact encoded bytes afterwards. Keep it readable in narrow queue cards. */
+.queue-item-main .queue-size {
+  display: block;
+  min-width: 0;
+  margin-top: 3px;
+  color: #c9bcff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.queue-item .queue-status {
+  max-width: 115px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+@media (max-width: 520px) {
+  .queue-item-main .queue-size { font-size: 10px; }
+  .queue-item .queue-status { max-width: 88px; font-size: 10px; }
+}

@@ -2,6 +2,69 @@ const MAX_PROJECT_CLIPS = 10000;
 const MIN_SPLIT_FRAGMENT_SECONDS = 0.5;
 const MAX_AUTO_CLIPS = 5000;
 
+/**
+ * Estimate an MP4's size before encoding. This is deliberately a range, not a
+ * promise: CRF-based encodes vary with motion, noise, detail and source codec.
+ * The renderer records the actual Blob size after encoding and replaces it.
+ */
+export function estimateOutputFileSize(options = {}) {
+  const sourceBytes = Math.max(0, Number(options.sourceBytes) || 0);
+  const sourceDuration = Math.max(0, Number(options.sourceDurationSeconds) || 0);
+  const clipDuration = Math.max(0, Number(options.clipDurationSeconds) || 0);
+  const speed = Math.max(0.25, Math.min(4, Number(options.speed) || 1));
+  const outputDuration = clipDuration / speed;
+  if (!outputDuration) return { estimateBytes: 0, minBytes: 0, maxBytes: 0, basis: "unavailable" };
+
+  const sourceWidth = Math.max(2, Number(options.sourceWidth) || 1280);
+  const sourceHeight = Math.max(2, Number(options.sourceHeight) || 720);
+  const outputWidth = Math.max(2, Number(options.outputWidth) || sourceWidth);
+  const outputHeight = Math.max(2, Number(options.outputHeight) || sourceHeight);
+  const sourcePixels = sourceWidth * sourceHeight;
+  const outputPixels = outputWidth * outputHeight;
+  const sourceAverageBitrate = sourceDuration > 0 ? sourceBytes * 8 / sourceDuration : 0;
+  const validSourceBitrate = sourceAverageBitrate >= 200_000;
+  const reencode = options.reencode !== false;
+  const includeAudio = options.includeAudio !== false;
+  const audioRate = includeAudio ? Math.max(0, Number(options.audioBitrateKbps) || 128) * 1000 : 0;
+
+  let estimateBytes;
+  let basis;
+  if (!reencode && validSourceBitrate) {
+    // Stream-copy keeps source encoding; proportional duration is the best
+    // browser-only estimate available without parsing source packet indexes.
+    estimateBytes = sourceBytes * Math.min(1, clipDuration / sourceDuration);
+    basis = "source bitrate";
+  } else {
+    const sourceAudioRate = includeAudio ? Math.min(256_000, sourceAverageBitrate * 0.15) : 0;
+    const sourceVideoRate = validSourceBitrate ? Math.max(0, sourceAverageBitrate - sourceAudioRate) : 0;
+    const pixelScale = outputPixels / sourcePixels;
+    const pixelsRate = (outputPixels / 1_000_000) * 3_000_000;
+    const mode = String(options.mode || "smart");
+    const rawCrf = Number(options.crf);
+    let crf = Number.isFinite(rawCrf) ? Math.min(32, Math.max(16, rawCrf)) : 23;
+    if (mode === "mobile") crf = Math.max(crf, 29);
+    if (mode === "high") crf = Math.min(crf, 20);
+    const crfFactor = 2 ** ((23 - crf) / 6);
+    const baseVideoRate = sourceVideoRate > 0
+      ? Math.max(sourceVideoRate * pixelScale, pixelsRate * 0.65)
+      : pixelsRate;
+    let videoRate = baseVideoRate * crfFactor;
+    if (mode === "mobile") videoRate *= 0.85;
+    videoRate = Math.min(35_000_000, Math.max(350_000, videoRate));
+    estimateBytes = ((videoRate + audioRate) * outputDuration / 8) + 48 * 1024;
+    basis = "resolution and quality estimate";
+  }
+
+  const lowFactor = reencode || !validSourceBitrate ? 0.65 : 0.9;
+  const highFactor = reencode || !validSourceBitrate ? 1.45 : 1.1;
+  return {
+    estimateBytes: Math.max(1, Math.round(estimateBytes)),
+    minBytes: Math.max(1, Math.round(estimateBytes * lowFactor)),
+    maxBytes: Math.max(1, Math.round(estimateBytes * highFactor)),
+    basis
+  };
+}
+
 /** Create a bounded clip plan; null signals a timeline too large for a sensible editor session. */
 export function buildClipSegments(duration, clipSeconds = 30, options = {}) {
   const total = Number(duration);
