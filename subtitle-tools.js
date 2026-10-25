@@ -78,7 +78,7 @@ export function createAssDocument({ title = '', duration = 0, width = 1280, heig
   const titleUnderline=titleStyle.decoration==='underline'?-1:0,titleStrike=titleStyle.decoration==='line-through'?-1:0;
   const titleSpacing=Math.max(-2,Math.min(10,Number(titleStyle.spacing)||0));
   const titleShadow=Math.max(0,Math.min(16,Math.max(Number(titleStyle.shadow??6)||0,(Number(titleStyle.glow)||0)*.35)));
-  const titleOutlineWidth=Math.max(0,Math.min(12,Number(titleStyle.outlineWidth??Math.max(1,titleSize*.09))));
+  const titleOutlineWidth=Math.max(0,Math.min(30,Number(titleStyle.bgEnabled?(titleStyle.bgPadding??10):(titleStyle.outlineWidth??Math.max(1,titleSize*.09))));
   const titleRotation=Math.max(-180,Math.min(180,Number(titleStyle.rotation)||0));
   const titleAlignment=({left:7,center:8,right:9})[titleStyle.align]||8;
   const titleText=String(title??'');
