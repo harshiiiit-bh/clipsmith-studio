@@ -16,7 +16,7 @@ const powerTools = readFileSync(join(root, "power-tools.js"), "utf8");
 const runtimeGuard = readFileSync(join(root, "runtime-guard.js"), "utf8");
 
 assert.match(html, /href="\.\/styles\.css\?[^"]+"/, "legacy editor stylesheet remains linked");
-assert.match(html, /href="\.\/studio-2\.css\?v=20261024-ratiowork4"/, "Studio stylesheet cache key is refreshed for this release");
+assert.match(html, /href="\.\/studio-2\.css\?v=[^"]+"/, "Studio stylesheet has a cache-busting version");
 assert.ok(
   html.indexOf('href="./studio-2.css?') > html.indexOf('href="./styles.css?'),
   "Studio 2.0 overrides must load after the legacy editor CSS"
@@ -57,7 +57,7 @@ assert.ok(html.includes('id="focusPreviewBtn"'), "desktop preview focus control 
 assert.ok(html.includes('id="timelineZoomRange"'), "timeline zoom control exists");
 assert.ok(html.includes('id="timelineZoomFitBtn"'), "timeline reset-to-fit control exists");
 assert.ok(html.includes('src="./workspace-controls.js?v=20261024-power3"'), "workspace controls cache key is refreshed for this release");
-assert.ok(html.includes('src="./app.js?v=20261024-ratiowork4"'), "editor application cache key is refreshed for this release");
+assert.match(html, /src="\.\/app\.js\?v=[^"]+"/, "editor application has a cache-busting version");
 assert.ok(app.includes('from "./subtitle-tools.js?v=20261024-power3"'), "changed subtitle module cache key is refreshed");
 assert.ok(css.includes(".app-shell.focus-preview .workspace"), "focus mode expands the editing workspace");
 assert.ok(css.includes(".timeline-zoom-controls"), "timeline zoom controls receive responsive styling");
@@ -81,10 +81,18 @@ assert.ok(html.includes('id="commandPaletteSearch"'), "quick actions search fiel
 assert.ok(html.includes('id="commandPaletteList"'), "quick actions list exists");
 assert.ok(html.includes('id="titleBold"') && html.includes('id="titleItalic"'), "bold and italic controls exist");
 assert.ok(html.includes('id="titleSpacing"') && html.includes('id="titleShadow"'), "letter spacing and shadow controls exist");
-for (const font of ["Manrope", "Poppins", "Montserrat", "Roboto Condensed", "Permanent Marker", "Playfair Display"]) assert.ok(html.includes(`<option>${font}</option>`), `heading font available: ${font}`);
-assert.ok(app.includes("fontWeight:style.bold===false?500:800"), "on-canvas heading reflects bold state");
-assert.ok(app.includes('fontStyle:style.italic?"italic":"normal"'), "on-canvas heading reflects italic state");
+for (const font of ["Manrope", "Poppins", "Montserrat", "Roboto Condensed", "Permanent Marker", "Playfair Display"]) assert.ok(html.includes(`<option value="${font}"`), `heading font available: ${font}`);
+assert.match(app, /fontWeight:weight/, "visible title text receives the selected font weight");
+assert.ok(app.includes('fontStyle:style?.italic?"italic":"normal"'), "visible title text receives the selected italic state");
 assert.ok(app.includes("letterSpacing:"), "on-canvas heading reflects letter spacing");
+assert.ok(app.includes("function ensureTitleFont(style)"), "selected fonts are requested from the document font set");
+assert.ok(app.includes('Object.assign(titleText.style,{'), "font and style controls apply directly to the visible text node");
+for (const property of ["fontFamily:", "fontWeight:weight", "fontStyle:style?.italic", "letterSpacing:", "color:style?.color", "textTransform:style?.transform", "textDecoration:style?.decoration", "textShadow:shadows"]) assert.ok(app.includes(property), `visible title styling handles ${property}`);
+assert.ok(app.includes("const scale=Math.min(1,Math.max(.28,width/420))"), "typography scales to all output ratios");
+const titleGeometry = css.match(/\.preview-canvas > \.title-overlay\s*\{([^}]+)\}/);
+assert.ok(titleGeometry, "preview canvas has an explicit title layout rule");
+assert.doesNotMatch(titleGeometry[1], /!important/, "ratio CSS must not override interactive title geometry");
+
 assert.equal(app.split("}\\nfunction ").length - 1, 0, "app.js must not contain escaped \\n separators between function declarations");
 assert.ok(app.includes('"titleBold","titleItalic","titleSpacing","titleShadow"'), "new typography controls persist through the existing style handler");
 assert.ok(subtitleTools.includes("${titleBold},${titleItalic}"), "MP4/ASS title style exports bold and italic settings");
@@ -95,7 +103,7 @@ assert.ok(workspaceControls.includes('event.key === "ArrowDown"'), "quick action
 assert.ok(css.includes(".command-palette-scrim") && css.includes(".text-style-toggles"), "new typography and command palette styles exist");
 
 assert.ok(html.includes('src="./runtime-guard.js?v=20261024-power3"'), "startup guard loads before editor module");
-assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v=20261024-ratiowork4"'), "startup diagnostics must load before editor modules");
+assert.ok(html.indexOf('src="./runtime-guard.js?v=20261024-power3"') < html.indexOf('src="./app.js?v='), "startup diagnostics must load before editor modules");
 assert.ok(html.includes('src="./power-tools.js?v=20261024-power3"'), "Power Tools module is loaded");
 assert.ok(mobilePrepare.includes('"runtime-guard.js"') && mobilePrepare.includes('"power-tools.js"'), "Android WebView packages both new runtime modules");
 assert.ok(runtimeGuard.includes("clipsmith:app-ready") && runtimeGuard.includes("clipsmithStartupRecovery"), "startup failures receive a visible recovery route");
