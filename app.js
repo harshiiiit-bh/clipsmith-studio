@@ -473,6 +473,8 @@ function fitCanvasOverlayText(){
   Object.assign(titleText.style,{
     fontFamily:`"${font}", Inter, sans-serif`,
     fontSize:titleFontSize+"px",
+    width:style?.bgEnabled?"auto":"100%",
+    maxWidth:"100%",
     fontWeight:weight,
     fontStyle:style?.italic?"italic":"normal",
     letterSpacing:(clamp(Number(style?.spacing)||0,-2,10)*scale)+"px",
