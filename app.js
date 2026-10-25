@@ -883,7 +883,6 @@ async function renderClip(c,i,mode){
 function displayClipTitle(c){return getClipDisplayTitle(c,state.clips,state.seriesTitle)}
 function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
 function getExportRecord(clip){const record=clip&&state.exportHistory&&state.exportHistory[clip.id];return record&&typeof record==="object"&&!Array.isArray(record)?record:null}
-function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
 function updateExportSelectionSummary(){
   const chosen=getSelectedExportClips(),todo=state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id)),done=state.clips.filter(c=>getExportRecord(c)&&!exportSelectedClipIds.has(c.id));
   const count=$("exportSelectionCount");if(count)count.textContent=`${todo.length} to export · ${done.length} exported`;
