@@ -105,6 +105,36 @@ try {
 
   const response = await page.goto(origin + "/", { waitUntil: "domcontentloaded" });
   assert.equal(response?.status(), 200, "editor document should load");
+
+  // Regression: browser-rendered text must produce a real, full-frame transparent PNG.
+  const overlayProbe = await page.evaluate(async () => {
+    const module = await import("/export-overlay.js?overlay-browser-regression=1");
+    const blob = await module.createExportOverlayPng({
+      width: 720,
+      height: 1280,
+      title: "DANGEROUS FAMILY HOLIDAY · PART 1",
+      titleStyle: { font: "Arial", size: 30, color: "#ff2255", outline: "#000000", outlineWidth: 2, opacity: 1, bold: true, weight: 800, align: "center", positionY: 17, shadow: 4 },
+      caption: "Overlay export regression",
+      captionStyle: { style: "Classic", highlight: "#9e83ff", positionY: 78, size: 32 },
+      watermark: { text: "ClipSmith", position: "bottom-right", color: "#ffffff", size: 24, opacity: 0.7 }
+    });
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(bitmap, 0, 0);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let visiblePixels = 0;
+    for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) visiblePixels++;
+    return { type: blob.type, size: blob.size, width: bitmap.width, height: bitmap.height, visiblePixels };
+  });
+  assert.equal(overlayProbe.type, "image/png", "export overlays are encoded as transparent PNG files");
+  assert.equal(overlayProbe.width, 720, "export overlay width matches encoded video width");
+  assert.equal(overlayProbe.height, 1280, "export overlay height matches encoded video height");
+  assert.ok(overlayProbe.size > 1000, "export overlay must not be an empty image");
+  assert.ok(overlayProbe.visiblePixels > 1000, "heading, caption, and watermark create visible overlay pixels");
+
   await page.waitForSelector("#app-shell");
   await page.waitForTimeout(800);
   await page.waitForFunction(() => {
