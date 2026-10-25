@@ -496,6 +496,20 @@ try {
   assert.equal(savedExportSettings.watermark, true, "watermark setting is autosaved");
   assert.equal(savedExportSettings.watermarkText, "My Channel", "watermark text is autosaved");
   assert.equal(await page.locator("#exportPreviewStage").isVisible(), true, "export center contains the final-output preview stage");
+  await page.locator("#exportAspectSelect").selectOption("4:5");
+  const previewGeometry = await page.locator("#exportPreviewStage").evaluate(stage => {
+    const rect = stage.getBoundingClientRect();
+    const title = document.querySelector("#exportPreviewTitle");
+    return { width: rect.width, height: rect.height, ratio: rect.width / rect.height,
+      panelWidth: stage.parentElement.clientWidth,
+      titleFontSize: parseFloat(getComputedStyle(title).fontSize) };
+  });
+  assert.ok(Math.abs(previewGeometry.ratio - 0.8) < 0.025,
+    "4:5 export preview frame keeps the actual portrait ratio");
+  assert.ok(previewGeometry.width < previewGeometry.panelWidth * 0.8,
+    "portrait export preview is a portrait canvas, not a stretched landscape panel");
+  assert.ok(Math.abs(previewGeometry.titleFontSize / previewGeometry.width - 30 / 420) < 0.02,
+    "preview heading size scales to the output frame rather than the surrounding panel");
   await page.locator("#exportPreviewClipSelect").evaluate(select => {
     if (!select.options.length) {
       const option = document.createElement("option");
