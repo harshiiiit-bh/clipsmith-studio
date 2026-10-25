@@ -66,6 +66,12 @@ assert.ok(workspaceControls.includes('classList.toggle("focus-preview"'), "focus
 assert.ok(workspaceControls.includes("aria-pressed"), "focus control reports its active state");
 assert.ok(workspaceControls.includes("MutationObserver"), "timeline zoom remains applied after clip sequence updates");
 assert.ok(workspaceControls.includes("dataset.baseWidth"), "timeline zoom scales base widths without compounding");
+assert.doesNotMatch(html, /class="clip-strip-section"/, "duplicate Browse clips panel is removed");
+assert.match(app, /function renderTimeline\(\)[\s\S]*?e\.draggable=true/, "the single clip sequence supports drag-to-reorder");
+assert.match(app, /reorderClip\(state\.clips,from,c\.id/, "dragging sequence blocks uses the existing safe reorder helper");
+assert.match(css, /\.timeline-clip-copy/, "the unified clip sequence shows clip labels and time ranges");
+assert.match(css, /grid-template-rows: auto minmax\(0,auto\) minmax\(64px,1fr\) !important/, "the timeline is laid out as one clip navigator");
+
 assert.ok(workspaceControls.includes('event.key.toLowerCase() === "f"'), "F toggles preview focus mode");
 assert.ok(workspaceControls.includes('event.key === "Escape"'), "Escape exits preview focus mode");
 assert.ok(html.includes("<kbd>F</kbd>"), "keyboard help documents the focus shortcut");
