@@ -87,3 +87,8 @@ ClipSmith can be built as a native Android shell with its web editor packaged lo
 - Editor assets are bundled into the app. Video conversion and speech/object models are loaded only when used and may require an internet connection on first use.
 - Memory-safe mode warns about source files/durations that may strain a phone, keeps exports serial, and releases temporary FFmpeg/AI runtimes after heavy tasks. The Memory Vault separately autosaves project state and remembers a source-video copy in IndexedDB when local storage permits it. If the media copy cannot be saved, re-import the video after reopening. Use Save to export an independent project backup for important work.
 - The automated APK is debug-signed for direct testing/sideloading, not a Play Store release. Debug builds may require uninstalling an older build before installing a later build if their signing keys differ.
+
+
+## Premium spacing and responsive layout
+
+The latest visual layer standardises spacing across the header, tool rail, editing canvas, timeline, inspector, modals and mobile navigation. Responsive layouts reduce toolbar crowding, make actions wrap or collapse before colliding, increase panel breathing room, and use a seven-column mobile navigation so all destinations fit without an extra overflowing tab. Long inspector content scrolls inside its own panel rather than covering neighbouring work areas.
