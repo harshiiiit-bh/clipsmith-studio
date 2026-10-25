@@ -35,6 +35,7 @@ assert.match(app,/function handleStartExportClick\(\)/,"export startup errors ar
 assert.match(app,/const currentExportIds=new Set\(state\.clips\.map\(c=>c\.id\)\)/,"new clips are selected when the export queue is opened again");
 assert.match(app,/cancelExportRequested/,"export supports cancelling the active task");
 assert.match(app,/activeEngine\.terminate\(\)/,"cancel immediately terminates the active FFmpeg render");assert.match(app,/Stopping the current render and cancelling the remaining queue/,"cancel explains that the active render is being stopped");
+assert.match(app,/cancelExportRequested=false;\s*\$\("cancelExportBtn"\)/,"cancel flag resets after the queue so later exports remain usable");assert.match(app,/exportSelectedClip: async \(\) => \{[\s\S]*?openExport\(\);[\s\S]*?await startExport\(\)/,"Power Tools single-clip export uses the shared cancellable export queue");
 assert.match(app,/function getClipSizeEstimate\(c\)/,"export queue estimates output size before rendering");assert.match(app,/Final file size · /,"successful renders expose exact encoded file size");assert.match(app,/Estimated size · /,"queue rows distinguish an estimate from a final file size");assert.match(app,/totalExportedBytes/,"completion summary totals exact exported bytes");
 assert.match(app,/function renderExportPreview\(\)/,"final-output preview has a dedicated renderer");
 assert.match(app,/frameWidth=Math\.floor\(Math\.min\(availableWidth,maxHeight\*aspectRatio\)\)/,"output preview is constrained by width and aspect ratio");
