@@ -1,9 +1,9 @@
 import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
 import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-power3";
-import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-deepaudit5";
+import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-deepaudit6";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
-import { getImportKind, chooseVideoFromZip } from "./media-import.js?v=20261024-zipimport1";
+import { getImportKind, chooseVideoFromZip } from "./media-import.js?v=20261025-zipimport2";
 import { scheduleCurrentSession, saveCurrentSession, loadCurrentSession, storeCurrentMedia, loadCurrentMedia, getCurrentMemoryInfo, clearCurrentMemory, flushCurrentSession } from "./memory-vault.js?v=20261024-power3";
 
 const $=id=>document.getElementById(id); const $$=(s,r=document)=>[...r.querySelectorAll(s)];
