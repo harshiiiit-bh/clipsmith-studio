@@ -2077,3 +2077,36 @@ body.archive-picker-open{overflow:hidden}
   .preview-stage > .preview-badges { top: 3px; }
   .preview-stage > .preview-badges span { padding: 3px 5px; font-size: 8px; }
 }
+
+
+/* Manual caption styles share the same stable canvas as timed subtitles.
+   Keep these rules after the ratio layout so no aspect mode silently drops
+   their typography or pop-card styling. */
+.preview-canvas > .caption-overlay {
+  line-height: 1.15;
+  text-shadow: 0 2px 3px #000, 0 5px 20px #000;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.preview-canvas > .caption-overlay[data-style="Karaoke"] {
+  text-transform: uppercase;
+  letter-spacing: .01em;
+  font-weight: 800;
+}
+.preview-canvas > .caption-overlay[data-style="Pop"] {
+  left: 50%;
+  right: auto;
+  width: max-content;
+  max-width: 80%;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: #0a0b10c9;
+  text-align: center;
+  transform: translateX(-50%);
+}
+.preview-canvas > .caption-overlay[data-style="Cinematic"] {
+  font-family: Georgia, serif;
+  font-weight: 600;
+  letter-spacing: .03em;
+}
