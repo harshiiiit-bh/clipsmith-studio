@@ -1019,8 +1019,9 @@ async function startExport(){
     }
   }finally{
     exportBusy=false;
+    cancelExportRequested=false;
     $("cancelExportBtn").classList.add("hidden");$("cancelExportBtn").disabled=true;
-    $$ (".export-clip-check").forEach(input=>input.disabled=false);
+    $ (".export-clip-check").forEach(input=>input.disabled=false);
     updateExportSelectionSummary();renderExportPreview();
     if(memorySafeMode)releaseTemporaryMemory({silent:true});
   }
@@ -1145,18 +1146,15 @@ $("memorySaveNowBtn")?.addEventListener("click",saveMemoryNow);$("memoryClearBtn
     if (!clip) throw new Error("Select a clip before exporting it.");
     if (!state.sourceFile) throw new Error("Re-import the source video before exporting this project.");
     if (exportBusy) throw new Error("Another export is already running.");
-    exportBusy = true;
-    try {
-      const index = state.clips.findIndex((item) => item.id === clip.id);
-      const blob = await renderClip(clip, index, exportMode);
-      downloadBlob(blob, outputName(clip, index));
-      qstatus(clip.id,"done",100,blob.size);
-      toast(`Selected clip exported · ${humanBytes(blob.size)}`);
-      return true;
-    } finally {
-      exportBusy = false;
-      if (memorySafeMode) releaseTemporaryMemory({ silent: true });
-    }
+    // Use the same visible queue for shortcut exports so cancellation, size
+    // estimates, exact output bytes, failures and recovery stay consistent.
+    $("powerToolsModal")?.classList.add("hidden");
+    openExport();
+    if ($("export-queue")?.classList.contains("hidden")) return false;
+    exportSelectedClipIds = new Set([clip.id]);
+    renderQueue(state.clips);
+    await startExport();
+    return exportOutputSizes.has(clip.id);
   }
 });
 
