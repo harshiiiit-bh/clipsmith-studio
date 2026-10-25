@@ -1,5 +1,5 @@
 import { generateCreatorIdeas } from "./creator-assistant.js?v=20261024-power3";
-import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges } from "./editor-tools.js?v=20261024-power3";
+import { splitClipAt, duplicateClip, moveClip, createProjectManifest, validateProjectManifest, buildClipSegmentsExcludingRanges, renumberAutoTitles, removeClipAndRenumber, reorderClip, rankSceneChanges, getClipDisplayTitle } from "./editor-tools.js?v=20261025-titleexport1";
 import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "./subtitle-tools.js?v=20261025-proexport1";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
@@ -297,7 +297,7 @@ function ensureTitleFont(style){
 function updatePreview(){
   const c=selected(),style=c?.titleStyle||state.titleStyle,cap=c?.captionStyle||state.captionStyle;
   const title=$("titleOverlay"),caption=$("captionOverlay"),titleText=$("titleOverlayText");
-  titleText.textContent=c?.title||`${state.seriesTitle} · Part 1`;
+  titleText.textContent=getClipDisplayTitle(c,state.clips,state.seriesTitle);
   ensureTitleFont(style);
   // The overlay is a positioning/background box. Typography belongs to the
   // editable text node so every property affects the visible letters reliably.
@@ -703,8 +703,9 @@ async function renderClip(c,i,mode){
   const audioFadeIn=clamp(Number(settings.audioFadeIn)||0,0,Math.min(2,outputDuration)),audioFadeOut=clamp(Number(settings.audioFadeOut)||0,0,Math.min(2,outputDuration));
   const watermarkText=settings.watermark?String(settings.watermarkText||"").trim().slice(0,80):"";
   const includeTitle=settings.includeTitle!==false,includeManualCaption=settings.includeManualCaption!==false,includeTimedSubtitles=settings.includeTimedSubtitles!==false;
+  const exportTitle=includeTitle?getClipDisplayTitle(c,state.clips,state.seriesTitle):"";
   const cuesForClip=includeTimedSubtitles?state.subtitleCues.filter(q=>q.end>c.start&&q.start<c.end).map(q=>({start:Math.max(0,Number(q.start)-c.start),end:Math.min(c.end,Number(q.end))-c.start,text:q.text})).filter(q=>q.end>q.start&&String(q.text||"").trim()):[];
-  const needsOverlay=state.burnOverlays!==false&&Boolean((includeTitle&&c.title)||(includeManualCaption&&c.caption)||cuesForClip.length||watermarkText);
+  const needsOverlay=state.burnOverlays!==false&&Boolean(exportTitle||(includeManualCaption&&c.caption)||cuesForClip.length||watermarkText);
   const needsAudioFilter=settings.normalizeAudio||audioFadeIn>0||audioFadeOut>0||fx.speed!==1||fx.volume!==1||fx.normalize;
   const needsVisualFilter=fx.speed!==1||fx.brightness!==0||fx.contrast!==1||fx.saturation!==1||fx.blur>0||needsAspect||needsResolution||needsFrameRate||videoFadeIn>0||videoFadeOut>0||needsOverlay;
   const customEncoding=Number(settings.crf)!==23||settings.encoderPreset!=="veryfast"||settings.audioBitrate!=="128k";
@@ -721,7 +722,7 @@ async function renderClip(c,i,mode){
     const width=Number(desiredSize?.[0]||sourceWidth),height=Number(desiredSize?.[1]||sourceHeight);
     if(needsOverlay){
       const ass=createAssDocument({
-        title:includeTitle?(c.title||""):"",
+        title:exportTitle,
         caption:includeManualCaption?(c.caption||""):"",
         duration:outputDuration,width,height,cues:cuesForClip,
         titleStyle:c.titleStyle||state.titleStyle,
