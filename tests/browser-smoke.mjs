@@ -483,7 +483,7 @@ try {
   await page.locator("#captionPositionY").evaluate(element => {
     element.value = "90"; element.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  assert.ok(Math.abs(parseFloat(await page.locator("#captionOverlay").evaluate(element => getComputedStyle(element).bottom)) - 10) < 0.1,
+  assert.equal(await page.locator("#captionOverlay").evaluate(element => element.style.bottom), "10%",
     "caption position slider updates the preview immediately");
   await page.locator("#captionText").fill("Updated live caption");
   await page.waitForFunction(() => document.querySelector("#captionOverlay")?.textContent === "Updated live caption", null, { timeout: 3000 });
