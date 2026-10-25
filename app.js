@@ -865,7 +865,7 @@ function renderExportPreview(){
     color:style.color||"#fff",opacity:String(clamp(Number(style.opacity??1),0,1)),
     textTransform:style.transform||"none",textAlign:style.align||"center",textDecoration:style.decoration||"none",
     lineHeight:String(clamp(Number(style.lineHeight??1.08),.8,1.5)),
-    textShadow:Number(style.shadow)>0?`0 2px ${Math.max(1,Number(style.shadow)*scale)}px ${style.shadowColor||"#000"}`:"none",
+    textShadow:[Number(style.shadow)>0?`0 2px ${Math.max(1,Number(style.shadow)*scale)}px ${style.shadowColor||"#000"}`:"",Number(style.glow)>0?`0 0 ${Math.max(1,Number(style.glow)*scale)}px ${style.glowColor||"#8b5cf6"}`:""].filter(Boolean).join(",")||"none",WebkitTextStroke:`${Math.max(0,Number(style.outlineWidth)||0)*scale}px ${style.outline||"#000"}`,
     left:style.bgEnabled?"50%":"5%",right:style.bgEnabled?"auto":"5%",width:style.bgEnabled?"fit-content":"auto",maxWidth:style.bgEnabled?"84%":"90%",
     top:`${clamp(Number(style.positionY??17),4,90)}%`,
     transform:`${style.bgEnabled?"translateX(-50%) ":""}rotate(${clamp(Number(style.rotation)||0,-180,180)}deg)`,
@@ -888,7 +888,7 @@ function renderExportPreview(){
   video.playbackRate=clamp(Number(fx.speed)||1,.25,4);
   video.volume=clamp(Number($("exportPreviewVolume")?.value??1),0,1);
   video.muted=Boolean($("exportPreviewMute")?.checked)||settings.includeAudio===false||!!fx.mute;
-  const duration=c?Math.max(0,c.end-c.start):0,elapsed=hasSource?Math.max(0,video.currentTime-(c?.start||0)):0;
+  const duration=c?Math.max(0,c.end-c.start):0,elapsed=hasSource?Math.max(0,video.currentTime-(c?.start||0)):0;const audioIn=clamp(Number(settings.audioFadeIn)||0,0,duration),audioOut=clamp(Number(settings.audioFadeOut)||0,0,duration);const audioGainIn=audioIn>0?clamp(elapsed/audioIn,0,1):1;const audioGainOut=audioOut>0?clamp((duration-elapsed)/audioOut,0,1):1;video.volume=clamp(Number($("exportPreviewVolume")?.value??1)*clamp(Number(fx.volume??1),0,1)*Math.min(audioGainIn,audioGainOut),0,1);
   const fadeIn=clamp(Number(settings.videoFadeIn)||0,0,duration),fadeOut=clamp(Number(settings.videoFadeOut)||0,0,duration);
   let darkness=fadeIn>0?clamp(1-elapsed/fadeIn,0,1):0;
   if(fadeOut>0&&elapsed>duration-fadeOut)darkness=Math.max(darkness,clamp((elapsed-(duration-fadeOut))/fadeOut,0,1));
@@ -898,7 +898,7 @@ function renderExportPreview(){
   const time=$("exportPreviewTime");if(time)time.textContent=`${formatPreviewTime(current)} / ${formatPreviewTime(duration)}`;
   const play=$("exportPreviewPlayToggle");if(play){play.disabled=!hasSource||!c;play.textContent=video.paused?"▶ Preview":"Ⅱ Pause"}
   const heading=$("exportPreviewHeading");if(heading)heading.textContent=c?displayClipTitle(c):"No clip selected";
-  const meta=$("exportPreviewMeta");if(meta)meta.textContent=c?`${fmt(c.end-c.start)} clip · ${state.exportAspect==="source"?"source aspect":"output "+state.exportAspect} · ${settings.resolution==="source"?"source resolution":settings.resolution+"p"}`:"Select a clip to preview";
+  const meta=$("exportPreviewMeta");if(meta)meta.textContent=c?`${fmt(c.end-c.start)} clip · ${state.exportAspect==="source"?"source aspect":"output "+state.exportAspect} · ${settings.resolution==="source"?"source resolution":settings.resolution+"p"} · ${settings.frameRate==="source"?"source FPS":settings.frameRate+" FPS"} · CRF ${settings.crf}`:"Select a clip to preview";
 }
 function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
