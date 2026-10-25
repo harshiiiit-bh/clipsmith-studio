@@ -277,3 +277,20 @@ export function reorderClip(clips, fromId, toId, options = {}) {
   if (typeof options.titleFor === 'function') return { clips: renumberAutoTitles(result, options.titleFor), selectedId: moving.id };
   return { clips: result, selectedId: moving.id };
 }
+
+
+/**
+ * Keep preview and export heading text consistent. A clip without a custom
+ * title still displays the series/part fallback in the editor, so export must
+ * burn that same title rather than silently omitting the heading.
+ */
+export function getClipDisplayTitle(clip, clips = [], seriesTitle = "Your series title") {
+  const customTitle = String(clip?.title ?? "").trim();
+  if (customTitle) return customTitle;
+  const clipIndex = Array.isArray(clips) && clip?.id
+    ? clips.findIndex((item) => item?.id === clip.id)
+    : -1;
+  const partNumber = clipIndex >= 0 ? clipIndex + 1 : 1;
+  const baseTitle = String(seriesTitle ?? "").trim() || "Your series title";
+  return `${baseTitle} · Part ${partNumber}`;
+}
