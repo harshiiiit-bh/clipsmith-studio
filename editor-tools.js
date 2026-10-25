@@ -285,13 +285,17 @@ export function reorderClip(clips, fromId, toId, options = {}) {
  * burn that same title rather than silently omitting the heading.
  */
 export function getClipDisplayTitle(clip, clips = [], seriesTitle = "Your series title") {
-  const customTitle = String(clip?.title ?? "").trim();
-  if (customTitle) return customTitle;
   const clipIndex = Array.isArray(clips) && clip?.id
     ? clips.findIndex((item) => item?.id === clip.id)
     : -1;
-  const partNumber = clipIndex >= 0 ? clipIndex + 1 : 1;
   const baseTitle = String(seriesTitle ?? "").trim() || "Your series title";
+  // Auto titles follow the live sequence order instead of stale stored numbering.
+  if (clip?.autoTitle === true && clipIndex >= 0) {
+    return `${baseTitle} · Part ${clipIndex + 1}`;
+  }
+  const customTitle = String(clip?.title ?? "").trim();
+  if (customTitle) return customTitle;
+  const partNumber = clipIndex >= 0 ? clipIndex + 1 : 1;
   return `${baseTitle} · Part ${partNumber}`;
 }
 
