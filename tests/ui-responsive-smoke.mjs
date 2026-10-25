@@ -94,7 +94,7 @@ assert.ok(titleGeometry, "preview canvas has an explicit title layout rule");
 assert.doesNotMatch(titleGeometry[1], /!important/, "ratio CSS must not override interactive title geometry");
 
 assert.equal(app.split("}\\nfunction ").length - 1, 0, "app.js must not contain escaped \\n separators between function declarations");
-assert.ok(app.includes('"titleBold","titleItalic","titleSpacing","titleShadow"'), "new typography controls persist through the existing style handler");
+assert.match(app, /titleControlMap=\{[^}]*titleBold:"bold"[^}]*titleItalic:"italic"[^}]*titleSpacing:"spacing"[^}]*titleShadow:"shadow"/, "new typography controls persist through the existing style handler");
 assert.ok(subtitleTools.includes("${titleBold},${titleItalic}"), "MP4/ASS title style exports bold and italic settings");
 assert.ok(subtitleTools.includes("${titleSpacing}"), "MP4/ASS title style exports letter spacing");
 assert.ok(subtitleTools.includes("${(titleShadow/3).toFixed(1)}"), "MP4/ASS title style exports shadow depth");
