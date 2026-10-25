@@ -1936,13 +1936,17 @@ body.archive-picker-open{overflow:hidden}
   transform: none;
 }
 .preview-canvas > .subtitle-overlay[data-style="Pop"] {
-  left: 5% !important;
-  right: 5% !important;
-  width: auto !important;
-  max-width: 90% !important;
+  left: 50% !important;
+  right: auto !important;
+  width: max-content !important;
+  max-width: 80% !important;
   margin: 0 !important;
   display: block !important;
-  transform: none !important;
+  transform: translateX(-50%) !important;
+  padding: 5px 12px !important;
+  border-radius: 8px !important;
+  background: #0a0b10c9 !important;
+  text-align: center !important;
 }
 
 
