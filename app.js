@@ -879,7 +879,7 @@ async function renderClip(c,i,mode){
   }
 }
 function displayClipTitle(c){return getClipDisplayTitle(c,state.clips,state.seriesTitle)}
-function exportQueueLabel(c,index){return c?.autoTitle===true?displayClipTitle(c):`Part ${index+1} · ${displayClipTitle(c)}`}
+function exportQueueLabel(c,index){const title=displayClipTitle(c),base=String(state.seriesTitle||"").trim()||"Your series title";return c?.autoTitle===true||title===`${base} · Part ${index+1}`?title:`Part ${index+1} · ${title}`}
 function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
 function updateExportSelectionSummary(){
   const chosen=getSelectedExportClips(),total=state.clips.length;
@@ -1154,7 +1154,7 @@ function readMp4VideoDimensions(data){
 }
 function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;e.querySelector('.queue-status').textContent=s;e.querySelector('.queue-progress span').style.width=p+'%'}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
-function outputName(c,i){const exportClip=c?.autoTitle===true?{...c,title:displayClipTitle(c)}:c;return buildExportFilename(exportClip,i,{prefix:$("powerExportPrefix")?.value||"",mode:getExportSettings().filenameMode})}
+function outputName(c,i){const title=displayClipTitle(c),exportClip=title!==String(c?.title||"")?{...c,title}:c;return buildExportFilename(exportClip,i,{prefix:$("powerExportPrefix")?.value||"",mode:getExportSettings().filenameMode})}
 function getExportSettings(){return {...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})}}
 async function getFFmpeg(){if(ffmpegInstance)return ffmpegInstance;if(ffmpegLoading)return ffmpegLoading;ffmpegLoading=(async()=>{const {FFmpeg}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js');const {fetchFile,toBlobURL}=await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js');const ff=new FFmpeg();const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';await ff.load({classWorkerURL:new URL("./ffmpeg/worker.js?v=20261024-workerfix1",import.meta.url).href,coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm'),workerURL:await toBlobURL(`${base}/ffmpeg-core.worker.js`,'text/javascript')});ff.__fetchFile=fetchFile;ffmpegInstance=ff;return ff})();try{return await ffmpegLoading}catch(e){ffmpegLoading=null;throw e}}
 async function startExport(){
