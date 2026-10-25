@@ -279,11 +279,6 @@ function updatePreview(){
   const c=selected(),style=c?.titleStyle||state.titleStyle,cap=c?.captionStyle||state.captionStyle;
   const title=$("titleOverlay"),caption=$("captionOverlay");
   $("titleOverlayText").textContent=c?.title||`${state.seriesTitle} · Part 1`;
-  const shadow=clamp(Number(style.shadow??6),0,16),glow=clamp(Number(style.glow??0),0,24);
-  const shadows=[];
-  if(shadow>0)shadows.push(`0 2px ${Math.max(1,shadow)}px ${style.shadowColor||"#000000"}`);
-  if(glow>0)shadows.push(`0 0 ${glow}px ${style.glowColor||"#8b5cf6"}`);
-  const outlineWidth=clamp(Number(style.outlineWidth??2),0,12);
   Object.assign(title.style,{
     fontFamily:style.font||"Inter",
     fontSize:String(style.size)+"px",
@@ -292,8 +287,6 @@ function updatePreview(){
     letterSpacing:String(Number(style.spacing)||0)+"px",
     color:style.color||"#ffffff",
     opacity:clamp(Number(style.opacity??1),0,1),
-    textShadow:shadows.join(", ")||"none",
-    WebkitTextStroke:outlineWidth>0?`${outlineWidth}px ${style.outline||"#000000"}`:"0 transparent",
     textTransform:style.transform||"none",
     textAlign:style.align||"center",
     textDecoration:style.decoration||"none",
@@ -445,11 +438,23 @@ function fitCanvasOverlayText(){
   const width=canvas.clientWidth;
   if(width<2)return;
   const clip=selected(),style=clip?.titleStyle||state.titleStyle;
+  // Scale typography effects with the preview canvas. Previously the font
+  // shrank for 9:16, while its full-size black stroke and shadow stayed fixed,
+  // making the title look muddy or almost black on narrow portrait previews.
   const scale=Math.min(1,Math.max(.4,width/420));
-  const titleFontSize=Math.max(12,(Number(style?.size)||30)*scale);
+  const titleFontSize=Math.max(13,(Number(style?.size)||30)*scale);
   const title=$("titleOverlay"),titleText=$("titleOverlayText");
-  if(title){title.style.fontSize=titleFontSize+"px";title.style.lineHeight="1.08"}
-  if(titleText)titleText.style.fontSize=titleFontSize+"px";
+  if(title){title.style.fontSize=titleFontSize+"px";title.style.lineHeight=String(clamp(Number(style?.lineHeight??1.08),.8,1.5))}
+  if(titleText){
+    titleText.style.fontSize=titleFontSize+"px";
+    const shadow=clamp(Number(style?.shadow??6),0,16),glow=clamp(Number(style?.glow??0),0,24);
+    const shadows=[];
+    if(shadow>0)shadows.push(`0 ${Math.max(.5,2*scale)}px ${Math.max(.6,shadow*scale)}px ${style?.shadowColor||"#000000"}`);
+    if(glow>0)shadows.push(`0 0 ${Math.max(.6,glow*scale)}px ${style?.glowColor||"#8b5cf6"}`);
+    titleText.style.textShadow=shadows.join(", ")||"none";
+    const outlineWidth=clamp(Number(style?.outlineWidth??2),0,12)*scale;
+    titleText.style.setProperty("-webkit-text-stroke",outlineWidth>0?`${outlineWidth.toFixed(2)}px ${style?.outline||"#000000"}`:"0 transparent");
+  }
   const caption=$("captionOverlay");
   if(caption)caption.style.fontSize=Math.max(11,21*Math.min(1,Math.max(.52,width/420)))+"px";
   const subtitle=$("subtitleOverlay");
