@@ -524,6 +524,12 @@ try {
 
   // Advanced export preferences must autosave and rehydrate with the project.
   await page.locator("#export-queue").evaluate(element => element.classList.remove("hidden"));
+  await page.locator("#queueSearchInput").fill("queue-search-regression-no-hit");
+  assert.equal(await page.locator("#queueList .queue-empty strong").textContent(), "No matches found", "clip search shows a useful empty state for unmatched queries");
+  assert.equal(await page.locator("#clearQueueSearchBtn").isVisible(), true, "clear search appears while a query is active");
+  await page.locator("#clearQueueSearchBtn").click();
+  assert.equal(await page.locator("#queueSearchInput").inputValue(), "", "clear search resets the filter");
+  assert.equal(await page.locator("#clearQueueSearchBtn").isVisible(), false, "clear search hides after the query is removed");
   await page.locator("#exportResolution").selectOption("1080");
   await page.locator("#exportFrameRate").selectOption("30");
   await page.locator("#exportCrf").evaluate(element => {
