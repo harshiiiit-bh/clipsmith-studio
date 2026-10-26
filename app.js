@@ -4,8 +4,8 @@ import { groupSubtitleWords, createSrt, wavToFloat32, createAssDocument } from "
 import { createExportOverlayPng } from "./export-overlay.js?v=20261025-exportedit2";
 import { findHighlightMoments, auditTranscript, suggestSubtitleCleanup, makeChapterLabels, calculateReadingLoad, scorePlatformReadiness } from "./ai-creator-tools.js?v=20261024-power3";
 import { getMemoryProfile, getMediaMemoryWarning } from "./mobile-memory.js?v=20261024-power3";
-import { getImportKind, getVideoMimeType, chooseVideoFromZip } from "./media-import.js?v=20261025-zipimport2";
-import { scheduleCurrentSession, saveCurrentSession, loadCurrentSession, storeCurrentMedia, loadCurrentMedia, getCurrentMemoryInfo, clearCurrentMemory, flushCurrentSession } from "./memory-vault.js?v=20261024-power3";
+import { getImportKind, getVideoMimeType, getVideoFileExtension, chooseVideoFromZip } from "./media-import.js?v=20261026-media-reliability-v3";
+import { scheduleCurrentSession, saveCurrentSession, loadCurrentSession, storeCurrentMedia, loadCurrentMedia, getCurrentMemoryInfo, clearCurrentMemory, flushCurrentSession, chooseNewestSessionSnapshot } from "./memory-vault.js?v=20261026-session-recovery-v2";
 
 const $=id=>document.getElementById(id); const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
@@ -22,6 +22,7 @@ const DEFAULT_EXPORT_SETTINGS=Object.freeze({resolution:"source",frameRate:"sour
 const state={projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},exportAspect:"source",burnOverlays:true,burnOverlaysExplicitlySet:false,exportSettings:{...DEFAULT_EXPORT_SETTINGS},aspect:"16:9",showSafe:false,seriesTitle:"Your series title",autoParts:true,titleStyle:{font:"Inter",size:30,color:"#ffffff",outline:"#000000",opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17},captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},clips:[],exportHistory:{},fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null};
 const MAX_CONCURRENT_EXPORTS=1; let lastCommitted=null, visionModelPromise=null, ffmpegInstance=null, ffmpegLoading=null, ffmpegSourceFile=null, ffmpegSourcePath=null, ffmpegSourceInstance=null, exportMode="smart", exportBusy=false, exportAspect="source";
 let exportSelectedClipIds=new Set(), exportKnownClipIds=new Set(), exportPreviewClipId=null, cancelExportRequested=false, exportSelectionInitialized=false, exportQueueView="todo", exportQueueSearch="";
+let exportQueueStates=new Map();
 let exportPreviewEditing=false;
 let aiHighlights=[],aiAudit=null,aiCleanup=null,aiChapters=[],aiReadability=null,aiReadiness=null,lastCreatorIdeas=null;
 let previewSourceVersion=0,previewCompatibilityBusy=false,queuedPreviewRecoveryFile=null;
@@ -51,14 +52,14 @@ function setMemoryVaultStatus(title,detail=""){
 }
 function humanBytes(bytes){if(!Number.isFinite(Number(bytes))||Number(bytes)<=0)return "0 B";const units=["B","KB","MB","GB","TB"];let value=Number(bytes),unit=0;while(value>=1024&&unit<units.length-1){value/=1024;unit++}return `${value.toFixed(unit?1:0)} ${units[unit]}`}
 
-function persist(){const snapshot=snap();try{localStorage.setItem("clipsmith.project.v2",JSON.stringify(snapshot));const draft=$("memoryDraftStatus");if(draft){draft.textContent="Draft autosaved on this device";draft.dataset.state="ready"}}catch{setMemoryStatus("Local autosave storage is full or unavailable. Use Save to export a project file before closing the app.","error")}scheduleCurrentSession(snapshot)}
+function persist(){const snapshot={...snap(),__clipsmithSavedAt:Date.now()};try{localStorage.setItem("clipsmith.project.v2",JSON.stringify(snapshot));const draft=$("memoryDraftStatus");if(draft){draft.textContent="Draft autosaved on this device";draft.dataset.state="ready"}}catch{setMemoryStatus("Local autosave storage is full or unavailable. Use Save to export a project file before closing the app.","error")}scheduleCurrentSession(snapshot)}
 function commit(){const now=snap();if(lastCommitted&&JSON.stringify(now)!==JSON.stringify(lastCommitted)){state.history.push(lastCommitted);if(state.history.length>50)state.history.shift()}state.future=[];lastCommitted=now;persist();setSave("● Saved")}
 function setSave(t){const n=$("saveState");if(!n)return;n.textContent=t;clearTimeout(n._timer);n._timer=setTimeout(()=>n.textContent="● Ready",1500)}
 function toast(msg,type="info"){let t=document.querySelector(".toast");if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t)}t.textContent=msg;t.dataset.type=type;t.classList.add("show");clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove("show"),2600)}
 function selected(){return state.clips.find(c=>c.id===state.selectedId)||null}
 function undo(){const p=state.history.pop();if(!p)return toast("Nothing to undo");state.future.push(snap());restore(p);setSave("● Undo")}
 function redo(){const n=state.future.pop();if(!n)return toast("Nothing to redo");state.history.push(snap());restore(n);setSave("● Redo")}
-function restore(s){const durableExportHistory=state.exportHistory&&typeof state.exportHistory==="object"&&!Array.isArray(state.exportHistory)?state.exportHistory:{};Object.assign(state,JSON.parse(JSON.stringify(s)));state.exportHistory={...(s.exportHistory&&typeof s.exportHistory==="object"&&!Array.isArray(s.exportHistory)?s.exportHistory:{}),...durableExportHistory};state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.burnOverlaysExplicitlySet=s.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(s.exportSettings||{})};state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
+function restore(s){const durableExportHistory=state.exportHistory&&typeof state.exportHistory==="object"&&!Array.isArray(state.exportHistory)?state.exportHistory:{};Object.assign(state,JSON.parse(JSON.stringify(s)));delete state.__clipsmithSavedAt;state.exportHistory={...(s.exportHistory&&typeof s.exportHistory==="object"&&!Array.isArray(s.exportHistory)?s.exportHistory:{}),...durableExportHistory};state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];state.subtitleCues=Array.isArray(s.subtitleCues)?s.subtitleCues:[];state.subtitleSettings={style:"Classic",highlight:"#9e83ff",positionY:82,...(s.subtitleSettings||{})};state.exportAspect=s.exportAspect||"source";state.burnOverlays=s.burnOverlays!==false;state.burnOverlaysExplicitlySet=s.burnOverlaysExplicitlySet===true;state.exportSettings={...DEFAULT_EXPORT_SETTINGS,...(s.exportSettings||{})};state.duration=Number(state.sourceMeta?.duration)||state.duration||0;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);lastCommitted=snap();renderAll();persist()}
 function hasRecoverableDraft(snapshot){
   return Boolean(snapshot&&(
     (Array.isArray(snapshot.clips)&&snapshot.clips.length)||
@@ -86,6 +87,7 @@ function showDraftRecoveryPrompt(snapshot){
 function applyRecoveredDraft(s){
   if(!s||typeof s!=="object")return false;
   Object.assign(state,s);
+  delete state.__clipsmithSavedAt;
   state.clips=Array.isArray(s.clips)?s.clips:[];
   state.exportHistory=s.exportHistory&&typeof s.exportHistory==="object"&&!Array.isArray(s.exportHistory)?s.exportHistory:{};
   state.skipRanges=Array.isArray(s.skipRanges)?s.skipRanges:[];
@@ -168,15 +170,15 @@ async function startFreshProject(){
 }
 async function refreshMemoryVaultStats(){try{const info=await getCurrentMemoryInfo();const node=$("memoryVaultUsage");if(node){const used=Number(info.usageBytes)||0,quota=Number(info.quotaBytes)||0;node.textContent=used>0?(`${humanBytes(used)} used`+(quota>0?" of "+humanBytes(quota):"")):"Storage estimate unavailable"}}catch{const node=$("memoryVaultUsage");if(node)node.textContent="Storage estimate unavailable"}}
 async function rememberSourceMedia(file){if(memoryClearInProgress)return;const generation=++mediaSaveGeneration;setMemoryVaultStatus("Remembering source video…",`${file.name} · checking device storage`);try{if(navigator.storage?.persist)await navigator.storage.persist().catch(()=>false);const estimate=await navigator.storage?.estimate?.().catch(()=>null);const free=Number(estimate?.quota)-Number(estimate?.usage);if(Number.isFinite(free)&&free>0&&file.size>free*.92)throw new Error("Not enough available browser storage for this video");if(memoryClearInProgress)return;await storeCurrentMedia(file);await refreshMemoryVaultStats();if(generation===mediaSaveGeneration)setMemoryVaultStatus("Source video remembered",`${file.name} · ${humanBytes(file.size)} stored on this device. The app can reconnect it after restart.`)}catch(error){if(generation===mediaSaveGeneration)setMemoryVaultStatus("Project autosave is active",`The video is loaded for this session, but could not be stored (${error?.message||"storage unavailable"}). Re-import it after a restart. Export a project file as a backup.`)}}
-async function saveMemoryNow(){const button=$("memorySaveNowBtn");if(button)button.disabled=true;setMemoryVaultStatus("Saving project memory…","Saving the current edit, settings, subtitles and available source video.");try{await flushCurrentSession(snap());if(state.sourceFile)await rememberSourceMedia(state.sourceFile);else setMemoryVaultStatus("Project memory saved","The edit and settings are stored locally. Import the source video again if it is not remembered.");const info=await getCurrentMemoryInfo();await refreshMemoryVaultStats();if(info.hasSession&&!info.hasMedia&&state.sourceMeta)setMemoryVaultStatus("Project memory saved","Your edit and subtitles are saved, but the source video needs re-importing after restart.");toast("Project memory saved on this device")}catch(error){setMemoryVaultStatus("Local backup unavailable",error?.message||"Use Save to download a portable project file.");toast("Could not save device memory · use Save to export a backup","error")}finally{if(button)button.disabled=false}}
+async function saveMemoryNow(){const button=$("memorySaveNowBtn");if(button)button.disabled=true;setMemoryVaultStatus("Saving project memory…","Saving the current edit, settings, subtitles and available source video.");try{const snapshot={...snap(),__clipsmithSavedAt:Date.now()};try{localStorage.setItem("clipsmith.project.v2",JSON.stringify(snapshot))}catch{}await flushCurrentSession(snapshot);if(state.sourceFile)await rememberSourceMedia(state.sourceFile);else setMemoryVaultStatus("Project memory saved","The edit and settings are stored locally. Import the source video again if it is not remembered.");const info=await getCurrentMemoryInfo();await refreshMemoryVaultStats();if(info.hasSession&&!info.hasMedia&&state.sourceMeta)setMemoryVaultStatus("Project memory saved","Your edit and subtitles are saved, but the source video needs re-importing after restart.");toast("Project memory saved on this device")}catch(error){setMemoryVaultStatus("Local backup unavailable",error?.message||"Use Save to download a portable project file.");toast("Could not save device memory · use Save to export a backup","error")}finally{if(button)button.disabled=false}}
 async function clearDeviceMemory(){if(!confirm("Clear all ClipSmith project memory and remembered video stored on this device? This will remove the local draft too."))return;memoryClearInProgress=true;try{await clearCurrentMemory();localStorage.removeItem("clipsmith.project.v2");localStorage.removeItem("clipsmith.project.v1");if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);location.reload()}catch(error){memoryClearInProgress=false;toast(`Could not clear local memory: ${error?.message||"storage error"}`,"error")}}
 async function restoreRememberedMemory(){
   setMemoryVaultStatus("Checking device memory…","Looking for your last project and remembered source video.");
   try{
-    if(!pendingRecoverySnapshot){
-      const savedSession=await loadCurrentSession();
-      if(savedSession?.snapshot&&hasRecoverableDraft(savedSession.snapshot))pendingRecoverySnapshot=savedSession.snapshot;
-    }
+    const localSnapshot=pendingRecoverySnapshot;
+    const savedSession=await loadCurrentSession();
+    pendingRecoverySnapshot=chooseNewestSessionSnapshot(localSnapshot,savedSession?.snapshot);
+    if(!hasRecoverableDraft(pendingRecoverySnapshot))pendingRecoverySnapshot=null;
     const snapshot=pendingRecoverySnapshot;
     const savedMedia=await loadCurrentMedia();
     const meta=snapshot?.sourceMeta||null;
@@ -685,7 +687,7 @@ async function ensureExportSourceFile(ff,clipId){
   if(ffmpegSourceInstance===ff&&ffmpegSourceFile===file&&ffmpegSourcePath)return ffmpegSourcePath;
   if(ffmpegSourceInstance===ff&&ffmpegSourcePath){try{await ff.deleteFile(ffmpegSourcePath)}catch{}}
   ffmpegSourceFile=null;ffmpegSourcePath=null;ffmpegSourceInstance=null;
-  const extension=String(file.name||"video.mp4").match(/\\.([a-z0-9]{1,8})$/i)?.[1]?.toLowerCase()||"mp4";
+  const extension=getVideoFileExtension(file.name||"video.mp4");
   const input="source-"+uid()+"."+extension;
   qstatus(clipId,"reading source once",0);
   try{
@@ -884,11 +886,11 @@ function renderQueue(clips){
     }).join("")||(query?'<div class="queue-empty"><strong>No matches found</strong><span>No clips match “'+esc(query)+'”. Try a title, part number, or time.</span></div>':(current.length?'<div class="queue-empty">No exported clips yet. Use “Mark selected exported” for clips you already downloaded earlier.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>'));
   }else{
     list.innerHTML=visible.map(c=>{
-      const i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id),record=getExportRecord(c);
+      const i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id),record=getExportRecord(c),queueState=exportQueueStates.get(c.id),statusText=queueState?.status||(record&&checked?"re-export queued":checked?"waiting":"not selected"),progress=clamp(Number(queueState?.progress)||0,0,100);
       return '<div class="queue-item '+(checked?"is-export-selected":"is-export-unselected")+'" id="queue-'+esc(c.id)+'" tabindex="0" role="group" aria-label="'+esc(exportQueueLabel(c,i)+" · Press Enter or Space to select or deselect.")+'" style="cursor:pointer" title="Click or press Enter/Space to select this clip">'+
       '<label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Select '+esc(exportQueueLabel(c,i))+' for export"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
-      '<div class="queue-item-main"><strong>'+esc(exportQueueLabel(c,i))+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+'</small><div class="queue-progress"><span></span></div></div>'+
-      '<small class="queue-status">'+(record&&checked?"re-export queued":checked?"waiting":"not selected")+'</small></div>';
+      '<div class="queue-item-main"><strong>'+esc(exportQueueLabel(c,i))+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+'</small><div class="queue-progress"><span style="width:'+progress+'%"></span></div></div>'+
+      '<small class="queue-status">'+esc(statusText)+'</small></div>';
     }).join("")||(query?'<div class="queue-empty"><strong>No matches found</strong><span>No clips match “'+esc(query)+'”. Try a title, part number, or time.</span></div>':(current.length?'<div class="queue-empty">All clips have been exported. Open Exported to re-export any clip, or add new clips.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>'));
   }
   const previewSelect=$("exportPreviewClipSelect");
@@ -924,6 +926,7 @@ async function reExportClip(id){
 function setExportClipSelection(id,checked){
   if(exportBusy)return;
   const clip=state.clips.find(c=>c.id===id);if(!clip)return;
+  exportQueueStates.delete(id);
   if(checked)exportSelectedClipIds.add(id);else exportSelectedClipIds.delete(id);
   const item=$("queue-"+id);
   if(item){
@@ -1173,7 +1176,7 @@ function readMp4VideoDimensions(data){
   }
   return null;
 }
-function qstatus(id,s,p=0){const e=$("queue-"+id);if(!e)return;const status=e.querySelector(".queue-status"),progress=e.querySelector(".queue-progress span");if(status)status.textContent=s;if(progress)progress.style.width=p+"%"}
+function qstatus(id,s,p=0){const progressValue=clamp(Number(p)||0,0,100),statusText=String(s??"");exportQueueStates.set(id,{status:statusText,progress:progressValue});const e=$("queue-"+id);if(!e)return;const status=e.querySelector(".queue-status"),progress=e.querySelector(".queue-progress span");if(status)status.textContent=statusText;if(progress)progress.style.width=progressValue+"%"}
 function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 function outputName(c,i){const title=displayClipTitle(c),exportClip=title!==String(c?.title||"")?{...c,title}:c;return buildExportFilename(exportClip,i,{prefix:$("powerExportPrefix")?.value||"",mode:getExportSettings().filenameMode})}
 function getExportSettings(){return {...DEFAULT_EXPORT_SETTINGS,...(state.exportSettings||{})}}
@@ -1182,7 +1185,7 @@ async function startExport(){
   if(exportBusy)return;
   const chosen=getSelectedExportClips();
   if(!chosen.length)return toast("Select at least one clip to export.","error");
-  cancelExportRequested=false;exportBusy=true;
+  cancelExportRequested=false;exportBusy=true;exportQueueStates.clear();
   $("startExportBtn").disabled=true;$("startExportBtn").textContent="Preparing export…";
   $("cancelExportBtn").classList.remove("hidden");$("cancelExportBtn").disabled=false;$("cancelExportBtn").textContent="Cancel export";
   $("exportRecoveryActions").classList.add("hidden");
@@ -1237,8 +1240,8 @@ async function handleStartExportClick(){
 }
 $("startExportBtn").addEventListener("click",()=>{void handleStartExportClick()});
 $("cancelExportBtn").onclick=cancelExport;
-$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;getVisibleExportQueueClips(state.clips).forEach(c=>exportSelectedClipIds.add(c.id));renderQueue(state.clips)};
-$("clearExportClipSelectionBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds.clear();renderQueue(state.clips)};
+$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;getVisibleExportQueueClips(state.clips).forEach(c=>{exportSelectedClipIds.add(c.id);exportQueueStates.delete(c.id)});renderQueue(state.clips)};
+$("clearExportClipSelectionBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds.clear();exportQueueStates.clear();renderQueue(state.clips)};
 $("queueTodoTab").onclick=()=>setExportQueueView("todo");
 $("queueExportedTab").onclick=()=>setExportQueueView("exported");
 $("queueSearchInput").addEventListener("input",event=>{exportQueueSearch=String(event.target.value||"");renderQueue(state.clips)});

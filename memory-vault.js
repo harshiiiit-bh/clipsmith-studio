@@ -6,6 +6,14 @@ let dbPromise;
 let snapshotTimer;
 let mediaWriteQueue = Promise.resolve();
 
+export function chooseNewestSessionSnapshot(localSnapshot, indexedSnapshot) {
+  if (!localSnapshot) return indexedSnapshot || null;
+  if (!indexedSnapshot) return localSnapshot;
+  const localSavedAt = Number(localSnapshot.__clipsmithSavedAt) || 0;
+  const indexedSavedAt = Number(indexedSnapshot.__clipsmithSavedAt) || 0;
+  return indexedSavedAt > localSavedAt ? indexedSnapshot : localSnapshot;
+}
+
 function openDatabase() {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {

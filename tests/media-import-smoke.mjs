@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { getImportKind, getVideoMimeType, formatMediaBytes } from "../media-import.js";
+import { getImportKind, getVideoMimeType, getVideoFileExtension, formatMediaBytes } from "../media-import.js";
 
 const root = new URL("../", import.meta.url);
 const html = readFileSync(new URL("index.html", root), "utf8");
@@ -23,6 +23,9 @@ assert.equal(getImportKind({ name: "folder.7z", type: "application/x-7z-compress
 assert.equal(getImportKind({ name: "camera-file", type: "video/mp4" }), "video", "video MIME types should be accepted even without an extension");
 assert.equal(getImportKind({ name: "notes.pdf", type: "application/pdf" }), "unsupported");
 assert.equal(getVideoMimeType("episode.mkv"), "video/x-matroska");
+assert.equal(getVideoFileExtension("episode.MKV"), "mkv", "export source filenames preserve their actual extension");
+assert.equal(getVideoFileExtension("source video.m2ts"), "m2ts", "multi-part video extensions are preserved");
+assert.equal(getVideoFileExtension("video-without-extension"), "mp4", "unknown extensions keep a predictable fallback");
 assert.equal(getVideoMimeType("episode.mp4"), "video/mp4");
 assert.equal(formatMediaBytes(1024), "1.00 KB");
 assert.equal(formatMediaBytes(1024 * 1024), "1.00 MB");
@@ -54,6 +57,7 @@ assert.ok(app.indexOf("if(mime.includes('text/html'))")<app.indexOf("readBlobWit
 assert.match(app, /recoverPreviewCompatibility/, "decoder failures should launch compatibility recovery");
 assert.match(app,/getVideoMimeType\(name,blob\.type\|\|mime\)/,"direct video links infer a usable video MIME type from the filename when the server sends a generic type");
 assert.match(app, /libx264/);
+assert.ok(app.includes('getVideoFileExtension(file.name||"video.mp4")'), "the FFmpeg source cache uses the shared extension parser");
 assert.match(app, /original source retained for export/i);
 
 assert.match(app, /function syncPlaybackClip\(time\)/,

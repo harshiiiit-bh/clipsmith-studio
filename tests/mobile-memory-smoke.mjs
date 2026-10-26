@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { getMemoryProfile, getMediaMemoryWarning } from "../mobile-memory.js";
+import { chooseNewestSessionSnapshot } from "../memory-vault.js";
 
 const low=getMemoryProfile({deviceMemory:2,userAgent:"Mozilla/5.0 (Linux; Android 15)"});
 const balanced=getMemoryProfile({deviceMemory:4,userAgent:"Android"});
@@ -12,4 +13,10 @@ assert.ok(balanced.recommendedSourceBytes<high.recommendedSourceBytes);
 assert.match(getMediaMemoryWarning({fileSize:220*1024*1024,duration:2700,profile:low}),/memory/i);
 assert.equal(getMediaMemoryWarning({fileSize:10*1024*1024,duration:60,profile:low}),"");
 assert.equal(getMemoryProfile({userAgent:"Desktop"}).tier,"standard");
+const localOlder={projectName:"Local older",__clipsmithSavedAt:100};
+const indexedNewer={projectName:"IndexedDB newer",__clipsmithSavedAt:200};
+assert.equal(chooseNewestSessionSnapshot(localOlder,indexedNewer),indexedNewer,"recovery prefers newer IndexedDB snapshots when localStorage is stale or full");
+assert.equal(chooseNewestSessionSnapshot(indexedNewer,localOlder),indexedNewer,"recovery does not replace newer local drafts with older database copies");
+assert.equal(chooseNewestSessionSnapshot(localOlder,{projectName:"Legacy IndexedDB"}),localOlder,"legacy snapshots without timestamps remain compatible");
+assert.equal(chooseNewestSessionSnapshot(null,indexedNewer),indexedNewer,"IndexedDB remains available when localStorage has no draft");
 console.log("ClipSmith mobile memory checks passed.");

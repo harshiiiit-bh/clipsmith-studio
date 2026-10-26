@@ -24,6 +24,10 @@ export function getImportKind(file) {
   return "unsupported";
 }
 
+export function getVideoFileExtension(fileName) {
+  return String(fileName || "").match(/\.([a-z0-9]{1,8})$/i)?.[1]?.toLowerCase() || "mp4";
+}
+
 export function getVideoMimeType(fileName, fallbackType = "") {
   const extension = String(fileName || "").match(/\.([a-z0-9]{1,8})$/i)?.[1]?.toLowerCase();
   return MIME_BY_EXTENSION[extension] || (String(fallbackType).startsWith("video/") ? fallbackType : "application/octet-stream");
