@@ -919,7 +919,7 @@ function renderQueue(clips){
       const when=record?.at&&Number.isFinite(Date.parse(record.at))?new Date(record.at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
       const detail=record?.manual?"Previously exported · marked by you":"Exported "+(when||"previously")+(Number(record?.size)>0?" · "+formatFileSize(record.size):"");
       const title=exportQueueLabel(c,i);
-      return '<div class="queue-item queue-item-exported '+(checked?"is-reexport-selected is-export-selected":"is-reexport-unselected is-export-unselected")+'" id="queue-'+esc(c.id)+'" style="cursor:pointer" title="Click anywhere on this clip to select it">'+
+      return '<div class="queue-item queue-item-exported '+(checked?"is-reexport-selected is-export-selected":"is-reexport-unselected is-export-unselected")+'" id="queue-'+esc(c.id)+'" tabindex="0" role="group" aria-label="'+esc(title+" · Press Enter or Space to select or deselect.")+'" style="cursor:pointer" title="Click or press Enter/Space to select this clip">'+
         '<label class="queue-clip-check" title="Select this clip for batch re-export"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Select '+esc(title)+' for re-export"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
         '<div class="queue-item-main"><strong>'+esc(title)+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+' · '+esc(detail)+'</small></div>'+
         '<button class="soft-btn reexport-clip" type="button" data-clip-id="'+esc(c.id)+'" '+(exportBusy?"disabled":"")+' >↻ Re-export</button></div>';
@@ -927,7 +927,7 @@ function renderQueue(clips){
   }else{
     list.innerHTML=visible.map(c=>{
       const i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id),record=getExportRecord(c);
-      return '<div class="queue-item '+(checked?"is-export-selected":"is-export-unselected")+'" id="queue-'+esc(c.id)+'" style="cursor:pointer" title="Click anywhere on this clip to select it">'+
+      return '<div class="queue-item '+(checked?"is-export-selected":"is-export-unselected")+'" id="queue-'+esc(c.id)+'" tabindex="0" role="group" aria-label="'+esc(exportQueueLabel(c,i)+" · Press Enter or Space to select or deselect.")+'" style="cursor:pointer" title="Click or press Enter/Space to select this clip">'+
       '<label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Select '+esc(exportQueueLabel(c,i))+' for export"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
       '<div class="queue-item-main"><strong>'+esc(exportQueueLabel(c,i))+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+'</small><div class="queue-progress"><span></span></div></div>'+
       '<small class="queue-status">'+(record&&checked?"re-export queued":checked?"waiting":"not selected")+'</small></div>';
@@ -970,6 +970,7 @@ function setExportClipSelection(id,checked){
   const item=$("queue-"+id);
   if(item){
     const checkbox=item.querySelector(".export-clip-check");if(checkbox)checkbox.checked=checked;
+    item.setAttribute("aria-label",exportQueueLabel(clip,state.clips.indexOf(clip))+(checked?" is selected.":" is not selected.")+" Press Enter or Space to change selection.");
     item.classList.toggle("is-export-selected",checked);item.classList.toggle("is-export-unselected",!checked);
     if(item.classList.contains("queue-item-exported")){item.classList.toggle("is-reexport-selected",checked);item.classList.toggle("is-reexport-unselected",!checked)}
   }
@@ -1286,6 +1287,7 @@ $("queueSearchInput").addEventListener("input",event=>{exportQueueSearch=String(
 $("clearQueueSearchBtn").onclick=()=>{exportQueueSearch="";$("queueSearchInput").value="";renderQueue(state.clips);$("queueSearchInput").focus()};
 $("markExportedSelectedBtn").onclick=markSelectedClipsExported;
 $("queueList").addEventListener("click",event=>{const button=event.target.closest(".reexport-clip");if(button){void reExportClip(button.dataset.clipId);return}const item=event.target.closest(".queue-item");if(!item||exportBusy||event.target.closest(".queue-clip-check,input,button,a,select,textarea,label,[contenteditable='true']"))return;const input=item.querySelector(".export-clip-check");if(input&&!input.disabled)setExportClipSelection(input.dataset.clipId,!exportSelectedClipIds.has(input.dataset.clipId))});
+$("queueList").addEventListener("keydown",event=>{const item=event.target.closest(".queue-item");if(!item||event.target!==item||exportBusy||(event.key!=="Enter"&&event.key!==" "))return;const input=item.querySelector(".export-clip-check");if(!input||input.disabled)return;event.preventDefault();setExportClipSelection(input.dataset.clipId,!exportSelectedClipIds.has(input.dataset.clipId))});
 $("queueList").addEventListener("change",event=>{const input=event.target.closest(".export-clip-check");if(input)setExportClipSelection(input.dataset.clipId,input.checked)});
 function seekExportPreviewToClip(c){
   const video=$("exportPreviewVideo");if(!video||!c||video.readyState<1)return;
