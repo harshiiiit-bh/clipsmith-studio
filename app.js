@@ -21,7 +21,7 @@ const DEFAULT_FX={preset:"Original",brightness:0,contrast:1,saturation:1,blur:0,
 const DEFAULT_EXPORT_SETTINGS=Object.freeze({resolution:"source",frameRate:"source",crf:23,encoderPreset:"veryfast",audioBitrate:"128k",fitMode:"contain",videoFadeIn:0,videoFadeOut:0,audioFadeIn:0,audioFadeOut:0,includeTitle:true,includeManualCaption:true,includeTimedSubtitles:true,includeAudio:true,normalizeAudio:false,watermark:false,watermarkText:"ClipSmith",watermarkPosition:"bottom-right",watermarkColor:"#ffffff",watermarkSize:28,watermarkOpacity:72,filenameMode:"number-title",metadataTitle:"",writeMetadata:true});
 const state={projectName:"Untitled Project",sourceFile:null,sourceUrl:"",sourceMeta:null,visualTags:[],duration:0,selectedId:null,durationPreset:30,skipRanges:[],subtitleCues:[],subtitleSettings:{style:"Classic",highlight:"#9e83ff",positionY:82},exportAspect:"source",burnOverlays:true,burnOverlaysExplicitlySet:false,exportSettings:{...DEFAULT_EXPORT_SETTINGS},aspect:"16:9",showSafe:false,seriesTitle:"Your series title",autoParts:true,titleStyle:{font:"Inter",size:30,color:"#ffffff",outline:"#000000",opacity:1,bold:true,italic:false,spacing:0,shadow:6,weight:800,transform:"none",align:"center",decoration:"none",outlineWidth:2,shadowColor:"#000000",glow:0,glowColor:"#8b5cf6",bgEnabled:false,bgColor:"#111827",bgOpacity:.72,bgPadding:10,bgRadius:10,rotation:0,lineHeight:1.08,positionY:17},captionStyle:{style:"Classic",text:"",highlight:"#9e83ff",positionY:78},clips:[],exportHistory:{},fx:{...DEFAULT_FX},history:[],future:[],activeTool:"media",objectUrl:null};
 const MAX_CONCURRENT_EXPORTS=1; let lastCommitted=null, visionModelPromise=null, ffmpegInstance=null, ffmpegLoading=null, ffmpegSourceFile=null, ffmpegSourcePath=null, ffmpegSourceInstance=null, exportMode="smart", exportBusy=false, exportAspect="source";
-let exportSelectedClipIds=new Set(), exportKnownClipIds=new Set(), exportPreviewClipId=null, cancelExportRequested=false, exportSelectionInitialized=false, exportQueueView="todo";
+let exportSelectedClipIds=new Set(), exportKnownClipIds=new Set(), exportPreviewClipId=null, cancelExportRequested=false, exportSelectionInitialized=false, exportQueueView="todo", exportQueueSearch="";
 let exportPreviewEditing=false;
 let aiHighlights=[],aiAudit=null,aiCleanup=null,aiChapters=[],aiReadability=null,aiReadiness=null,lastCreatorIdeas=null;
 let previewSourceVersion=0,previewCompatibilityBusy=false,queuedPreviewRecoveryFile=null;
@@ -884,6 +884,11 @@ function displayClipTitle(c){return getClipDisplayTitle(c,state.clips,state.seri
 function exportQueueLabel(c,index){const title=displayClipTitle(c),base=String(state.seriesTitle||"").trim()||"Your series title";return c?.autoTitle===true||title===`${base} · Part ${index+1}`?title:`Part ${index+1} · ${title}`}
 function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
 function getExportRecord(clip){const record=clip&&state.exportHistory&&state.exportHistory[clip.id];return record&&typeof record==="object"&&!Array.isArray(record)?record:null}
+function getVisibleExportQueueClips(current=state.clips){
+  const all=Array.isArray(current)?current:[],viewItems=exportQueueView==="exported"?all.filter(c=>getExportRecord(c)):all.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id)),query=String(exportQueueSearch||"").trim().toLocaleLowerCase();
+  if(!query)return viewItems;
+  return viewItems.filter(c=>{const index=all.indexOf(c),title=exportQueueLabel(c,index),searchable=[title,"part "+(index+1),String(index+1),fmt(c.start),fmt(c.end),fmt(c.end-c.start),String(c.id||"")].join(" ").toLocaleLowerCase();return searchable.includes(query)});
+}
 function updateExportSelectionSummary(){
   const chosen=getSelectedExportClips(),todo=state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id)),done=state.clips.filter(c=>getExportRecord(c));
   const count=$("exportSelectionCount");if(count)count.textContent=todo.length+" queued · "+done.length+" exported";
@@ -893,8 +898,11 @@ function updateExportSelectionSummary(){
   if(todoTab){todoTab.textContent="To export ("+todo.length+")";todoTab.disabled=exportBusy;todoTab.classList.toggle("active",exportQueueView==="todo");todoTab.setAttribute("aria-selected",String(exportQueueView==="todo"))}
   if(doneTab){doneTab.textContent="Exported ("+done.length+")";doneTab.disabled=exportBusy;doneTab.classList.toggle("active",exportQueueView==="exported");doneTab.setAttribute("aria-selected",String(exportQueueView==="exported"))}
   const actions=$("exportSelectionActions");if(actions)actions.classList.remove("hidden");
-  const visibleCount=exportQueueView==="exported"?done.length:todo.length;
-  const selectAll=$("selectAllExportClipsBtn");if(selectAll)selectAll.disabled=exportBusy||visibleCount===0;
+  const query=String(exportQueueSearch||"").trim(),visibleCount=getVisibleExportQueueClips(state.clips).length;
+  const visibleCountLabel=$("queueVisibleCount");if(visibleCountLabel)visibleCountLabel.textContent=query?(visibleCount+" match"+(visibleCount===1?"":"es")):(visibleCount+" clip"+(visibleCount===1?"":"s"));
+  const clearSearch=$("clearQueueSearchBtn");if(clearSearch)clearSearch.classList.toggle("hidden",!query);
+  const searchInput=$("queueSearchInput");if(searchInput&&searchInput.value!==exportQueueSearch)searchInput.value=exportQueueSearch;
+  const selectAll=$("selectAllExportClipsBtn");if(selectAll){selectAll.disabled=exportBusy||visibleCount===0;selectAll.textContent=query?"Select matches ("+visibleCount+")":"Select all";}
   const clear=$("clearExportClipSelectionBtn");if(clear)clear.disabled=exportBusy;
   const mark=$("markExportedSelectedBtn");if(mark){mark.classList.toggle("hidden",exportQueueView==="exported");mark.disabled=exportBusy||chosen.length===0||exportQueueView==="exported"}
 }
@@ -904,8 +912,9 @@ function renderQueue(clips){
   const current=Array.isArray(clips)?clips:[];
   const todo=current.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id));
   const done=current.filter(c=>getExportRecord(c));
+  const visible=getVisibleExportQueueClips(current),query=String(exportQueueSearch||"").trim();
   if(exportQueueView==="exported"){
-    list.innerHTML=done.map(c=>{
+    list.innerHTML=visible.map(c=>{
       const record=getExportRecord(c),i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id);
       const when=record?.at&&Number.isFinite(Date.parse(record.at))?new Date(record.at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
       const detail=record?.manual?"Previously exported · marked by you":"Exported "+(when||"previously")+(Number(record?.size)>0?" · "+formatFileSize(record.size):"");
@@ -914,15 +923,15 @@ function renderQueue(clips){
         '<label class="queue-clip-check" title="Select this clip for batch re-export"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Select '+esc(title)+' for re-export"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
         '<div class="queue-item-main"><strong>'+esc(title)+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+' · '+esc(detail)+'</small></div>'+
         '<button class="soft-btn reexport-clip" type="button" data-clip-id="'+esc(c.id)+'" '+(exportBusy?"disabled":"")+' >↻ Re-export</button></div>';
-    }).join("")||(current.length?'<div class="queue-empty">No exported clips yet. Use “Mark selected exported” for clips you already downloaded earlier.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>');
+    }).join("")||(query?'<div class="queue-empty"><strong>No matches found</strong><span>No clips match “'+esc(query)+'”. Try a title, part number, or time.</span></div>':(current.length?'<div class="queue-empty">No exported clips yet. Use “Mark selected exported” for clips you already downloaded earlier.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>'));
   }else{
-    list.innerHTML=todo.map(c=>{
+    list.innerHTML=visible.map(c=>{
       const i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id),record=getExportRecord(c);
       return '<div class="queue-item '+(checked?"is-export-selected":"is-export-unselected")+'" id="queue-'+esc(c.id)+'">'+
-      '<label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Export Part '+(i+1)+'"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
+      '<label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Select '+esc(exportQueueLabel(c,i))+' for export"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
       '<div class="queue-item-main"><strong>'+esc(exportQueueLabel(c,i))+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+'</small><div class="queue-progress"><span></span></div></div>'+
       '<small class="queue-status">'+(record&&checked?"re-export queued":checked?"waiting":"not selected")+'</small></div>';
-    }).join("")||(current.length?'<div class="queue-empty">All clips have been exported. Open Exported to re-export any clip, or add new clips.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>');
+    }).join("")||(query?'<div class="queue-empty"><strong>No matches found</strong><span>No clips match “'+esc(query)+'”. Try a title, part number, or time.</span></div>':(current.length?'<div class="queue-empty">All clips have been exported. Open Exported to re-export any clip, or add new clips.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>'));
   }
   const previewSelect=$("exportPreviewClipSelect");
   if(previewSelect){
@@ -1268,10 +1277,12 @@ async function handleStartExportClick(){
 }
 $("startExportBtn").addEventListener("click",()=>{void handleStartExportClick()});
 $("cancelExportBtn").onclick=cancelExport;
-$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;const visible=exportQueueView==="exported"?state.clips.filter(c=>getExportRecord(c)):state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id));visible.forEach(c=>exportSelectedClipIds.add(c.id));renderQueue(state.clips)};
+$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;getVisibleExportQueueClips(state.clips).forEach(c=>exportSelectedClipIds.add(c.id));renderQueue(state.clips)};
 $("clearExportClipSelectionBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds.clear();renderQueue(state.clips)};
 $("queueTodoTab").onclick=()=>setExportQueueView("todo");
 $("queueExportedTab").onclick=()=>setExportQueueView("exported");
+$("queueSearchInput").addEventListener("input",event=>{exportQueueSearch=String(event.target.value||"");renderQueue(state.clips)});
+$("clearQueueSearchBtn").onclick=()=>{exportQueueSearch="";$("queueSearchInput").value="";renderQueue(state.clips);$("queueSearchInput").focus()};
 $("markExportedSelectedBtn").onclick=markSelectedClipsExported;
 $("queueList").addEventListener("click",event=>{const button=event.target.closest(".reexport-clip");if(button)void reExportClip(button.dataset.clipId)});
 $("queueList").addEventListener("change",event=>{const input=event.target.closest(".export-clip-check");if(input)setExportClipSelection(input.dataset.clipId,input.checked)});
