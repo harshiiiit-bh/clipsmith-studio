@@ -885,45 +885,49 @@ function exportQueueLabel(c,index){const title=displayClipTitle(c),base=String(s
 function getSelectedExportClips(){return state.clips.map((clip,index)=>({clip,index})).filter(item=>exportSelectedClipIds.has(item.clip.id))}
 function getExportRecord(clip){const record=clip&&state.exportHistory&&state.exportHistory[clip.id];return record&&typeof record==="object"&&!Array.isArray(record)?record:null}
 function updateExportSelectionSummary(){
-  const chosen=getSelectedExportClips(),todo=state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id)),done=state.clips.filter(c=>getExportRecord(c)&&!exportSelectedClipIds.has(c.id));
-  const count=$("exportSelectionCount");if(count)count.textContent=`${todo.length} to export · ${done.length} exported`;
-  const summary=$("exportSummary");if(summary)summary.textContent=`${chosen.length} selected · ${fmt(chosen.reduce((n,item)=>n+item.clip.end-item.clip.start,0))} total`;
-  const button=$("startExportBtn");if(button&&!exportBusy){button.textContent=`Export selected (${chosen.length})`;button.disabled=chosen.length===0}
+  const chosen=getSelectedExportClips(),todo=state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id)),done=state.clips.filter(c=>getExportRecord(c));
+  const count=$("exportSelectionCount");if(count)count.textContent=todo.length+" queued · "+done.length+" exported";
+  const summary=$("exportSummary");if(summary)summary.textContent=chosen.length+" selected · "+fmt(chosen.reduce((n,item)=>n+item.clip.end-item.clip.start,0))+" total";
+  const button=$("startExportBtn");if(button&&!exportBusy){button.textContent="Export selected ("+chosen.length+")";button.disabled=chosen.length===0}
   const todoTab=$("queueTodoTab"),doneTab=$("queueExportedTab");
-  if(todoTab){todoTab.textContent=`To export (${todo.length})`;todoTab.disabled=exportBusy;todoTab.classList.toggle("active",exportQueueView==="todo");todoTab.setAttribute("aria-selected",String(exportQueueView==="todo"))}
-  if(doneTab){doneTab.textContent=`Exported (${done.length})`;doneTab.disabled=exportBusy;doneTab.classList.toggle("active",exportQueueView==="exported");doneTab.setAttribute("aria-selected",String(exportQueueView==="exported"))}
-  const actions=$("exportSelectionActions");if(actions)actions.classList.toggle("hidden",exportQueueView==="exported");
-  const selectAll=$("selectAllExportClipsBtn");if(selectAll)selectAll.disabled=exportBusy||todo.length===0;
+  if(todoTab){todoTab.textContent="To export ("+todo.length+")";todoTab.disabled=exportBusy;todoTab.classList.toggle("active",exportQueueView==="todo");todoTab.setAttribute("aria-selected",String(exportQueueView==="todo"))}
+  if(doneTab){doneTab.textContent="Exported ("+done.length+")";doneTab.disabled=exportBusy;doneTab.classList.toggle("active",exportQueueView==="exported");doneTab.setAttribute("aria-selected",String(exportQueueView==="exported"))}
+  const actions=$("exportSelectionActions");if(actions)actions.classList.remove("hidden");
+  const visibleCount=exportQueueView==="exported"?done.length:todo.length;
+  const selectAll=$("selectAllExportClipsBtn");if(selectAll)selectAll.disabled=exportBusy||visibleCount===0;
   const clear=$("clearExportClipSelectionBtn");if(clear)clear.disabled=exportBusy;
-  const mark=$("markExportedSelectedBtn");if(mark)mark.disabled=exportBusy||chosen.length===0;
+  const mark=$("markExportedSelectedBtn");if(mark){mark.classList.toggle("hidden",exportQueueView==="exported");mark.disabled=exportBusy||chosen.length===0||exportQueueView==="exported"}
 }
 function setExportQueueView(view){if(exportBusy)return;exportQueueView=view==="exported"?"exported":"todo";renderQueue(state.clips)}
 function renderQueue(clips){
   const list=$("queueList");if(!list)return;
   const current=Array.isArray(clips)?clips:[];
   const todo=current.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id));
-  const done=current.filter(c=>getExportRecord(c)&&!exportSelectedClipIds.has(c.id));
+  const done=current.filter(c=>getExportRecord(c));
   if(exportQueueView==="exported"){
     list.innerHTML=done.map(c=>{
-      const record=getExportRecord(c);
+      const record=getExportRecord(c),i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id);
       const when=record?.at&&Number.isFinite(Date.parse(record.at))?new Date(record.at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
-      const detail=record?.manual?"Previously exported · marked by you":`Exported ${when||"previously"}${Number(record?.size)>0?" · "+formatFileSize(record.size):""}`;
-      return `<div class="queue-item queue-item-exported" id="queue-${esc(c.id)}"><span class="queue-exported-check" role="img" aria-label="Exported">✓</span><div class="queue-item-main"><strong>${esc(exportQueueLabel(c,current.indexOf(c)))}</strong><small>${fmt(c.start)} → ${fmt(c.end)} · ${fmt(c.end-c.start)} · ${esc(detail)}</small></div><button class="soft-btn reexport-clip" type="button" data-clip-id="${esc(c.id)}" ${exportBusy?"disabled":""}>↻ Re-export</button></div>`;
-    }).join("")||`<div class="queue-empty">${current.length?"No exported clips yet. Use “Mark selected exported” for clips you already downloaded earlier.":"Create clips first to build an export queue."}</div>`;
+      const detail=record?.manual?"Previously exported · marked by you":"Exported "+(when||"previously")+(Number(record?.size)>0?" · "+formatFileSize(record.size):"");
+      const title=exportQueueLabel(c,i);
+      return '<div class="queue-item queue-item-exported '+(checked?"is-reexport-selected is-export-selected":"is-reexport-unselected is-export-unselected")+'" id="queue-'+esc(c.id)+'">'+
+        '<label class="queue-clip-check" title="Select this clip for batch re-export"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Select '+esc(title)+' for re-export"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
+        '<div class="queue-item-main"><strong>'+esc(title)+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+' · '+esc(detail)+'</small></div>'+
+        '<button class="soft-btn reexport-clip" type="button" data-clip-id="'+esc(c.id)+'" '+(exportBusy?"disabled":"")+' >↻ Re-export</button></div>';
+    }).join("")||(current.length?'<div class="queue-empty">No exported clips yet. Use “Mark selected exported” for clips you already downloaded earlier.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>');
   }else{
     list.innerHTML=todo.map(c=>{
       const i=current.indexOf(c),checked=exportSelectedClipIds.has(c.id),record=getExportRecord(c);
-      return `<div class="queue-item ${checked?"is-export-selected":"is-export-unselected"}" id="queue-${esc(c.id)}">
-      <label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="${esc(c.id)}" ${checked?"checked":""} ${exportBusy?"disabled":""} aria-label="Export Part ${i+1}"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>
-      <div class="queue-item-main"><strong>${esc(exportQueueLabel(c,i))}</strong><small>${fmt(c.start)} → ${fmt(c.end)} · ${fmt(c.end-c.start)}</small><div class="queue-progress"><span></span></div></div>
-      <small class="queue-status">${record&&checked?"re-export queued":checked?"waiting":"not selected"}</small>
-    </div>`;
+      return '<div class="queue-item '+(checked?"is-export-selected":"is-export-unselected")+'" id="queue-'+esc(c.id)+'">'+
+      '<label class="queue-clip-check"><input type="checkbox" class="export-clip-check" data-clip-id="'+esc(c.id)+'" '+(checked?"checked":"")+' '+(exportBusy?"disabled":"")+' aria-label="Export Part '+(i+1)+'"><span class="queue-clip-checkmark" aria-hidden="true"></span></label>'+
+      '<div class="queue-item-main"><strong>'+esc(exportQueueLabel(c,i))+'</strong><small>'+fmt(c.start)+' → '+fmt(c.end)+' · '+fmt(c.end-c.start)+'</small><div class="queue-progress"><span></span></div></div>'+
+      '<small class="queue-status">'+(record&&checked?"re-export queued":checked?"waiting":"not selected")+'</small></div>';
     }).join("")||(current.length?'<div class="queue-empty">All clips have been exported. Open Exported to re-export any clip, or add new clips.</div>':'<div class="queue-empty">Create clips first to build an export queue.</div>');
   }
   const previewSelect=$("exportPreviewClipSelect");
   if(previewSelect){
     const previous=exportPreviewClipId;
-    previewSelect.innerHTML=current.map((c,i)=>`<option value="${esc(c.id)}">${esc(exportQueueLabel(c,i))}</option>`).join("");
+    previewSelect.innerHTML=current.map((c,i)=>'<option value="'+esc(c.id)+'">'+esc(exportQueueLabel(c,i))+'</option>').join("");
     if(current.some(c=>c.id===previous))previewSelect.value=previous;
     else{
       const candidate=selected();
@@ -935,12 +939,13 @@ function renderQueue(clips){
 }
 function markSelectedClipsExported(){
   if(exportBusy)return;
-  const chosen=getSelectedExportClips();if(!chosen.length)return toast("Select the clips you already exported first.");
+  const chosen=getSelectedExportClips().filter(({clip})=>!getExportRecord(clip));
+  if(!chosen.length)return toast("Selected clips already have export records. Use Export selected to re-export them.");
   const at=new Date().toISOString();
   state.exportHistory={...(state.exportHistory&&typeof state.exportHistory==="object"?state.exportHistory:{})};
   chosen.forEach(({clip})=>{state.exportHistory[clip.id]={at,fileName:"",size:0,manual:true};exportSelectedClipIds.delete(clip.id)});
   lastCommitted=snap();persist();exportQueueView="exported";renderQueue(state.clips);
-  toast(`Marked ${chosen.length} clip${chosen.length===1?"":"s"} as already exported.`);
+  toast("Marked "+chosen.length+" clip"+(chosen.length===1?"":"s")+" as already exported.");
 }
 async function reExportClip(id){
   if(exportBusy)return;
@@ -951,15 +956,23 @@ async function reExportClip(id){
 }
 function setExportClipSelection(id,checked){
   if(exportBusy)return;
+  const clip=state.clips.find(c=>c.id===id);if(!clip)return;
   if(checked)exportSelectedClipIds.add(id);else exportSelectedClipIds.delete(id);
   const item=$("queue-"+id);
-  if(item){item.classList.toggle("is-export-selected",checked);item.classList.toggle("is-export-unselected",!checked)}
+  if(item){
+    item.classList.toggle("is-export-selected",checked);item.classList.toggle("is-export-unselected",!checked);
+    if(item.classList.contains("queue-item-exported")){item.classList.toggle("is-reexport-selected",checked);item.classList.toggle("is-reexport-unselected",!checked)}
+  }
   const status=item?.querySelector(".queue-status");if(status)status.textContent=checked?"waiting":"not selected";
-  if(!checked&&exportPreviewClipId===id){
+  if(checked){
+    exportPreviewClipId=id;
+    if($("exportPreviewClipSelect"))$("exportPreviewClipSelect").value=id;
+  }else if(exportPreviewClipId===id){
     const next=state.clips.find(c=>exportSelectedClipIds.has(c.id))||state.clips.find(c=>c.id!==id);
     exportPreviewClipId=next?.id||null;
     if($("exportPreviewClipSelect")&&exportPreviewClipId)$("exportPreviewClipSelect").value=exportPreviewClipId;
   }else if(!exportPreviewClipId)exportPreviewClipId=id;
+  if(exportQueueView==="todo"&&!checked&&getExportRecord(clip)){renderQueue(state.clips);return}
   updateExportSelectionSummary();renderExportPreview();
 }
 function cancelExport(){
@@ -1255,7 +1268,7 @@ async function handleStartExportClick(){
 }
 $("startExportBtn").addEventListener("click",()=>{void handleStartExportClick()});
 $("cancelExportBtn").onclick=cancelExport;
-$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds=new Set(state.clips.filter(c=>!getExportRecord(c)).map(c=>c.id));renderQueue(state.clips)};
+$("selectAllExportClipsBtn").onclick=()=>{if(exportBusy)return;const visible=exportQueueView==="exported"?state.clips.filter(c=>getExportRecord(c)):state.clips.filter(c=>!getExportRecord(c)||exportSelectedClipIds.has(c.id));visible.forEach(c=>exportSelectedClipIds.add(c.id));renderQueue(state.clips)};
 $("clearExportClipSelectionBtn").onclick=()=>{if(exportBusy)return;exportSelectedClipIds.clear();renderQueue(state.clips)};
 $("queueTodoTab").onclick=()=>setExportQueueView("todo");
 $("queueExportedTab").onclick=()=>setExportQueueView("exported");
