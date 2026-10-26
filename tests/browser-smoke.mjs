@@ -599,6 +599,23 @@ try {
   assert.equal(await headingEditor.getAttribute("contenteditable"), "false", "edit mode can be exited without changing the shared text state");
   await page.locator("#clearExportClipSelectionBtn").click();
   assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (0)", "Clear selection works");
+
+  // Clicking the card body toggles its checkbox; the row is also keyboard-operable.
+  const selectableCard = page.locator("#queueList .queue-item").first();
+  const selectableCheckbox = selectableCard.locator(".export-clip-check");
+  assert.equal(await selectableCard.getAttribute("tabindex"), "0", "export cards are keyboard-focusable");
+  assert.equal(await selectableCard.getAttribute("role"), "group", "export card has a named, grouped interaction surface");
+  await selectableCard.locator(".queue-item-main").click();
+  assert.equal(await selectableCheckbox.isChecked(), true, "clicking clip details selects the whole clip");
+  assert.match(await selectableCard.getAttribute("aria-label"), /is selected/i, "the selection state is announced on the card");
+  await selectableCard.locator(".queue-item-main").click();
+  assert.equal(await selectableCheckbox.isChecked(), false, "clicking clip details again deselects it");
+  await selectableCard.focus();
+  await page.keyboard.press("Space");
+  assert.equal(await selectableCheckbox.isChecked(), true, "Space selects a focused clip card");
+  await page.keyboard.press("Enter");
+  assert.equal(await selectableCheckbox.isChecked(), false, "Enter toggles a focused clip card");
+
   await page.locator("#selectAllExportClipsBtn").click();
   assert.equal(await page.locator("#startExportBtn").textContent(), "Export selected (1)", "Select all works");
 
