@@ -363,3 +363,51 @@ a { text-underline-offset: 3px; }
     max-height: none;
   }
 }
+
+
+/* Export Center reset: balanced panes, clearer spacing, and a usable clip queue. */
+@media (min-width: 821px) {
+  .export-queue { padding: 15px 16px 12px; gap: 9px; }
+  .export-queue .queue-head { gap: 16px; align-items: center; padding-bottom: 9px; border-bottom: 1px solid #ffffff10; }
+  .export-queue .queue-head h2 { margin: 4px 0 5px; font-size: 21px; line-height: 1.2; }
+  .export-queue .queue-head p { max-width: 640px; font-size: 10px; line-height: 1.5; }
+  .export-queue .export-grid { flex: 1 1 43%; min-height: 190px; min-width: 0; gap: 12px; margin-top: 0; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); }
+  .export-queue .export-grid > :first-child { height: 100%; min-height: 0; padding: 0 8px 3px 0; }
+  .export-queue .export-preview-panel { min-width: 0; min-height: 0; padding: 12px; gap: 8px; border-radius: 14px; }
+  .export-queue .export-preview-heading { flex: 0 0 auto; gap: 10px; align-items: center; }
+  .export-queue .export-selection-panel { flex: 1 1 47%; min-height: 205px; min-width: 0; margin-top: 0; padding: 11px 12px; gap: 8px; border-radius: 14px; }
+  .export-queue .export-selection-heading { align-items: center; gap: 9px; margin-bottom: 0; }
+  .export-queue .export-selection-heading > div:first-child { gap: 7px; }
+  .export-queue .export-selection-actions { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .export-queue .export-selection-actions button { min-height: 32px; padding: 7px 10px; white-space: nowrap; }
+  .export-queue .queue-view-tabs { margin: 1px 0 3px; }
+  .export-queue .export-selection-panel .queue-list { flex: 1 1 auto; min-height: 0; max-height: none; gap: 7px; }
+  .export-queue .queue-item { min-height: 54px; padding: 9px 11px; border-radius: 11px; }
+  .export-queue .queue-item-main strong { font-size: 10px; line-height: 1.4; }
+  .export-queue .queue-item-main small { line-height: 1.4; }
+  .export-queue .queue-footer { flex: 0 0 auto; margin-top: 0; padding: 9px 0 2px; border-top: 1px solid #ffffff10; }
+}
+@media (min-width: 821px) and (max-height: 820px) {
+  .export-queue .export-grid { flex: 1 1 43%; min-height: 185px; }
+  .export-queue .export-selection-panel { flex: 1 1 47%; min-height: 198px; }
+}
+.queue-item-exported.is-export-unselected { opacity: 1; }
+.queue-item-exported.is-reexport-selected { border-color: #7868b2; background: linear-gradient(120deg, #211b34, #121522); box-shadow: inset 0 0 0 1px #a995ff20; }
+.queue-item-exported .queue-clip-check { min-width: 24px; }
+.queue-item-exported .queue-clip-check input { cursor: pointer; }
+@media (max-width: 820px) {
+  .export-queue { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: calc(100dvh - 78px); }
+  .export-queue .export-grid { display: grid; flex: 0 0 auto; min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .export-queue .export-grid > :first-child { max-height: 32dvh; min-height: 0; }
+  .export-queue .export-preview-panel { max-height: none; min-height: 210px; }
+  .export-queue .export-selection-panel { flex: 0 0 auto; min-height: 200px; }
+  .export-queue .export-selection-panel .queue-list { max-height: 30dvh; min-height: 90px; }
+  .export-queue .queue-footer { position: sticky; bottom: 0; margin-top: 0; z-index: 10; }
+}
+@media (max-width: 560px) {
+  .export-queue .export-selection-heading { align-items: flex-start; flex-direction: column; }
+  .export-queue .export-selection-actions { width: 100%; }
+  .export-queue .export-selection-actions button { flex: 1 1 auto; font-size: 10px; }
+  .export-queue .queue-item-exported { grid-template-columns: 24px minmax(0, 1fr) !important; }
+  .export-queue .queue-item-exported .reexport-clip { grid-column: 2; justify-self: start; margin-top: 2px; }
+}
