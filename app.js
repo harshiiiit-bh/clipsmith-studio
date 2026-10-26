@@ -231,61 +231,19 @@ function releaseTemporaryMemory({silent=false}={}){
 function makeClip(start,end,i){return{id:uid(),start,end,title:state.autoParts?`${state.seriesTitle} · Part ${i+1}`:state.seriesTitle,autoTitle:state.autoParts,caption:state.captionStyle.text,titleStyle:{...state.titleStyle},captionStyle:{...state.captionStyle},fx:{...DEFAULT_FX}}}
 function generateClips({notify=true}={}){if(!state.duration)return toast("Add a video first");const seg=buildClipSegmentsExcludingRanges(state.duration,state.durationPreset,state.skipRanges);if(seg===null)return toast("That would create too many clips. Choose a longer duration");if(!seg.length)return toast("No usable footage remains. Check the marked skip ranges or choose a shorter clip length");state.clips=seg.map(s=>makeClip(s.start,s.end,s.index));state.selectedId=state.clips[0]?.id||null;commit();renderAll();if(notify)toast(`${state.clips.length} clips ready`)}
 function applyTitle(){state.seriesTitle=$("seriesTitle").value.trim()||"Untitled";state.autoParts=$("autoParts").checked;state.clips.forEach((c,i)=>{if(c.autoTitle===false)return;c.title=state.autoParts?`${state.seriesTitle} · Part ${i+1}`:state.seriesTitle;c.autoTitle=state.autoParts});commit();renderAll();toast("Title pattern applied")}
-function selectClip(id){state.selectedId=id;const c=selected();if(c&&$("previewVideo").src)$("previewVideo").currentTime=clamp(c.start,0,state.duration);syncInspector();renderTimeline();renderClips();updatePreview();requestAnimationFrame(()=>scrollClipCardIntoView(id));persist()}
+function selectClip(id){state.selectedId=id;const c=selected();if(c&&$("previewVideo").src)$("previewVideo").currentTime=clamp(c.start,0,state.duration);syncInspector();renderTimeline();updatePreview();requestAnimationFrame(()=>scrollTimelineClipIntoView(id));persist()}
 function splitSelected(){const c=selected();if(!c)return toast("Select a clip first");const t=$("previewVideo").currentTime;if(t<=c.start+.05||t>=c.end-.05)return toast("Put the playhead inside the selected clip");const r=splitClipAt(state.clips,c.id,t,{makeId:uid,titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});if(!r)return toast("Could not split here");state.clips=renumberAutoTitles(r.clips,i=>`${state.seriesTitle} · Part ${i+1}`);state.selectedId=r.selectedId;commit();renderAll();toast("Split at playhead")}
 function duplicateSelected(){const c=selected();if(!c)return toast("Select a clip first");const r=duplicateClip(state.clips,c.id,{makeId:uid,titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});state.clips=renumberAutoTitles(r.clips,i=>`${state.seriesTitle} · Part ${i+1}`);state.selectedId=r.selectedId;commit();renderAll();toast("Clip duplicated")}
 function moveSelected(d){const c=selected();if(!c)return toast("Select a clip first");const r=moveClip(state.clips,c.id,d);if(!r)return;state.clips=renumberAutoTitles(r.clips,i=>`${state.seriesTitle} · Part ${i+1}`);commit();renderAll()}
 function deleteSelected(){const c=selected();if(!c)return toast("Select a clip first");const result=removeClipAndRenumber(state.clips,c.id,{titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});if(!result)return;state.clips=result.clips;state.selectedId=result.selectedId;commit();renderAll();toast("Clip removed · part numbers fixed")}
 function renderTimeline(){const root=$("timeline");if(!root)return;root.innerHTML="";if(!state.clips.length){root.innerHTML='<div class="timeline-empty">Import a video to build your clip sequence.</div>';return}state.clips.forEach((c,i)=>{const e=document.createElement("button");e.type="button";e.draggable=true;e.dataset.clipId=c.id;e.className=`timeline-block ${c.id===state.selectedId?"selected":""}`;const baseWidth=Math.max(84,Math.min(260,(c.end-c.start)*2));e.dataset.baseWidth=String(baseWidth);e.style.width=`${baseWidth}px`;e.innerHTML=`<span class="timeline-clip-index">${String(i+1).padStart(2,"0")}</span><span class="timeline-clip-copy"><b>${esc(getClipDisplayTitle(c,state.clips,state.seriesTitle))}</b><small>${fmt(c.start)} → ${fmt(c.end)}</small></span><span class="timeline-drag-hint" aria-hidden="true">⠿</span>`;e.title=`${fmt(c.start)} – ${fmt(c.end)} · Drag to reorder`;e.setAttribute("aria-label",`Part ${i+1}: ${getClipDisplayTitle(c,state.clips,state.seriesTitle)}. Select or drag to reorder.`);e.onclick=()=>selectClip(c.id);e.addEventListener("dragstart",event=>{event.dataTransfer?.setData("text/plain",c.id);if(event.dataTransfer)event.dataTransfer.effectAllowed="move";e.classList.add("dragging")});e.addEventListener("dragend",()=>{e.classList.remove("dragging");$$("#timeline .timeline-block").forEach(block=>block.classList.remove("drag-over"))});e.addEventListener("dragover",event=>{event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect="move";e.classList.add("drag-over")});e.addEventListener("dragleave",()=>e.classList.remove("drag-over"));e.addEventListener("drop",event=>{event.preventDefault();e.classList.remove("drag-over");const from=event.dataTransfer?.getData("text/plain");if(!from||from===c.id)return;const result=reorderClip(state.clips,from,c.id,{titleFor:index=>`${state.seriesTitle} · Part ${index+1}`});if(!result)return;state.clips=result.clips;state.selectedId=result.selectedId;commit();renderAll();toast("Clip order updated")});root.appendChild(e)})}
-function renderClips(){const root=$("clip-strip");if(!root){syncClipStripSlider();return}root.innerHTML="";if(!state.clips.length){root.innerHTML='<div class="queue-empty">No clips yet</div>';return}state.clips.forEach((c,i)=>{const e=document.createElement("button");e.type="button";e.draggable=true;e.dataset.clipId=c.id;e.className=`clip-card ${c.id===state.selectedId?"selected":""}`;e.innerHTML=`<div class="clip-thumb"><span>${String(i+1).padStart(2,"0")}</span><span class="drag-hint">⠿ drag</span></div><div><div class="clip-meta">PART ${i+1}</div><div class="clip-title">${esc(getClipDisplayTitle(c,state.clips,state.seriesTitle))}</div><div class="clip-time">${fmt(c.start)} → ${fmt(c.end)}</div></div>`;e.onclick=()=>selectClip(c.id);e.addEventListener("dragstart",event=>{event.dataTransfer?.setData("text/plain",c.id);if(event.dataTransfer)event.dataTransfer.effectAllowed="move";e.classList.add("dragging")});e.addEventListener("dragend",()=>e.classList.remove("dragging"));e.addEventListener("dragover",event=>{event.preventDefault();e.classList.add("drag-over")});e.addEventListener("dragleave",()=>e.classList.remove("drag-over"));e.addEventListener("drop",event=>{event.preventDefault();e.classList.remove("drag-over");const from=event.dataTransfer?.getData("text/plain");if(!from||from===c.id)return;const result=reorderClip(state.clips,from,c.id,{titleFor:i=>`${state.seriesTitle} · Part ${i+1}`});if(!result)return;state.clips=result.clips;state.selectedId=result.selectedId;commit();renderAll();toast("Clip order updated")});root.appendChild(e)})}
-function syncClipStripSlider(){
-  const strip=$("clip-strip"),slider=$("clipStripSlider"),prev=$("clipStripPrevBtn"),next=$("clipStripNextBtn"),position=$("clipStripPosition");
-  if(!strip||!slider)return;
-  const cards=$$(".clip-card",strip),maxScroll=Math.max(0,strip.scrollWidth-strip.clientWidth);
-  const ratio=maxScroll>0?clamp(strip.scrollLeft/maxScroll,0,1):0;
-  slider.max="1000";
-  slider.disabled=maxScroll<2;
-  if(document.activeElement!==slider)slider.value=String(Math.round(ratio*1000));
-  if(prev)prev.disabled=maxScroll<2||strip.scrollLeft<=2;
-  if(next)next.disabled=maxScroll<2||strip.scrollLeft>=maxScroll-2;
-  const step=cards.length?cards[0].getBoundingClientRect().width+12:172;
-  const first=cards.length?Math.min(cards.length,Math.floor(strip.scrollLeft/Math.max(1,step))+1):0;
-  const visibleCount=cards.length?Math.max(1,Math.ceil(strip.clientWidth/Math.max(1,step))):0;
-  const last=cards.length?Math.min(cards.length,first+visibleCount-1):0;
-  const label=cards.length?(first+"–"+last+" / "+cards.length):"No clips";
-  if(position)position.textContent=label;
-  slider.setAttribute("aria-valuetext",cards.length?("Clips "+first+" to "+last+" of "+cards.length):"No clips");
-}
-function scrollClipStrip(direction){
-  const strip=$("clip-strip");
-  if(!strip)return;
-  const step=Math.max(172,Math.min(strip.clientWidth*.82,strip.clientWidth-20));
-  strip.scrollBy({left:direction*step,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
-}
-function scrollClipCardIntoView(id){
-  const strip=$("clip-strip");
-  if(strip){
-    const card=$$(".clip-card",strip).find(item=>item.dataset.clipId===id);
-    if(card){const left=card.offsetLeft,right=left+card.offsetWidth,viewLeft=strip.scrollLeft,viewRight=viewLeft+strip.clientWidth;if(left<viewLeft+5)strip.scrollTo({left:Math.max(0,left-5),behavior:"smooth"});else if(right>viewRight-5)strip.scrollTo({left:Math.max(0,right-strip.clientWidth+5),behavior:"smooth"});requestAnimationFrame(syncClipStripSlider);return}
-  }
+function scrollTimelineClipIntoView(id){
   const timeline=$("timeline"),block=timeline?$$(".timeline-block",timeline).find(item=>item.dataset.clipId===id):null;
   if(!timeline||!block)return;
   const left=block.offsetLeft,right=left+block.offsetWidth,viewLeft=timeline.scrollLeft,viewRight=viewLeft+timeline.clientWidth;
   if(left<viewLeft+5)timeline.scrollTo({left:Math.max(0,left-5),behavior:"smooth"});
   else if(right>viewRight-5)timeline.scrollTo({left:Math.max(0,right-timeline.clientWidth+5),behavior:"smooth"});
 }
-function initializeClipStripSlider(){
-  const strip=$("clip-strip"),slider=$("clipStripSlider");
-  if(!strip||!slider)return;
-  slider.addEventListener("input",()=>{const maxScroll=Math.max(0,strip.scrollWidth-strip.clientWidth);strip.scrollLeft=(Number(slider.value)/1000)*maxScroll;syncClipStripSlider()});
-  $("clipStripPrevBtn")?.addEventListener("click",()=>scrollClipStrip(-1));
-  $("clipStripNextBtn")?.addEventListener("click",()=>scrollClipStrip(1));
-  strip.addEventListener("scroll",()=>requestAnimationFrame(syncClipStripSlider),{passive:true});
-  window.addEventListener("resize",syncClipStripSlider,{passive:true});
-  new MutationObserver(()=>requestAnimationFrame(syncClipStripSlider)).observe(strip,{childList:true});
-  requestAnimationFrame(syncClipStripSlider);
-}
-initializeClipStripSlider();
 let requestedTitleFontKey = "";
 function ensureTitleFont(style){
   const font=String(style?.font||"Inter").replace(/["\\\\]/g,"").trim()||"Inter";
@@ -422,7 +380,7 @@ function applyTitlePreset(name){
   toast(`${name[0].toUpperCase()+name.slice(1)} heading preset applied`);
 }
 function previewTitleTyping(){const text=$("titleOverlayText").innerText.replace(/[\r\n]+/g," ").replace(/\s+/g," ").trim();const clip=selected();if(clip&&text){clip.title=text;clip.autoTitle=false;persist()}}
-function editTitleFromCanvas(){const text=$("titleOverlayText").innerText.replace(/[\r\n]+/g," ").replace(/\s+/g," ").trim();const clip=selected();if(!text||!clip)return;const clipId=clip.id,base=text.replace(/\s*[·–-]\s*Part\s+\d+\s*$/i,"").trim()||text;state.seriesTitle=base;state.clips=renumberAutoTitles(state.clips,i=>`${base} · Part ${i+1}`);const current=state.clips.find(item=>item.id===clipId);if(current){current.title=text;current.autoTitle=false}if($("seriesTitle"))$("seriesTitle").value=base;renderTimeline();renderClips();persist()}
+function editTitleFromCanvas(){const text=$("titleOverlayText").innerText.replace(/[\r\n]+/g," ").replace(/\s+/g," ").trim();const clip=selected();if(!text||!clip)return;const clipId=clip.id,base=text.replace(/\s*[·–-]\s*Part\s+\d+\s*$/i,"").trim()||text;state.seriesTitle=base;state.clips=renumberAutoTitles(state.clips,i=>`${base} · Part ${i+1}`);const current=state.clips.find(item=>item.id===clipId);if(current){current.title=text;current.autoTitle=false}if($("seriesTitle"))$("seriesTitle").value=base;renderTimeline();persist()}
 function applyTitleStyleToAll(){if(!state.clips.length)return toast("Create clips first");state.clips.forEach(clip=>clip.titleStyle={...state.titleStyle});commit();renderAll();toast("Heading style copied to every clip")}
 function applyCaptionToAll(){if(!state.clips.length)return toast("Create clips first");const text=$("captionText").value,style={style:$("captionStyle").value,highlight:$("captionHighlightColor").value,positionY:Number($("captionPositionY").value)};state.clips.forEach(clip=>{clip.caption=text;clip.captionStyle={...(clip.captionStyle||{}),...style}});commit();renderAll();toast("Manual caption copied to all clips")}
 async function exportCurrentThumbnail(){
@@ -543,7 +501,7 @@ canvasAspectObserver?.observe($("preview-stage"));
 const canvasTextObserver=typeof ResizeObserver!=="undefined"?new ResizeObserver(()=>requestAnimationFrame(fitCanvasOverlayText)):null;
 canvasTextObserver?.observe($("preview-canvas"));
 window.addEventListener("resize",()=>requestAnimationFrame(applyCanvasAspect),{passive:true});
-function renderAll(){renderTimeline();renderClips();renderSkipRanges();renderSubtitleCueList();syncInspector();updatePreview();$("aspectSelect").value=state.aspect;applyCanvasAspect();if($("burnOverlaysToggle"))$("burnOverlaysToggle").checked=state.burnOverlays!==false;$("ratioBadge").textContent=state.aspect;$("safeZones").classList.toggle("hidden",!state.showSafe);$$('#durationChips button').forEach(b=>b.classList.toggle('active',b.dataset.duration===String(state.durationPreset)||(b.dataset.duration==="custom"&&![15,30,45,60].includes(state.durationPreset))));setTimeInputs("duration",state.durationPreset);$("durationBadge").textContent=fmt(state.duration);$("totalTime").textContent=fmt(state.duration);$("timelineHint").textContent=state.clips.length?`${state.clips.length} clips · select or drag to reorder`:"Your sequence is empty";if($("projectName"))$("projectName").value=state.projectName}
+function renderAll(){renderTimeline();renderSkipRanges();renderSubtitleCueList();syncInspector();updatePreview();$("aspectSelect").value=state.aspect;applyCanvasAspect();if($("burnOverlaysToggle"))$("burnOverlaysToggle").checked=state.burnOverlays!==false;$("ratioBadge").textContent=state.aspect;$("safeZones").classList.toggle("hidden",!state.showSafe);$$('#durationChips button').forEach(b=>b.classList.toggle('active',b.dataset.duration===String(state.durationPreset)||(b.dataset.duration==="custom"&&![15,30,45,60].includes(state.durationPreset))));setTimeInputs("duration",state.durationPreset);$("durationBadge").textContent=fmt(state.duration);$("totalTime").textContent=fmt(state.duration);$("timelineHint").textContent=state.clips.length?`${state.clips.length} clips · select or drag to reorder`:"Your sequence is empty";if($("projectName"))$("projectName").value=state.projectName}
 function setTool(tool){if(typeof tool!=="string"||!tool)return;if(tool==="preview"){state.activeTool="preview";$("inspector").classList.remove("open");$$('.tool,.mobile-tab').forEach(x=>x.classList.remove('active'));$$('.mobile-tab[data-tool="preview"]').forEach(x=>x.classList.add('active'));return}state.activeTool=tool;$$('.tool,.mobile-tab').forEach(x=>x.classList.toggle('active',x.dataset.tool===tool));$$('.inspector-pane').forEach(x=>x.classList.add('hidden'));const pane=$("pane-"+tool);if(pane)pane.classList.remove('hidden');$("inspectorTitle").textContent=tool==="cut"?"Clips":tool==="creator"?"Creator Intelligence":tool[0].toUpperCase()+tool.slice(1);if(innerWidth<=820)$("inspector").classList.add('open')}
 function updateImportStatus(text,type="info"){const n=$("importStatus");if(n){n.textContent=text;n.dataset.state=type}}
 function updateSource(file,{sourceUrl=""}={}){if(!file)return;previewSourceVersion++;if(pendingRecoverySnapshot){pendingRecoverySnapshot=null;hideDraftRecoveryPrompt()}restoreExistingClipsOnLoad=false;if(state.objectUrl)URL.revokeObjectURL(state.objectUrl);state.subtitleCues=[];subtitleCueLimit=80;renderSubtitleCueList();updateActiveSubtitle();state.skipRanges=[];setTimeInputs("skipStart",null);setTimeInputs("skipEnd",null);renderSkipRanges();state.sourceFile=file;state.sourceUrl=sourceUrl;state.sourceMeta={fileName:file.name,fileSize:file.size,sourceUrl,duration:0};state.objectUrl=URL.createObjectURL(file);const v=$("previewVideo");v.src=state.objectUrl;v.load();$("mediaName").textContent=file.name;$("previewEmptyTitle").textContent="Preparing your edit…";$("previewEmptyHint").textContent="Reading the video and building your first clip plan."; $("previewEmpty").classList.remove("hidden");updateImportStatus("Reading video metadata…","loading");setSave("● Media loaded");persist();void rememberSourceMedia(file)}
@@ -680,7 +638,7 @@ async function loadUrl(){const raw=$("videoUrl").value.trim();if(!raw)return toa
 $("uploadBtn").onclick=$("dropBrowseBtn").onclick=$("emptyUploadBtn").onclick=()=>$("videoInput").click();$("videoInput").onchange=e=>{void loadFile(e.target.files?.[0]);e.target.value=''};$("dropCard").ondragover=e=>e.preventDefault();$("dropCard").ondrop=e=>{e.preventDefault();void loadFile(e.dataTransfer.files?.[0])};$("loadUrlBtn").onclick=loadUrl;$("videoUrl").onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadUrl()}};
 $("previewVideo").onerror=()=>{const video=$("previewVideo"),file=state.sourceFile;if(!file)return;if(video.currentSrc&&state.objectUrl&&video.currentSrc!==state.objectUrl)return;void recoverPreviewCompatibility(file)};
 $("previewVideo").onloadedmetadata=()=>{const d=Number($("previewVideo").duration);if(!Number.isFinite(d)||d<=0)return $("previewVideo").onerror?.();state.duration=d;state.sourceMeta={...(state.sourceMeta||{}),duration:d};$("previewEmpty").classList.add("hidden");$("totalTime").textContent=fmt(d);$("durationBadge").textContent=fmt(d);if(restoreExistingClipsOnLoad&&state.clips.length){restoreExistingClipsOnLoad=false;state.selectedId=state.clips.some(c=>c.id===state.selectedId)?state.selectedId:(state.clips[0]?.id||null);renderAll();lastCommitted=snap();updateImportStatus(`Memory restored · ${state.clips.length} saved clips reconnected`,"ready");setMemoryStatus("Project fully restored",`${state.clips.length} clips, subtitles and source video are ready. Changes continue to autosave.`);setMemoryVaultStatus("Project fully restored",`${state.clips.length} clips, subtitles and source video are ready. Changes continue to autosave.`);void refreshMemoryVaultStats();toast("Project and source video restored")}else{restoreExistingClipsOnLoad=false;generateClips({notify:false});updateImportStatus(`Ready · ${state.clips.length} clips planned at ${state.durationPreset}s`,"ready");toast("Video ready")}};
-function syncPlaybackClip(time){const active=state.clips.find(c=>time>=c.start&&time<c.end);if(!active||active.id===state.selectedId)return;state.selectedId=active.id;$$(".timeline-block, .clip-card").forEach(node=>node.classList.toggle("selected",node.dataset.clipId===active.id));if($("selectedClipLabel"))$("selectedClipLabel").textContent=active.title;syncInspector();updatePreview()}
+function syncPlaybackClip(time){const active=state.clips.find(c=>time>=c.start&&time<c.end);if(!active||active.id===state.selectedId)return;state.selectedId=active.id;$$(".timeline-block").forEach(node=>node.classList.toggle("selected",node.dataset.clipId===active.id));if($("selectedClipLabel"))$("selectedClipLabel").textContent=active.title;syncInspector();updatePreview()}
 $("previewVideo").ontimeupdate=()=>{const v=$("previewVideo");$("currentTime").textContent=fmt(v.currentTime);$("seekBar").value=state.duration?v.currentTime/state.duration*100:0;syncPlaybackClip(v.currentTime);updateActiveSubtitle()};
 $("previewVideo").onplay=()=>{$("playBtn").textContent='Ⅱ'};
 $("previewVideo").onpause=()=>{$("playBtn").textContent='▶'};
@@ -1166,7 +1124,7 @@ function startExportPreviewLayerDrag(event){
   };
   const finish=()=>{
     grip.removeEventListener("pointermove",move);grip.removeEventListener("pointerup",finish);grip.removeEventListener("pointercancel",finish);
-    commit();syncInspector();renderTimeline();renderClips();renderExportPreview();
+    commit();syncInspector();renderTimeline();renderExportPreview();
     toast((kind==="heading"?"Heading":kind==="caption"?"Caption":kind==="subtitle"?"Timed subtitle":"Watermark")+" position saved");
   };
   grip.addEventListener("pointermove",move);grip.addEventListener("pointerup",finish);grip.addEventListener("pointercancel",finish);
@@ -1193,7 +1151,7 @@ function finishExportPreviewLayerEdit(event){
   const text=event.target.closest?.(".export-preview-layer-text");if(!text||!exportPreviewEditing)return;
   const layer=text.closest("[data-export-layer]"),kind=layer?.dataset.exportLayer,c=state.clips.find(clip=>clip.id===exportPreviewClipId)||selected()||state.clips[0];
   if(kind==="heading"&&c){c.title=String(text.textContent||"").trim()||displayClipTitle(c);c.autoTitle=false}
-  commit();syncInspector();renderTimeline();renderClips();
+  commit();syncInspector();renderTimeline();
 }
 
 function formatFileSize(bytes){
