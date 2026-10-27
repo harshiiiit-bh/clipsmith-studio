@@ -152,5 +152,7 @@ assert.match(brandFinish, /prefers-reduced-motion:\s*reduce/,
   "premium interaction transitions respect reduced motion");
 assert.match(brandFinish, /button:not\(:disabled\):active/,
   "interactive controls provide pressed-state feedback");
-assert.match(app, /if\(typing\)return;if\(\(e\.ctrlKey\|\|e\.metaKey\)\&\&e\.key\.toLowerCase\(\)==="z"\)[\s\S]*?active\?\.closest\?\.\("button,a,summary,\[role=button\],\[role=slider\]"\)/,
-  "form editing and native interactive controls retain their own keyboard behavior");
+assert.ok(app.includes('if(typing&&e.key!=="Escape")return;if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z")'),
+  "native text fields retain Ctrl/Cmd+Z instead of triggering project-level undo");
+assert.ok(app.includes('if(!typing&&active?.closest?.("button,a,summary,[role=button],[role=slider]")&&e.key!=="Escape"&&e.key!=="?")return;'),
+  "interactive controls keep native keyboard behavior while Escape remains available");
