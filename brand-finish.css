@@ -882,3 +882,40 @@ a { text-underline-offset: 3px; }
     background: transparent;
   }
 }
+
+
+/* ClipSmith refinement pass: improve mobile tool-label readability and control feedback. */
+.mobile-nav .mobile-tab {
+  min-width: 0;
+  gap: 4px;
+  padding-inline: 1px;
+  font-size: 8px !important;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+.mobile-nav .mobile-tab span {
+  font-size: 15px !important;
+  line-height: 1;
+}
+.mobile-nav .mobile-tab:focus-visible {
+  outline-offset: -3px;
+}
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+  filter: saturate(.76);
+}
+@media (max-width: 360px) {
+  .mobile-nav .mobile-tab { font-size: 7.6px !important; }
+  .mobile-nav .mobile-tab span { font-size: 14px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav .mobile-tab,
+  .mobile-nav .mobile-tab span {
+    transition: none !important;
+    animation: none !important;
+  }
+}
