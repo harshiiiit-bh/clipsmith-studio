@@ -184,7 +184,7 @@ try {
   await projectNameInput.press("Control+z");
   assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), false,
     "Ctrl/Cmd+Z inside a form field must preserve native text undo instead of intercepting project undo");
-  await page.locator("#app-shell").click({ position: { x: 4, y: 120 } });
+  await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
   assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), true,
     "Ctrl/Cmd+Z outside editable controls should still activate the editor history");
