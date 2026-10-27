@@ -189,6 +189,19 @@ try {
   assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), true,
     "Ctrl/Cmd+Z outside editable controls should still activate the editor history");
 
+  // Focused buttons keep their native Space-key activation rather than hijacking preview playback.
+  await page.evaluate(() => {
+    window.__clipsmithSpaceDefaultPrevented = null;
+    window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") window.__clipsmithSpaceDefaultPrevented = event.defaultPrevented;
+    });
+  });
+  await page.locator("#focusPreviewBtn").focus();
+  await page.keyboard.press("Space");
+  assert.equal(await page.evaluate(() => window.__clipsmithSpaceDefaultPrevented), false,
+    "Space on a focused button must remain a native button activation");
+  await page.keyboard.press("Escape");
+
   // The aspect dropdown must resize the actual canvas, not just update its label.
   const ratioChecks = [
     { value: "16:9", ratio: 16 / 9, name: "landscape" },
