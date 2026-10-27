@@ -168,6 +168,26 @@ try {
     "Start fresh returns to a clean editor");
   await page.waitForTimeout(100);
 
+  // Native text undo must stay inside the focused field, not rewind the entire edit session.
+  await page.evaluate(() => {
+    window.__clipsmithUndoDefaultPrevented = null;
+    window.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        window.__clipsmithUndoDefaultPrevented = event.defaultPrevented;
+      }
+    });
+  });
+  const projectNameInput = page.locator("#projectName");
+  await projectNameInput.click();
+  await projectNameInput.press("End");
+  await projectNameInput.pressSequentially("x");
+  await projectNameInput.press("Control+z");
+  assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), false,
+    "Ctrl/Cmd+Z inside a form field must preserve native text undo instead of intercepting project undo");
+  await page.locator("#app-shell").click({ position: { x: 4, y: 120 } });
+  await page.keyboard.press("Control+z");
+  assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), true,
+    "Ctrl/Cmd+Z outside editable controls should still activate the editor history");
 
   // The aspect dropdown must resize the actual canvas, not just update its label.
   const ratioChecks = [
