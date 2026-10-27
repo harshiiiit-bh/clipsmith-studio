@@ -168,6 +168,39 @@ try {
     "Start fresh returns to a clean editor");
   await page.waitForTimeout(100);
 
+  // Native text undo must stay inside the focused field, not rewind the entire edit session.
+  await page.evaluate(() => {
+    window.__clipsmithUndoDefaultPrevented = null;
+    window.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        window.__clipsmithUndoDefaultPrevented = event.defaultPrevented;
+      }
+    });
+  });
+  const projectNameInput = page.locator("#projectName");
+  await projectNameInput.click();
+  await projectNameInput.press("End");
+  await projectNameInput.pressSequentially("x");
+  await projectNameInput.press("Control+z");
+  assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), false,
+    "Ctrl/Cmd+Z inside a form field must preserve native text undo instead of intercepting project undo");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+z");
+  assert.equal(await page.evaluate(() => window.__clipsmithUndoDefaultPrevented), true,
+    "Ctrl/Cmd+Z outside editable controls should still activate the editor history");
+
+  // Focused buttons keep their native Space-key activation rather than hijacking preview playback.
+  await page.evaluate(() => {
+    window.__clipsmithSpaceDefaultPrevented = null;
+    window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") window.__clipsmithSpaceDefaultPrevented = event.defaultPrevented;
+    });
+  });
+  await page.locator("#focusPreviewBtn").focus();
+  await page.keyboard.press("Space");
+  assert.equal(await page.evaluate(() => window.__clipsmithSpaceDefaultPrevented), false,
+    "Space on a focused button must remain a native button activation");
+  await page.keyboard.press("Escape");
 
   // The aspect dropdown must resize the actual canvas, not just update its label.
   const ratioChecks = [

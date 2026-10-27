@@ -139,3 +139,20 @@ assert.match(css, /\.mobile-tab span svg/, "mobile tool icons have consistent si
 assert.match(css, /@media \(max-width: 960px\) and \(min-width: 821px\)[\s\S]*?\.top-actions #loadProjectBtn \{ display: inline-flex/, "laptop layout keeps Open project available");
 
 console.log("ClipSmith Studio Max responsive smoke checks passed.");
+
+
+const brandFinish = readFileSync(join(root, "brand-finish.css"), "utf8");
+assert.match(html, /brand-finish\.css\?v=20261027-premium-pass-v1/,
+  "the premium visual layer must be cache-busted");
+assert.match(brandFinish, /--premium-surface-raised/,
+  "premium design tokens define a shared raised-surface level");
+assert.match(brandFinish, /\.tool\.active::before/,
+  "the active desktop tool has a clear active-state rail");
+assert.match(brandFinish, /prefers-reduced-motion:\s*reduce/,
+  "premium interaction transitions respect reduced motion");
+assert.match(brandFinish, /button:not\(:disabled\):active/,
+  "interactive controls provide pressed-state feedback");
+assert.ok(app.includes('if(typing&&e.key!=="Escape")return;if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z")'),
+  "native text fields retain Ctrl/Cmd+Z instead of triggering project-level undo");
+assert.ok(app.includes('if(!typing&&active?.closest?.("button,a,summary,[role=button],[role=slider]")&&e.key!=="Escape"&&e.key!=="?")return;'),
+  "interactive controls keep native keyboard behavior while Escape remains available");
