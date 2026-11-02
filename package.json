@@ -10,7 +10,7 @@
     "test": "npm run check:mobile"
   },
   "dependencies": {
-    "@capacitor/android": "8.5.3",
+    "@capacitor/android": "8.6.0",
     "@capacitor/core": "8.5.3"
   },
   "devDependencies": {
